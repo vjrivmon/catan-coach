@@ -207,9 +207,9 @@ export function ChatInterface() {
       {/* Header */}
       <header className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0">
         <img
-          src="/logo.jpg"
+          src="/logo.png"
           alt="Catan Coach"
-          className="w-10 h-10 rounded-xl object-cover object-center shrink-0"
+          className="w-12 h-12 object-contain shrink-0"
         />
         <div>
           <h1 className="text-amber-400 font-semibold text-base leading-tight">Catan Coach</h1>
@@ -273,7 +273,7 @@ export function ChatInterface() {
             aria-label="Enviar"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </button>
         </form>
