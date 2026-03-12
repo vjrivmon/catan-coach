@@ -14,6 +14,7 @@ const STRATEGY_KEYWORDS = [
   'debería', 'conviene', 'ventaja', 'ganar más', 'mejorar', 'ayuda',
   'trucos', 'tips', 'clave', 'errores', 'evitar', 'prioridad', 'primero',
   'importante', 'experto', 'avanzado', 'técnica', 'táctica', 'plan',
+  'priorizar', 'más importante', 'cuándo conviene', 'más vale',
 ]
 
 const CONVERSATIONAL_KEYWORDS = [
