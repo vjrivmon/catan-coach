@@ -1,0 +1,174 @@
+## ESTRATEGIA DE GESTIÓN DE RECURSOS EN CATAN
+
+Entender cómo gestionar los recursos es fundamental para ganar en Catan. Los recursos son
+la moneda del juego: los necesitas para construir, y construir es la única forma de ganar
+puntos de victoria.
+
+---
+
+## NIVEL PRINCIPIANTE — LOS 5 RECURSOS
+
+### Los cinco tipos de recursos
+
+Catan tiene 5 tipos de recursos, cada uno producido por un tipo de terreno:
+
+- LADRILLO (Brick): producido por Colinas (Hills). Solo 3 hexágonos. Necesario para caminos y poblados.
+- MADERA (Lumber): producida por Bosques (Forest). 4 hexágonos. Necesaria para caminos y poblados.
+- CEREAL (Grain): producido por Campos (Fields). 4 hexágonos. Necesario para poblados, ciudades y cartas de desarrollo.
+- LANA (Wool): producida por Praderas (Pasture). 4 hexágonos. Necesaria para poblados y cartas de desarrollo.
+- MINERAL (Ore): producido por Montañas (Mountains). Solo 3 hexágonos. Necesario para ciudades y cartas de desarrollo.
+
+### Recursos más importantes al inicio
+
+Al principio de la partida, Ladrillo y Madera son los más críticos. Los necesitas para:
+- Construir caminos (1 Ladrillo + 1 Madera)
+- Construir nuevos poblados (1 Ladrillo + 1 Madera + 1 Lana + 1 Cereal)
+
+Sin expansión inicial, no puedes conseguir más producción ni más puntos de victoria.
+La Lana y el Cereal también son importantes para los poblados.
+
+### El Mineral se vuelve crucial a medio-largo plazo
+
+Las ciudades requieren 3 Mineral + 2 Cereal. Una ciudad dobla la producción de un poblado
+y vale 2 PV en lugar de 1. Es casi imposible ganar sin construir al menos un par de ciudades.
+El Mineral es el recurso más escaso (solo 3 hexágonos) y el más difícil de conseguir mediante comercio.
+
+---
+
+## NIVEL INTERMEDIO — GESTIÓN ACTIVA
+
+### Cuándo guardar y cuándo gastar
+
+Las cartas de recurso que guardas en la mano son vulnerables al ladrón (cuando alguien saca
+un "7" o juega un Caballero). Si tienes más de 7 cartas y alguien saca un "7", deberás
+descartar la mitad. Por eso, gastar recursos es siempre mejor que acumularlos sin plan.
+
+Regla práctica: si tienes suficientes cartas para construir algo útil, hazlo. No esperes
+el "momento perfecto" porque puede que ese momento nunca llegue.
+
+### El problema del desequilibrio de recursos
+
+Si produces mucho de un recurso pero poco de su complementario, te quedarás atascado:
+- Exceso de Ladrillo sin Madera = no puedes construir caminos ni poblados
+- Exceso de Madera sin Ladrillo = ídem
+- Exceso de Mineral sin Cereal = no puedes construir ciudades
+- Exceso de Cereal sin Mineral = ídem
+
+Cuando tengas desequilibrio, busca activamente comerciar el exceso. No esperes a que alguien
+te ofrezca exactamente lo que necesitas; toma la iniciativa y propón el intercambio.
+
+### Recursos como herramienta de negociación
+
+Tener recursos que los demás necesitan es poder. Si eres el único con buen acceso a Mineral
+y todos necesitan ciudades, puedes negociar en posición de fuerza. No te apresures a vender
+tus recursos escasos; úsalos como palanca para obtener lo que necesitas.
+
+Por el contrario, si tienes exceso de un recurso muy común (que todos producen), tu poder
+de negociación para ese recurso es bajo. Cuanto antes lo conviertas en algo más útil, mejor.
+
+### La Lana: el recurso menos valorado
+
+La Lana solo se necesita para poblados y cartas de desarrollo. Muchos jugadores acumulan
+demasiada Lana sin poder gastarla. Si tienes mucha producción de Lana, asegúrate de tener
+un plan para gastarla (estrategia de expansión con muchos poblados, o estrategia de cartas
+de desarrollo) o busca puertos para comerciarla eficientemente.
+
+En las negociaciones, la Lana es generalmente el recurso más fácil de conseguir de otros
+jugadores y el menos valioso. Si necesitas Lana, probablemente alguien te la dará barata.
+
+---
+
+## NIVEL AVANZADO — OPTIMIZACIÓN
+
+### Prioridades de construcción por fase del juego
+
+Fase inicial (turnos 1-5 aproximadamente):
+- Prioridad: Expandirse y colocar el 3er poblado
+- Recursos a acumular: Ladrillo + Madera + Lana + Cereal
+- No es buen momento para mejorar a ciudad todavía
+
+Fase media (turnos 5-15 aproximadamente):
+- Prioridad: Mejorar poblados a ciudades y comprar cartas de desarrollo
+- Recursos a acumular: Mineral + Cereal
+- Considera si vas a intentar el Camino más Largo (necesitarás Ladrillo + Madera para más caminos)
+
+Fase final (cuando alguien se acerca a 8-9 PV):
+- Prioridad: Completar tu estrategia ganadora lo antes posible
+- Gasta todo lo que tengas en lugar de acumular
+- Un Año de la Abundancia o Monopolio aquí puede ser decisivo
+
+### Eficiencia de producción: el concepto de "pips por recurso"
+
+No todos los accesos a recursos son igual de eficientes. Un hexágono de Cereal con ficha 6
+(5 pips) produce el doble de frecuencia que uno con ficha 3 (2 pips). Al evaluar tus posiciones,
+considera no solo qué recursos produces sino con qué frecuencia los produces.
+
+Ejemplo: si tienes 2 poblados junto a Cereal-6 y Cereal-8 (10 pips totales en Cereal),
+casi con seguridad tendrás exceso de Cereal y escasez de otros recursos. Aprovecha eso
+para comerciar Cereal por lo que te falta.
+
+### Cartas de desarrollo como recurso alternativo
+
+Las cartas de desarrollo (Mineral + Lana + Cereal) son una forma de convertir recursos
+en potencial. A diferencia de construir, no tienen requisitos de posición en el tablero.
+Son especialmente útiles cuando:
+- Estás atascado sin poder expandirte
+- Necesitas el Ejército más Grande (2 PV)
+- Quieres los efectos de las cartas de Progreso
+
+El Año de la Abundancia es considerado por muchos la mejor carta de progreso: te da 2
+recursos cualesquiera del banco, lo que puede completar exactamente lo que te falta para
+construir algo importante.
+
+### El Monopolio: cómo usarlo bien
+
+La carta de Monopolio te da todos los ejemplares de un recurso que tengan los demás jugadores.
+Para maximizarla:
+1. Espera a que la gente haya acumulado cartas (varios turnos sin gastar mucho)
+2. Úsala justo después de que hayan salido varios números de un recurso concreto
+3. Anuncia el recurso que todos acaban de coleccionar
+4. Gasta de inmediato todo lo que ganas antes de que venga el siguiente "7"
+
+El mejor momento para jugar Monopolio es después de múltiples tiradas que produzcan el mismo
+recurso, cuando los jugadores con ciudades han acumulado 3-4 cartas de ese tipo.
+
+### Los recursos en el contexto del "7"
+
+Cuando alguien saca un "7", cualquier jugador con más de 7 cartas pierde la mitad. Esto
+castiga la acumulación. Reglas para gestionar el riesgo del ladrón:
+
+- Si tienes 7 o menos cartas, el "7" no te perjudica (solo el robo)
+- Si tienes 8 o más, deberías construir o commerciar para bajar antes de que salga el "7"
+- El turno antes de que lleguen a ti los dados es especialmente peligroso: si el jugador
+  anterior saca "7", perderás cartas antes de poder gastarlas
+
+Estrategia: intenta llegar a tu turno con entre 5 y 7 cartas. Suficientes para poder
+construir algo, pero sin arriesgar demasiado a un descarte.
+
+---
+
+## TABLA DE COSTES DE CONSTRUCCIÓN
+
+Para referencia rápida:
+
+| Construcción          | Ladrillo | Madera | Lana | Cereal | Mineral |
+|-----------------------|----------|--------|------|--------|---------|
+| Camino                | 1        | 1      | -    | -      | -       |
+| Poblado               | 1        | 1      | 1    | 1      | -       |
+| Ciudad                | -        | -      | -    | 2      | 3       |
+| Carta de Desarrollo   | -        | -      | 1    | 1      | 1       |
+
+---
+
+## ANÁLISIS DE VALOR POR RECURSO
+
+Valor por frecuencia de uso:
+1. Cereal: se necesita para todo (poblados, ciudades, cartas de desarrollo)
+2. Madera: muy necesaria al inicio (caminos + poblados)
+3. Ladrillo: muy necesario al inicio, se vuelve menos valioso a medida que construyes ciudades
+4. Mineral: bajo al inicio, altísimo a media-larga partida (ciudades)
+5. Lana: bajo en general, pero indispensable para poblados y cartas de desarrollo
+
+Nota sobre la escasez: Ladrillo y Mineral solo tienen 3 hexágonos cada uno (vs. 4 para los
+demás). Esto los hace naturalmente más escasos en el tablero y potencialmente más valiosos
+como moneda de comercio.

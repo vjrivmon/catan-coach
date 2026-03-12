@@ -1,0 +1,24 @@
+C4Container
+    title Catan Coach — Diagrama de Contenedores (C4 Level 2)
+
+    Person(player, "Jugador de Catan")
+
+    Container_Boundary(catanCoach, "Catan Coach") {
+        Container(frontend, "Frontend Next.js", "Next.js App Router", "Interfaz de chat mobile-first. Gestiona historial y conceptos vistos en localStorage.")
+        Container(apiRoutes, "API Routes", "Next.js API Routes", "Orquesta agentes: Router, Rules, Strategy, Generator, Suggestion.")
+        ContainerDb(chromaRules, "Rules Vector Store", "ChromaDB", "Embeddings del reglamento oficial y partida de ejemplo.")
+        ContainerDb(chromaStrategy, "Strategy Vector Store", "ChromaDB", "Embeddings de guías de estrategia.")
+        ContainerDb(localStorage, "Sesión Local", "localStorage", "Historial de chat, conceptos vistos y nivel detectado.")
+    }
+
+    System_Ext(ollamaUPV, "Servidor Ollama UPV", "gemma3:27b · qwen3:8b · nomic-embed-text")
+    System_Ext(webSpeech, "Web Speech API", "STT nativo")
+
+    Rel(player, frontend, "Escribe o dicta pregunta", "HTTPS")
+    Rel(frontend, webSpeech, "Activa micrófono", "Browser API")
+    Rel(frontend, apiRoutes, "Envía mensaje", "HTTP POST")
+    Rel(apiRoutes, chromaRules, "Busca contexto de reglas", "ChromaDB Client")
+    Rel(apiRoutes, chromaStrategy, "Busca contexto de estrategia", "ChromaDB Client")
+    Rel(apiRoutes, ollamaUPV, "Genera respuesta (gemma3:27b) y sugerencias (qwen3:8b)", "Ollama API")
+    Rel(apiRoutes, frontend, "Devuelve respuesta + preguntas sugeridas", "HTTP")
+    Rel(frontend, localStorage, "Lee/escribe historial y nivel", "Browser API")

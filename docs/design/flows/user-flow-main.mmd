@@ -1,0 +1,27 @@
+flowchart TD
+    A([Usuario abre Catan Coach]) --> B{¿Hay sesión previa\nen localStorage?}
+    B -->|Sí| C[Bot saluda recordando\nla última sesión]
+    B -->|No| D[Bot da bienvenida\ne invita a preguntar]
+    C --> E[Usuario escribe o dicta pregunta]
+    D --> E
+
+    E --> F[RouterAgent clasifica\nla pregunta]
+    F -->|Reglas / dudas| G[RulesAgent\nbusca en ChromaDB rules]
+    F -->|Estrategia| H[StrategyAgent\nbusca en ChromaDB strategy]
+
+    G --> I[GeneratorAgent\ngemma3:27b genera respuesta]
+    H --> I
+
+    I --> J[SuggestionAgent\nqwen3:8b genera preguntas\nrelacionadas EN PARALELO]
+    I --> K[UI muestra respuesta]
+    J --> L[UI muestra chips\nde preguntas sugeridas]
+
+    K --> M[ConceptTracker actualiza\nlocalStorage con tema visto]
+    M --> N[LevelDetector analiza\nhistorial y ajusta nivel]
+
+    N --> O{¿Concepto nuevo\nidentificado?}
+    O -->|Sí| P[Bot añade mensaje\nde progresión contextual]
+    O -->|No| Q[Espera siguiente pregunta]
+    P --> Q
+
+    Q --> E

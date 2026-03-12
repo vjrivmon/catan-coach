@@ -1,0 +1,14 @@
+C4Context
+    title Catan Coach — Diagrama de Contexto (C4 Level 1)
+
+    Person(player, "Jugador de Catan", "Quiere aprender reglas y estrategia del juego base")
+
+    System(catanCoach, "Catan Coach", "Asistente conversacional RAG para aprender Catan. Detecta nivel, responde dudas y sugiere preguntas.")
+
+    System_Ext(ollamaUPV, "Servidor Ollama UPV", "Aloja gemma3:27b, qwen3:8b y nomic-embed-text")
+    System_Ext(webSpeech, "Web Speech API", "STT nativo del navegador para entrada de voz")
+
+    Rel(player, catanCoach, "Pregunta sobre reglas o estrategia", "Chat / Voz")
+    Rel(catanCoach, ollamaUPV, "Genera respuestas y embeddings", "HTTP / Ollama API")
+    Rel(catanCoach, webSpeech, "Transcribe voz a texto", "Browser API")
+    Rel(catanCoach, player, "Responde + sugiere preguntas relacionadas", "Chat UI")

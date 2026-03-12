@@ -1,0 +1,185 @@
+## ESTRATEGIA DE NEGOCIACIÓN EN CATAN
+
+Catan no es solo un juego de tablero. Es un juego social donde la mitad de la partida
+ocurre en las conversaciones entre jugadores. Saber negociar bien puede compensar una
+colocación inicial mediocre, y negociar mal puede arruinar una posición perfecta.
+
+---
+
+## NIVEL PRINCIPIANTE — REGLAS BÁSICAS DEL COMERCIO
+
+### Reglas fundamentales del comercio en Catan
+
+- Solo se puede comerciar durante el turno de un jugador específico
+- Los jugadores que no tienen el turno solo pueden comerciar con el jugador activo, no entre sí
+- No se pueden regalar cartas (todos los intercambios deben ser recíprocos)
+- No se pueden comerciar cartas de desarrollo
+- No se pueden hacer intercambios del mismo recurso (ej: 2 lana por 1 lana)
+
+### Por qué el comercio es esencial
+
+Nadie produce los 5 recursos con igual eficiencia. Siempre habrá recursos que sobran y otros
+que faltan. El comercio es la forma de convertir el exceso en recursos útiles.
+
+La regla de oro del comercio: cada turno que no participas en algún tipo de comercio
+(tuyo o de otro) es un turno en que los demás avanzan y tú te quedas.
+
+### Cuándo hacer un trato
+
+Un buen trato para ti es aquel donde:
+1. Obtienes un recurso que te permite construir algo ahora o en muy poco tiempo
+2. Das un recurso que tienes en exceso o que en este momento no necesitas
+3. No le das al oponente lo que necesita para hacer una jugada peligrosa
+
+Un mal trato es aquel donde le das al oponente exactamente lo que necesita para
+ganar puntos en su próximo turno. Antes de aceptar o proponer un trato, piensa en
+qué puede construir el otro jugador con lo que le vas a dar.
+
+---
+
+## NIVEL INTERMEDIO — TÁCTICAS DE NEGOCIACIÓN
+
+### La importancia de hacer propuestas activas
+
+No esperes a que los demás te ofrezcan lo que necesitas. Anuncia durante los turnos
+de otros jugadores qué recursos tienes disponibles para intercambiar. Sé proactivo:
+"Tengo cereal de sobra para quien lo necesite."
+
+Las personas que más comercian ganan más. El campeón mundial Quetzal Jiménez confirma
+que más comercios equivalen a más victorias: cada intercambio te acerca al recurso que
+necesitas y ayuda a mantener relaciones cordiales con los demás jugadores.
+
+### No dejes que los demás hagan tratos entre ellos
+
+Si dos jugadores están negociando y el trato no te incluye, ese trato los beneficia a
+ellos y te perjudica a ti (relativamente). Interrumpe: ofrece una alternativa que te
+incluya. Si el jugador activo da 2 Cereales al jugador B por 1 Mineral, y tú también
+tienes ese Mineral, ofrece algo mejor.
+
+Esta táctica se llama "hacer ofertas de interferencia" y es clave para evitar que otros
+avancen más rápido que tú.
+
+### Detectar cuándo un trato te perjudica
+
+Antes de aceptar cualquier intercambio, hazte estas preguntas:
+1. ¿Con lo que le doy, puede el otro jugador construir algo que le dé puntos?
+2. ¿El recurso que obtengo me sirve ahora o tardaré mucho en poder usarlo?
+3. ¿Hay alguien más dispuesto a hacer este intercambio en mejores condiciones para mí?
+
+Ejemplo de trato malo: aceptar dar 2 Minerales por 1 Ladrillo cuando el que te los pide
+tiene ya 2 Cereales y puede construir una ciudad con tus Minerales inmediatamente.
+
+### El arte de negociar desde la necesidad sin mostrarte desesperado
+
+Si necesitas urgentemente un recurso, mostrar esa necesidad te debilita: el otro jugador
+te pedirá más a cambio. Usa la palabra "quiero" en lugar de "necesito". Di "quiero un
+cereal" en lugar de "necesito cereal urgentemente."
+
+Si el otro jugador sabe exactamente qué te falta para construir o ganar, te cobrará más
+por ese recurso. Mantén cierta ambigüedad sobre tus planes de construcción.
+
+### Crear alianzas temporales
+
+A veces conviene ayudar a un jugador que va por detrás para que no quede completamente
+fuera de la partida. Tener 3 jugadores activos en la partida es mejor para ti que jugar
+con solo 2 oponentes fuertes: más jugadores = más opciones de comercio = más flexibilidad.
+
+También puedes pactar verbalmente con alguien para no atacaros mutuamente con el ladrón
+durante un número de turnos. Estos pactos no son vinculantes según las reglas, pero
+normalmente se respetan porque romperlos daña tu reputación social en la mesa.
+
+---
+
+## NIVEL AVANZADO — TÉCNICAS DE EXPERTO
+
+### El lenguaje corporal y la presencia en la mesa
+
+El campeón mundial de Catan, Quetzal Jiménez, enfatiza que el 50% del juego es social.
+Tu comportamiento en la mesa importa:
+- Ser amable y sociable hace que la gente quiera comerciar contigo
+- Mostrar empatía cuando alguien tiene mala suerte construye buena voluntad
+- Mantener contacto visual y mostrarte relajado genera confianza
+
+En torneos (y en partidas serias), actuar de forma discreta cuando estás ganando ayuda
+a evitar que todos se coalicionen contra ti.
+
+### El bluff: cuándo y cómo usarlo
+
+El bluff en Catan consiste en decir que harás o tienes algo que en realidad no tienes:
+- "Voy a poner el ladrón en tu hexágono de mineral si no haces el trato conmigo" (aunque
+  no tengas carta de caballero)
+- "Si me das ese recurso, no voy a competir por esa posición" (aunque sí lo pensabas hacer)
+- Actuar indeciso sobre si aceptar un trato cuando en realidad ya decidiste que sí
+
+El bluff funciona mejor en partidas con jugadores que no te conocen bien. Con amigos
+habituales, tu historial de comportamiento importa más.
+
+Advertencia: los bluffs descubiertos dañan tu credibilidad para futuras negociaciones.
+No exageres con esta táctica.
+
+### Card tracking: saber qué tiene cada jugador
+
+En partidas avanzadas, los mejores jugadores llevan un registro mental de qué recursos
+tienen los demás. Esto es posible porque:
+- Todos los recursos producidos en cada tirada de dados son información pública
+- Los tratos realizados son públicos
+- Los descartados al sacar "7" revelan información
+
+Si sabes que el jugador A acaba de producir 2 Minerales y tiene 4 cartas de Cereal en
+mano, sabes que puede construir una ciudad con lo que tiene. Eso cambia si decides darle
+otro Mineral a cambio de algo.
+
+### Negociar la posición del ladrón
+
+Cuando alguien saca un "7" o juega un Caballero y debe poner el ladrón, tienes una ventana
+de negociación. Puedes:
+- Ofrecerle un buen trato a cambio de que no te lo ponga a ti
+- Señalar que otro jugador tiene más cartas y es mejor objetivo
+- Recordarle que tienes una carta de caballero que podrías usar contra él si te pone el ladrón
+
+Inversamente, cuando tú activas el ladrón, puedes usarlo para extorsionar:
+"Te pongo el ladrón en el hexágono de mineral a menos que me des un recurso ahora."
+
+### Cuándo rechazar un trato y por qué
+
+Rechaza un trato cuando:
+- Te da algo que no necesitas en el corto plazo
+- Le da al otro jugador exactamente lo que necesita para avanzar de forma peligrosa
+- Hay una alternativa mejor (otro jugador o el banco/puerto)
+- El trato es claramente desequilibrado a tu contra
+
+Mostrar disposición a rechazar tratos es poder de negociación. Si siempre aceptas cualquier
+cosa, la gente abusará de esa disposición.
+
+### El timing del Monopolio
+
+La carta de Monopolio merece mención especial en negociación. Usarla mal es uno de los
+errores más comunes:
+
+Mal uso: usarla inmediatamente al comprarla, cuando nadie tiene muchas cartas todavía.
+Resultado: conseguirás pocas cartas del recurso elegido.
+
+Buen uso: espera a que los dados hayan producido muchas cartas de un recurso concreto,
+o espera a que el jugador con más ciudades haya acumulado sus recursos. Luego activa el
+Monopolio y anuncia ese recurso. La diferencia puede ser de 2-3 cartas vs. 8-10 cartas.
+
+El mejor momento para jugar Monopolio es justo después de que tú mismo hayas tirado un
+número que produce muchas cartas de un recurso. Primero produces, luego monopolizas.
+
+---
+
+## RESUMEN: LAS 7 REGLAS DE ORO DE LA NEGOCIACIÓN
+
+1. Comercia con frecuencia: más tratos = más victoria. Cada turno sin comerciar es un turno perdido.
+
+2. Propón activamente: no esperes, anuncia qué tienes disponible.
+
+3. Piensa antes de dar: ¿el recurso que das le permite al oponente construir algo peligroso?
+
+4. No muestres desesperación: usa "quiero" en lugar de "necesito".
+
+5. Interfiere en los tratos ajenos: si dos jugadores negocian sin ti, ofrece una alternativa mejor.
+
+6. Usa el ladrón como herramienta de negociación, no solo de bloqueo.
+
+7. Sé amable: la gente hace mejores tratos con personas que les caen bien.

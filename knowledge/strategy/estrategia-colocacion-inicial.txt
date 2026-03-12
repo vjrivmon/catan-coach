@@ -1,0 +1,196 @@
+## ESTRATEGIA DE COLOCACIÓN INICIAL EN CATAN
+
+La colocación de los 2 poblados iniciales es la decisión más importante de toda la partida.
+Una mala colocación puede condenar al jugador desde el principio, mientras que una buena
+colocación sienta las bases de la victoria.
+
+---
+
+## NIVEL PRINCIPIANTE — CONCEPTOS BÁSICOS
+
+### Por qué la colocación inicial es tan importante
+
+Los 2 primeros poblados son los que determinarán qué recursos producirás durante toda la partida.
+Cada intersección toca hasta 3 hexágonos, y cada hexágono tiene un número. Cada vez que ese
+número salga en los dados, recibirás 1 carta de ese recurso (o 2 si luego mejoras a ciudad).
+
+Una mala colocación significa que pasarás muchos turnos sin producir nada, mientras tus
+oponentes se llenan de recursos y construyen. Cada posición que se toma después de la colocación
+inicial es de segunda categoría — las mejores siempre son las primeras.
+
+### El sistema de puntos (pips o dots)
+
+Bajo cada número en las fichas circulares hay una serie de puntos (pips). Más puntos = más
+probabilidad de que ese número salga:
+
+- Fichas 6 y 8: 5 puntos — las más frecuentes (14% de probabilidad cada una)
+- Fichas 5 y 9: 4 puntos — muy buenas (11% de probabilidad cada una)
+- Fichas 4 y 10: 3 puntos — aceptables (8% de probabilidad cada una)
+- Fichas 3 y 11: 2 puntos — mediocres (6% de probabilidad cada una)
+- Fichas 2 y 12: 1 punto — rarísimas (3% de probabilidad cada una)
+
+El consejo práctico: cuando dudes dónde colocar, cuenta los puntos de los 3 hexágonos
+adyacentes a esa intersección. La intersección con más puntos totales es generalmente la mejor.
+Intenta conseguir intersecciones con 10 o más puntos totales (suma de las 3 fichas adyacentes).
+
+### Regla básica: diversifica tus números
+
+Evita colocar tus 2 poblados en intersecciones que compartan los mismos números de hexágono.
+Por ejemplo, si tu primer poblado toca los números 8, 4 y 5, y tu segundo poblado también
+toca el 8, 4 y 5, tendrás picos de producción (cuando esos números salgan, recibirás muchas
+cartas) pero también largos silencios (cuando otros números salgan, no recibirás nada).
+
+Lo ideal es que tus 2 poblados cubran entre 5 y 6 números diferentes. Esto garantiza que
+casi cualquier tirada de dados te dé algún recurso.
+
+### Ladrillo y madera son los reyes al inicio
+
+Al principio de la partida, necesitas expandirte: construir caminos y luego nuevos poblados.
+Eso requiere Ladrillo + Madera. Son los recursos más críticos en las primeras rondas.
+
+Intenta que al menos uno de tus 2 poblados iniciales esté junto a un buen hexágono de
+Colinas (Ladrillo) o Bosques (Madera), preferiblemente con ficha 5, 6, 8 o 9.
+
+---
+
+## NIVEL INTERMEDIO — FACTORES A CONSIDERAR
+
+### Factor 1: Producción total (cantidad de puntos/pips)
+
+Suma los puntos de todos los hexágonos adyacentes a los 2 poblados iniciales. Cuanto mayor
+sea esa suma, más recursos producirás en promedio por turno. Una buena colocación inicial
+suele tener un total de 15-20 puntos entre los 2 poblados.
+
+### Factor 2: Diversidad de recursos
+
+Lo ideal es acceder a los 5 tipos de recursos desde tus posiciones iniciales. Si tienes los
+5 recursos, podrás construir todo sin depender tanto del comercio. Si te falta alguno, tendrás
+que buscarlo en el mercado con los demás jugadores o a través de puertos.
+
+El Cereal (Grain) es el recurso más versátil: se necesita para poblados, ciudades y cartas de
+desarrollo. Asegúrate siempre de tener acceso a Cereal desde el inicio.
+
+### Factor 3: Escasez relativa en el tablero
+
+Si un recurso es raro en el tablero (pocos hexágonos o todos con números bajos), controlar
+ese recurso te da poder de negociación. Los demás jugadores lo necesitarán y te ofrecerán
+buenos tratos. Por ejemplo, si solo hay 2 hexágonos de Mineral y ambos tienen números bajos,
+y tú consigues uno de ellos, tienes algo valioso.
+
+### Factor 4: Recursos complementarios
+
+Los recursos van en pares para construir:
+- Caminos y Poblados necesitan Ladrillo + Madera (proporciones iguales)
+- Ciudades necesitan Mineral + Cereal (ratio 3:2)
+- Cartas de Desarrollo necesitan Mineral + Lana + Cereal
+
+Si produces mucho de un recurso de un par pero poco del otro, acumularás el que sobra sin
+poder gastar el par. Por ejemplo, si produces mucho Ladrillo pero poco Madera, tendrás
+muchos Ladrillos que no puedes usar para caminos.
+
+Lo ideal es tener una producción equilibrada de Ladrillo y Madera si tu estrategia es la
+expansión, o de Mineral y Cereal si tu estrategia es construir ciudades.
+
+### Factor 5: Posición en el orden de juego
+
+El orden en que colocas tu primer poblado afecta enormemente tus opciones. Si vas primero,
+tienes la ventaja de elegir la mejor posición, pero el riesgo de que alguien bloquee tu
+expansión antes de que coloques el segundo poblado. Si vas último en la primera ronda,
+colocas 2 veces seguidas (primer y segundo poblado), lo que te da ventaja en la elección del
+segundo.
+
+Cuando coloques tu primer poblado, observa hacia dónde apuntan los caminos de los demás.
+Si van hacia un área que tú también necesitas, tendrás que competir. Ajusta tu estrategia.
+
+### Factor 6: Espacio para expandirse
+
+No solo pienses en los recursos que producirás desde el inicio. Piensa en dónde podrás
+colocar un 3er y 4to poblado en el futuro. Coloca tu camino inicial apuntando hacia
+intersecciones con buenas perspectivas de expansión, no hacia zonas ya saturadas.
+
+Evita colocar ambos poblados en el centro del tablero si el tablero está muy concurrido.
+Un poblado en el centro con un camino que no puede ir a ningún sitio útil es un error común.
+
+---
+
+## NIVEL AVANZADO — CONCEPTOS DE EXPERTO
+
+### Estrategia de Expansión (Brick/Wood focus)
+
+Para una estrategia de expansión agresiva, coloca tus poblados priorizando:
+- Primer poblado: intersección con Madera, Ladrillo y Cereal (idealmente con números altos)
+- Segundo poblado: intersección con Madera, Ladrillo y Lana (en el lado opuesto del tablero)
+
+El objetivo es poder expandirte rápidamente y alcanzar el Camino más Largo (2 PV) antes
+que nadie. Esta estrategia funciona mejor cuando hay muchos hexágonos de Madera y Ladrillo
+con buenos números en el tablero.
+
+Debilidad: Esta estrategia requiere 4 recursos diferentes y es cara. Para un nuevo poblado
+necesitas aproximadamente 8 cartas (3 Ladrillo + 3 Madera + 1 Lana + 1 Cereal).
+
+### Estrategia de Ciudades (Ore/Grain focus)
+
+Para una estrategia orientada a las ciudades, coloca tus poblados priorizando:
+- Primer poblado: cerca de un hexágono de Mineral con buen número (6, 8 preferiblemente)
+- Segundo poblado: cerca de hexágonos de Cereal con buenos números
+
+Mejora tus 2 poblados iniciales a ciudades lo antes posible. Esto duplica tu producción
+sin necesitar expandirte físicamente por el tablero.
+
+Debilidad: Esta estrategia no te da puntos de expansión; si solo construyes ciudades y no
+nuevos poblados, te quedas limitado a 4 ciudades = 8 PV. Necesitarás cartas de desarrollo
+o el Ejército más Grande para llegar a 10 PV.
+
+### Estrategia de Cartas de Desarrollo (Dev Card focus)
+
+Para una estrategia de compra de cartas de desarrollo, coloca tus poblados priorizando:
+- Acceso a Mineral, Lana y Cereal con buenos números
+
+Las cartas de desarrollo son versátiles y no tienen prerrequisitos territoriales. Un Año de
+la Abundancia, un Monopolio o el Ejército más Grande pueden cambiar el curso de la partida.
+Esta estrategia es menos predecible para los oponentes.
+
+### Estrategia de Puertos
+
+Si ves que el tablero tiene un recurso muy concentrado en hexágonos con buenos números
+(por ejemplo, 3 hexágonos de Cereal con fichas 5, 6 y 8), considera colocar cerca de ese
+recurso Y cerca del puerto 2:1 de ese recurso. Así podrás comerciar 2 Cereales por cualquier
+otro recurso, lo que es extremadamente eficiente.
+
+Debilidad: Los poblados en puertos solo tocan 2 hexágonos (no 3), lo que reduce la
+producción. No es una estrategia principal; es más bien un complemento.
+
+### Consideraciones de posición ofensiva
+
+Cuando dos posiciones te parecen igualmente buenas para tu juego, elige la que también sea
+la que más moleste a tu oponente más peligroso. Bloquear el camino de expansión de alguien
+que va bien posicionado puede valer más que un punto de producción extra.
+
+Cuando coloques tu primer poblado, mira hacia dónde los demás apuntarán sus caminos. Si
+alguien va a colocar un camino hacia la misma zona que tú necesitas, ponle tu camino en la
+dirección correcta antes de que llegue.
+
+### El error más común: no mirar hacia donde apuntas el camino
+
+Un fallo frecuente de los principiantes es elegir una buena intersección para el poblado pero
+luego colocar el camino sin pensar en el futuro. El camino determina hacia dónde te expandirás.
+Si apuntas hacia una zona sin buenas intersecciones de expansión, habrás desperdiciado el camino.
+
+Antes de colocar el camino, imagina dónde querrías poner tu 3er y 4to poblado. Asegúrate de
+que el camino apunte en esa dirección.
+
+---
+
+## RESUMEN PRÁCTICO
+
+Checklist para evaluar una posición de colocación inicial:
+
+1. ¿Cuántos puntos (pips) suman las 3 fichas adyacentes? (objetivo: 10 o más)
+2. ¿Qué recursos cubre? ¿Complementan bien mis otras posiciones?
+3. ¿Tengo suficiente diversidad de números con mis 2 poblados?
+4. ¿Hacia dónde apuntará mi camino? ¿Hay buenas expansiones disponibles?
+5. ¿Estoy bloqueando o siendo bloqueado por otros jugadores?
+6. ¿La posición me acerca a algún puerto útil?
+
+La colocación perfecta no existe. Sí existe una buena adaptación al tablero concreto que
+te ha tocado y a las posiciones que van eligiendo tus oponentes.

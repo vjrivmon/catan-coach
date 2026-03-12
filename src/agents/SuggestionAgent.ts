@@ -1,0 +1,69 @@
+import type { Message, UserLevel } from '../domain/entities'
+import { config } from '../config'
+
+export class SuggestionAgent {
+  async suggest(message: string, history: Message[], level: UserLevel): Promise<string[]> {
+    const levelLabel = level === 'beginner' ? 'principiante' : level === 'intermediate' ? 'intermedio' : 'avanzado'
+    const recentHistory = history.slice(-4).map(m =>
+      `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${m.content.slice(0, 200)}`
+    ).join('\n')
+
+    const prompt = `Historial reciente sobre Catan:
+${recentHistory}
+
+Última pregunta del usuario (nivel ${levelLabel}): ${message}
+
+Genera exactamente 3 preguntas de seguimiento en español que el usuario podría querer hacer a continuación.
+Las preguntas deben: (1) profundizar en el tema actual, (2) explorar un tema relacionado, (3) anticipar el siguiente concepto lógico.
+Devuelve SOLO un array JSON válido: ["pregunta1", "pregunta2", "pregunta3"]
+Sin explicaciones adicionales, solo el array JSON.`
+
+    try {
+      const response = await fetch(`${config.ollama.baseUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: config.ollama.suggestionModel,
+          prompt,
+          stream: false,
+        }),
+      })
+
+      if (!response.ok) return this.fallbackSuggestions(level)
+
+      const data = await response.json()
+      const text: string = data.response || ''
+
+      // Extract JSON array from response
+      const match = text.match(/\[[\s\S]*?\]/)
+      if (!match) return this.fallbackSuggestions(level)
+
+      const parsed = JSON.parse(match[0])
+      if (Array.isArray(parsed) && parsed.length >= 2) {
+        return parsed.slice(0, 3).map((q: unknown) => String(q))
+      }
+
+      return this.fallbackSuggestions(level)
+    } catch {
+      return this.fallbackSuggestions(level)
+    }
+  }
+
+  private fallbackSuggestions(level: UserLevel): string[] {
+    if (level === 'beginner') return [
+      '¿Cómo funciona el turno en Catan?',
+      '¿Cuáles son los recursos del juego?',
+      '¿Cómo se gana en Catan?',
+    ]
+    if (level === 'intermediate') return [
+      '¿Cuándo conviene priorizar ciudades sobre nuevos poblados?',
+      '¿Cómo funciona el intercambio marítimo?',
+      '¿Cuál es la mejor estrategia de colocación inicial?',
+    ]
+    return [
+      '¿Cómo calcular la probabilidad de producción en la colocación inicial?',
+      '¿Cuándo usar el Monopolio para mayor impacto?',
+      '¿Cómo bloquear al líder sin perjudicarte a ti mismo?',
+    ]
+  }
+}

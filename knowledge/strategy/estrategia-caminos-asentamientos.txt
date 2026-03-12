@@ -1,0 +1,177 @@
+## ESTRATEGIA DE CAMINOS Y ASENTAMIENTOS EN CATAN
+
+Los caminos y poblados son los instrumentos de expansión territorial en Catan. Construir
+caminos sin un destino claro es desperdiciar recursos. Construir poblados en lugares
+estratégicos multiplica la producción y los puntos de victoria.
+
+---
+
+## NIVEL PRINCIPIANTE — CONCEPTOS BÁSICOS
+
+### Para qué sirven los caminos
+
+Los caminos tienen dos funciones principales:
+1. Conectar poblados: para construir un nuevo poblado, necesitas que un camino tuyo llegue
+   a esa intersección.
+2. Competir por el "Camino más Largo": el primer jugador con un camino continuo de al menos
+   5 segmentos gana 2 puntos de victoria. Si alguien construye un camino más largo, le arrebata
+   esa carta y sus 2 puntos.
+
+Los caminos en sí no dan puntos de victoria a menos que tengas el "Camino más Largo".
+
+### Para qué sirven los poblados
+
+Cada poblado vale 1 punto de victoria y produce recursos de hasta 3 hexágonos adyacentes.
+Colocar un nuevo poblado en una intersección con buenos números y recursos te da producción
+continua durante el resto de la partida.
+
+El límite máximo es 5 poblados por jugador. Si quieres construir más, tendrás que mejorar
+alguno a ciudad primero (lo que también es más eficiente en puntos).
+
+### La Regla de Distancia
+
+Ningún poblado puede estar a menos de 2 intersecciones de otro (propio o ajeno). Esto significa
+que entre cualquier par de poblados debe haber siempre al menos 1 intersección vacía.
+
+Esta regla es fundamental para planificar la expansión: no todas las intersecciones adyacentes
+a tu camino estarán disponibles para construir. Comprueba siempre la Regla de Distancia
+antes de planificar la ruta de un camino.
+
+---
+
+## NIVEL INTERMEDIO — ESTRATEGIA DE EXPANSIÓN
+
+### Cuándo construir caminos vs. poblados vs. ciudades
+
+Decisión clave en cada turno: ¿Construyo un camino, un poblado o una ciudad?
+
+Construye caminos cuando:
+- Estás compitiendo por una posición de expansión y otro jugador también puede alcanzarla
+- Necesitas los caminos para llegar a un puerto o a una buena intersección de recursos
+- Estás intentando conseguir el Camino más Largo
+
+Construye poblados cuando:
+- Tienes acceso a una buena intersección (buenos números + recursos que te faltan)
+- Tienes todos los recursos necesarios y la posición está disponible
+- Necesitas aumentar tu producción antes de priorizar ciudades
+
+Construye ciudades cuando:
+- Ya tienes acceso a Mineral y Cereal en cantidades suficientes
+- Tus posiciones actuales ya producen bien y no necesitas nueva producción de otros hexágonos
+- Estás en la fase media/final de la partida y necesitas puntos rápidamente
+
+### El principio de expansión doble
+
+La estrategia de expansión óptima en la fase inicial es colocar tus 2 primeros poblados en
+lados opuestos del tablero. Esto te da dos "frentes" de expansión:
+- Si un lado se ve bloqueado por oponentes, puedes expandirte por el otro
+- Si un lado recibe el ladrón frecuentemente, el otro sigue produciendo
+- Tienes más opciones para alcanzar distintos recursos y puertos
+
+### Cuántos caminos necesitas por poblado
+
+Para construir un nuevo poblado generalmente necesitas construir 2-3 caminos de distancia
+desde tu posición actual (para cumplir la Regla de Distancia respecto a otros poblados).
+Esto significa que cada nuevo poblado te "cuesta" aproximadamente:
+- 2-3 caminos: 2-3 Ladrillo + 2-3 Madera
+- 1 poblado: 1 Ladrillo + 1 Madera + 1 Lana + 1 Cereal
+- Total aproximado: 3-4 Ladrillo + 3-4 Madera + 1 Lana + 1 Cereal
+
+Es una inversión considerable. Por eso hay que asegurarse de que la posición de expansión
+valga la pena antes de comenzar a construir hacia ella.
+
+### Planificar rutas antes de construir
+
+Antes de colocar el primer camino hacia una nueva posición, verifica:
+1. ¿La intersección destino cumple la Regla de Distancia? (no hay poblados a menos de 2 pasos)
+2. ¿Hay buenos recursos y números en la intersección destino?
+3. ¿Cuántos caminos necesitaré? ¿Tengo suficientes recursos o los tendré pronto?
+4. ¿Algún oponente puede llegar antes que yo a esa intersección?
+
+Si otro jugador está compitiendo por la misma posición, construye TODOS los caminos necesarios
+en un solo turno si es posible. Si construyes solo 1 camino para "reservar" el camino, el
+oponente verá tus intenciones y se adelantará.
+
+---
+
+## NIVEL AVANZADO — TÁCTICAS TERRITORIALES
+
+### Cortar a los oponentes
+
+Una táctica poderosa es bloquear el camino de expansión de un oponente que esté haciéndolo
+bien. Construye un camino o un poblado en la dirección que el oponente está intentando alcanzar.
+
+Esto es especialmente valioso cuando:
+- El oponente lleva ventaja y necesitas frenarlo
+- La intersección que quieres tomar también es valiosa para ti
+- Puedes completar el bloqueo en un solo turno antes de que él llegue
+
+Advertencia: cortar a alguien se recuerda durante el resto de la partida y puede hacer
+que ese jugador sea hostil contigo en las negociaciones. A veces vale la pena mantener
+buenas relaciones.
+
+### Romper el camino de un oponente
+
+Puedes colocar un poblado en cualquier intersección que cumpla la Regla de Distancia,
+incluso si eso parte el camino de un oponente por la mitad. Si el oponente tenía el
+"Camino más Largo" y tu poblado le rompe el camino en dos partes más cortas, le arrebatas
+esa carta (y sus 2 puntos de victoria).
+
+Esta es una jugada de alto impacto: puede generar un cambio de 4 puntos de victoria
+(2 que el oponente pierde + 2 que tú ganas si ahora tienes el camino más largo).
+
+### La carta "Camino más Largo": cuándo intentarla
+
+Vale la pena intentar el Camino más Largo cuando:
+- Tienes buena producción de Ladrillo y Madera
+- Hay espacio suficiente para construir 5+ segmentos sin bifurcaciones
+- Ningún oponente lleva ya 4+ segmentos de camino continuo
+- Tu estrategia no necesita Mineral para ciudades (puedes invertir en caminos)
+
+Para mantener el Camino más Largo una vez conseguido:
+- Sigue extendiendo el camino para que nadie pueda superarte
+- Vigila si alguien puede romper tu camino colocando un poblado en él
+- Un camino de 8-10 segmentos es prácticamente inalcanzable para los oponentes
+
+### Gestión de los límites de piezas
+
+Tienes exactamente 15 caminos disponibles. Si los gastas todos sin planificación, te quedarás
+sin posibilidad de expandirte. Planifica con cuidado:
+- No construyas caminos "decorativos" sin objetivo
+- No bifurques el camino innecesariamente (perderás segmentos del Camino más Largo)
+- Si vas por el Camino más Largo, puede que necesites 10-12 caminos para asegurarlo
+
+### La carta de Construcción de Caminos (Road Building)
+
+Esta carta de progreso te permite colocar 2 caminos gratis. Los mejores momentos para usarla:
+- Para completar una ruta hacia una posición de expansión que de otro modo tardarías mucho
+- Para ganar el Camino más Largo de forma inesperada cuando parece que llevas desventaja
+- Para cortar a un oponente antes de que llegue a una intersección clave
+
+---
+
+## ERRORES COMUNES A EVITAR
+
+Error 1: Construir caminos sin destino claro
+Cada camino debería tener un propósito: llegar a una intersección específica o extender el
+Camino más Largo. Construir caminos "por si acaso" es desperdiciar Ladrillo y Madera.
+
+Error 2: No aprovechar la Regla de Distancia a tu favor
+Cuando coloques un poblado, también estás bloqueando 3 intersecciones adyacentes para todos
+(incluidos tus oponentes). Coloca tus poblados en lugares que también bloqueen posiciones
+valiosas para los demás.
+
+Error 3: Olvidar contar las bifurcaciones para el Camino más Largo
+Solo cuenta el segmento más largo continuo, sin bifurcaciones. Si tu camino se bifurca en
+dos ramas, solo una de ellas cuenta. Planifica el camino de forma lineal cuando vayas a
+por el Camino más Largo.
+
+Error 4: No expandirse suficientemente pronto
+Muchos principiantes esperan demasiado para colocar el 3er poblado. Cada turno que no
+produces recursos de ese tercer poblado es producción perdida. Expándete en cuanto tengas
+los recursos necesarios.
+
+Error 5: Expandirse hacia posiciones mediocres
+No vale la pena gastar 3-4 Ladrillo + 3-4 Madera + 1 Lana + 1 Cereal para llegar a una
+intersección con sólo 2-3 pips de producción total. La expansión debe ser hacia intersecciones
+que realmente mejoren tu producción o te acerquen a un puerto importante.

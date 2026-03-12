@@ -1,0 +1,206 @@
+## ESTRATEGIA DE PUERTOS EN CATAN
+
+Los puertos (harbors) son una de las mecánicas más subestimadas por los jugadores nuevos
+y una de las más explotadas por los expertos. Un buen uso de los puertos puede compensar
+una posición de recursos mediocre o potenciar enormemente una posición ya buena.
+
+---
+
+## CONCEPTOS BÁSICOS DE LOS PUERTOS
+
+### Tipos de puertos
+
+Hay 9 puertos en total en el tablero estándar de Catan:
+
+**Puerto Genérico (3:1) — 4 puertos:**
+Permite intercambiar 3 cartas idénticas de CUALQUIER recurso por 1 carta de cualquier otro
+recurso diferente. Es más flexible que la tasa base de 4:1 del banco.
+
+**Puertos Especiales (2:1) — 5 puertos:**
+Hay exactamente uno por tipo de recurso:
+- Puerto de Ladrillo (2:1)
+- Puerto de Madera (2:1)
+- Puerto de Cereal (2:1)
+- Puerto de Lana (2:1)
+- Puerto de Mineral (2:1)
+
+Cada puerto especial permite intercambiar 2 cartas de su recurso específico por 1 carta
+de cualquier otro recurso. SOLO para ese recurso específico; para otros recursos sigue
+aplicando la tasa 4:1.
+
+### Cómo acceder a un puerto
+
+Para usar un puerto, debes tener un poblado o ciudad en una intersección costera que
+bordee ese puerto. No basta con construir caminos cerca del puerto; necesitas el edificio
+en la intersección exacta.
+
+Las intersecciones de puerto están en la costa y generalmente tocan 2 hexágonos de terreno
+(en lugar de 3 como las intersecciones interiores). Esto significa menor producción a cambio
+de acceso al puerto.
+
+### La tasa sin puerto: 4:1
+
+Siempre puedes intercambiar 4 cartas idénticas de un recurso por 1 carta de cualquier otro
+recurso con el banco, aunque no tengas ningún puerto. Esta tasa siempre está disponible.
+Los puertos mejoran sobre esta tasa base.
+
+---
+
+## VALOR ESTRATÉGICO DE LOS PUERTOS
+
+### Por qué los principiantes subestiman los puertos
+
+Los principiantes suelen colocar sus poblados en intersecciones interiores con alta producción
+(3 hexágonos adyacentes con buenos números) y evitan la costa. Esto es correcto en general,
+pero ignora el enorme valor de los puertos a largo plazo.
+
+Un puerto 2:1 con buena producción del recurso correspondiente puede ser más valioso que
+un tercer hexágono de producción media. Si produces Cereal en dos hexágonos con fichas 6 y 8,
+el puerto de Cereal 2:1 te permite convertir ese exceso en cualquier otro recurso de forma
+extremadamente eficiente.
+
+### Puerto Genérico 3:1: el más valioso para la mayoría
+
+El puerto 3:1 es más versátil que el 2:1 porque:
+1. No estás limitado a un solo tipo de recurso
+2. Puedes cambiar cualquier recurso que acumules en exceso
+3. Hay 4 de ellos en el tablero (más fácil de acceder que los 5 puertos 2:1)
+
+Para un jugador con producción diversificada, el puerto 3:1 es casi siempre un buen objetivo.
+Con él, cualquier exceso se convierte en lo que necesitas.
+
+### Puerto Especial 2:1: el más poderoso cuando hay sinergia
+
+El puerto 2:1 vale mucho cuando:
+1. Tienes 2 o más hexágonos del mismo recurso con números altos (6, 8, o varios con 5 y 9)
+2. Ese recurso es relativamente abundante en el tablero (los demás también lo producen y no
+   lo necesitan tanto para comerciar)
+3. Puedes posicionarte en ese puerto sin sacrificar demasiada producción general
+
+Ejemplo extremo: si tienes un poblado en Cereal-6, otro en Cereal-8, y controlas el puerto
+de Cereal 2:1, estás produciendo Cereal constantemente y puedes convertirlo en cualquier
+otro recurso pagando solo 2. Eso te da una economía tremendamente eficiente.
+
+---
+
+## ESTRATEGIAS CON PUERTOS
+
+### Estrategia "Puerto desde el inicio"
+
+Una estrategia valiente pero poderosa: colocar uno de los 2 poblados iniciales directamente
+en un puerto 2:1 o 3:1 que se alinee bien con la producción del tablero.
+
+Ventajas:
+- Aseguras el puerto antes de que otro jugador lo tome
+- No necesitas gastar recursos de expansión para llegar al puerto luego
+- Empiezas a comerciar favorablemente desde los primeros turnos
+
+Desventajas:
+- El poblado en el puerto solo toca 2 hexágonos (menos producción inicial)
+- Empezarás con menos recursos iniciales (el segundo poblado produce los recursos de inicio)
+- Requires que el recurso del puerto 2:1 sea abundante en el tablero
+
+Cuándo hacerlo: cuando el tablero tiene un recurso muy concentrado con buenos números, y el
+puerto correspondiente está cerca de esa concentración de producción.
+
+### Estrategia "Puerto como objetivo secundario"
+
+La estrategia más común: no empezar en el puerto, sino expandirse hacia él como 3ro o 4to
+movimiento. Coloca los 2 poblados iniciales en intersecciones interiores con buena producción,
+luego construye caminos hacia el puerto y coloca un poblado allí.
+
+Esta estrategia funciona bien cuando:
+- El puerto está a 2-3 caminos de distancia de tu posición actual
+- Tienes suficiente producción de un recurso para que el puerto sea útil cuando llegues
+- El puerto no está en riesgo de ser tomado por un oponente antes que tú
+
+### Estrategia "Monopolio de recurso + Puerto"
+
+Una estrategia avanzada: rodear 2 o 3 hexágonos del mismo recurso con buenos números Y
+tener el puerto 2:1 de ese recurso. Esto crea una "máquina" de conversión de ese recurso.
+
+Ejemplo: si controlas Madera-6, Madera-8 y el puerto de Madera 2:1, produces tanta Madera
+que puedes convertirla en cualquier otro recurso pagando solo 2 Maderas por 1 de cualquier
+cosa. Tu flujo de recursos es prácticamente ilimitado para ese canal.
+
+Advertencia: esta estrategia te hace muy vulnerable a la carta de Monopolio del oponente
+(que puede robarte toda tu Madera de golpe) y al ladrón en ese recurso.
+
+---
+
+## CUÁNDO NO PRIORIZAR LOS PUERTOS
+
+Hay situaciones en las que el puerto no compensa:
+
+1. El recurso del puerto 2:1 es escaso en el tablero y en tu propia producción: sin suficiente
+   producción de ese recurso, el puerto no sirve para nada.
+
+2. El puerto está demasiado lejos: si necesitas 5 o más caminos para llegar, el coste de
+   expansión puede no compensar.
+
+3. Tienes posiciones interiores alternativas excelentes: si hay intersecciones interiores
+   con 12+ pips disponibles, probablemente es mejor ir allí que al puerto.
+
+4. Otro jugador ya controla el recurso que corresponde al puerto: si no tienes acceso a ese
+   recurso, el puerto 2:1 es inútil.
+
+---
+
+## ANÁLISIS POR TIPO DE PUERTO
+
+### Puerto de Ladrillo 2:1
+
+Muy valioso al inicio de la partida cuando hay estrategia de expansión. El Ladrillo es
+uno de los recursos más escasos (solo 3 hexágonos) y siempre tiene demanda alta.
+
+Útil si: tienes 2+ hexágonos de Colinas (Ladrillo) con buenos números.
+Menos útil si: entras en la fase media-tarde donde los caminos ya no son prioridad.
+
+### Puerto de Madera 2:1
+
+Similar al de Ladrillo en valor inicial. La Madera es ligeramente más abundante (4 hexágonos)
+pero igualmente necesaria para la expansión.
+
+Útil si: tienes mucha producción de Bosques y una estrategia de expansión/Camino más Largo.
+Menos útil si: estás jugando principalmente por ciudades y cartas de desarrollo.
+
+### Puerto de Cereal 2:1
+
+El más versátil de los puertos especiales. El Cereal se necesita para todo: poblados,
+ciudades y cartas de desarrollo. Tener exceso de Cereal y un puerto 2:1 es una combinación
+extremadamente poderosa.
+
+Útil si: tienes 2+ hexágonos de Campos con buenos números.
+Pocas veces es una mala elección si hay producción suficiente.
+
+### Puerto de Mineral 2:1
+
+Valioso en la fase media-tardía de la partida cuando todos están construyendo ciudades.
+El Mineral es tan escaso como el Ladrillo (3 hexágonos) y tiene demanda constante.
+
+Útil si: tienes buena producción de Montañas.
+Muy útil si: combinado con Cereal abundante para una estrategia de ciudades a tope.
+
+### Puerto de Lana 2:1
+
+El menos valioso de los puertos especiales. La Lana solo se necesita para poblados y cartas
+de desarrollo. En muchas partidas, la Lana abunda y nadie la valora mucho.
+
+Útil si: tu estrategia se basa en comprar muchas cartas de desarrollo (necesitas Lana) y
+tienes mucha producción de Praderas.
+Generalmente de menor prioridad que los otros 4 puertos especiales.
+
+---
+
+## RESUMEN: DECISIONES CLAVE SOBRE PUERTOS
+
+Preguntas a hacerte cuando evalúas un puerto:
+
+1. ¿Tengo suficiente producción del recurso del puerto para sacarle partido? (2:1)
+2. ¿Qué recurso me sobra más frecuentemente? ¿Hay un puerto 3:1 cerca?
+3. ¿Cuántos caminos necesito para llegar? ¿Vale la pena la inversión?
+4. ¿Puede otro jugador llegar antes que yo y arrebatarme el puerto?
+5. ¿El puerto me da suficiente ventaja como para sacrificar producción en la intersección?
+
+Los puertos son herramientas estratégicas a largo plazo. El jugador que los usa bien tiene
+una economía más fluida y eficiente, especialmente en la segunda mitad de la partida.

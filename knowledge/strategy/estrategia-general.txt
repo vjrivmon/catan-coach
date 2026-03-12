@@ -1,0 +1,123 @@
+## ESTRATEGIA GENERAL EN CATAN — VISIÓN GLOBAL
+
+Esta guía ofrece una visión general de los principios estratégicos que gobiernan el juego de
+Catan, desde los conceptos fundamentales hasta las técnicas avanzadas que usan los jugadores
+experimentados.
+
+---
+
+## NIVEL PRINCIPIANTE — LOS 5 PRINCIPIOS BÁSICOS
+
+### 1. Diversificación de recursos
+Nunca dependas de un solo recurso. Un jugador que solo produce madera y ladrillo podrá
+construir caminos y poblados pero nunca ciudades. Un jugador que solo produce mineral y cereal
+podrá hacer ciudades y cartas de desarrollo pero no expandirse. Lo ideal en los primeros turnos
+es tener al menos 3 de los 5 recursos disponibles.
+
+La excepción: si tienes acceso a un puerto de 2:1, puedes permitirte especializar en un recurso
+y comerciar para obtener el resto. Pero esto requiere experiencia para ejecutarlo bien.
+
+### 2. La importancia de los 6 y los 8
+Los números 6 y 8 (marcados en rojo en el tablero) tienen la mayor probabilidad de salir.
+Un jugador que en su colocación inicial haya conseguido dos fichas de 6 u 8 tiene una ventaja
+productiva enorme sobre el resto. Si no los conseguiste, asegúrate de que los recursos que
+produces con esos números no sean los mismos que tus rivales — así el ladrón no te perseguirá.
+
+### 3. Expansión antes que ciudad
+En los primeros 4-6 turnos, prioriza construir caminos y un tercer poblado antes de hacer tu
+primera ciudad. La razón: cada poblado nuevo te da más puntos de victoria, más recursos, y más
+opciones de expansión. Una ciudad da 2 puntos de victoria pero no diversifica tu producción.
+Primero expándete, luego upgradea.
+
+La excepción: si ya tienes 5 puntos de producción (suma de pips) de mineral y cereal, hacer
+ciudad temprana puede ser devastador para tus rivales.
+
+### 4. Bloquear es tan importante como construir
+Cada camino que construyes tiene dos funciones: ir hacia donde quieres llegar, y cerrar el paso
+a los demás. Cuando veas que un rival tiene un solo camino viable hacia una zona rica, considera
+bloquearlo aunque no sea tu destino inmediato.
+
+### 5. El comercio es una herramienta, no un regalo
+Cuando comercies con otros jugadores, pregúntate siempre: "¿esto les ayuda más a ellos que a
+mí?" Si el jugador que va ganando te pide un intercambio, generalmente debes rechazarlo aunque
+te convenga a ti — porque le conviene más a él.
+
+---
+
+## NIVEL INTERMEDIO — MECÁNICAS AVANZADAS
+
+### El control de la mesa
+El jugador que controla el flujo de recursos de la mesa tiene poder. Si produces el recurso más
+escaso, todos te necesitan a ti. Si produces lo más abundante, nadie te da nada por ello.
+Antes de colocar, cuenta cuántos hexágonos de cada tipo hay y cuántos jugadores los tocan.
+
+### Cartas de desarrollo: cuándo y cómo
+- **Caballero (Knight):** Mejor usarlo proactivamente (antes de que el ladrón llegue a tus hex)
+  que reactivamente. Tres caballeros = Ejército más Grande = 2 puntos de victoria.
+- **Camino más Largo:** Vale 2 puntos y puede robarse. Si estás cerca de los 5 tramos, a veces
+  compensa construir solo para mantenerlo o arrebatárselo a alguien.
+- **Monopolio:** La carta más devastadora del juego si se usa en el momento correcto. Úsala
+  cuando el recurso objetivo sea escaso en el banco y los rivales lo acumulan.
+- **Construcción de Año:** Dos construcciones gratis en un turno. Ideal para cerrar el Camino
+  más Largo o colocar un poblado clave que de otro modo un rival bloquearía.
+
+### La regla de los 7 puntos de producción
+Si tu colocación inicial da menos de 7 puntos de producción total (suma de todos los pips de
+tus dos poblados iniciales), estás en desventaja. El ideal es 10-12 puntos de producción.
+Si tienes 14+ pero con recursos concentrados, eres vulnerable al ladrón.
+
+---
+
+## NIVEL AVANZADO — ESTRATEGIAS DE VICTORIA
+
+### Análisis de la mesa antes de elegir estrategia
+Antes de definir tu plan, observa:
+1. ¿Qué recursos son escasos en el tablero? (pocos hexágonos y números bajos)
+2. ¿Qué recursos son abundantes? (muchos hexágonos y números altos)
+3. ¿Qué puertos hay disponibles y quién los controla?
+4. ¿Cuántos jugadores hay? (a 3 el comercio es diferente que a 4)
+
+### Los tres caminos a la victoria
+
+**Camino 1 — Expansión rápida:**
+Construir 3-4 poblados antes del turno 8, asegurando territorio. Funciona cuando el tablero
+tiene mucha madera y ladrillo con números altos, y cuando los puertos de madera/ladrillo están
+disponibles. El objetivo es tener 4+ puntos de victoria antes que nadie.
+
+**Camino 2 — Ciudad storm:**
+Construir 2 poblados + 3 ciudades rápido. Necesitas acceso sólido a mineral y cereal (6, 8, 5,
+9 en esos recursos). 3 ciudades = 6 puntos + 2 poblados iniciales = 8 puntos. Solo necesitas
+2 puntos más de cartas de desarrollo o Camino/Ejército.
+
+**Camino 3 — Puerto + especialización:**
+Dominar un puerto de 2:1, especializarte en ese recurso, y usar el comercio para conseguir
+todo lo demás. Funciona bien con puertos de mineral o cereal. Es más lento pero muy consistente
+si nadie te puede bloquear el acceso al puerto.
+
+### Leer el tablero a mitad de partida
+Cada 2-3 rondas, evalúa:
+- ¿Quién va ganando? (cuenta puntos visibles, estima cartas de desarrollo)
+- ¿Quién puede llegar a 10 puntos antes que tú? → es tu objetivo a bloquear
+- ¿Tienes suficiente producción para ejecutar tu plan? → si no, ajusta
+
+### El meta del ladrón
+El ladrón no es solo un obstáculo — es una herramienta. Colócalo siempre en el hexágono del
+jugador que más te amenaza (el que va ganando), no en el que más te molesta a ti. Si tú vas
+ganando, espera ataques coordinados del ladrón de todos los demás. Mantén menos de 7 cartas
+al final de tu turno para minimizar el daño cuando salga el 7.
+
+---
+
+## ERRORES MÁS COMUNES
+
+1. **Ignorar al ladrón** — no es mala suerte, es consecuencia de tener muchas cartas o hexágonos
+   productivos sin caballeros para protegerlos.
+2. **Comerciar con el líder** — nunca le des recursos al jugador que va ganando.
+3. **Construir caminos sin destino** — cada camino debe tener un propósito claro.
+4. **No contar puntos ajenos** — a menudo los jugadores pierden porque no ven que alguien está
+   a 9 puntos y a un turno de ganar.
+5. **Acumular cartas de desarrollo sin usarlas** — las cartas de Caballero solo sirven si se usan.
+
+---
+
+*Fuentes: Reglamento oficial Catan 5ª ed., BoardGameGeek Strategy Guides, Reddit r/Catan community guides*

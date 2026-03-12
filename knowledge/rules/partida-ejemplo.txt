@@ -1,0 +1,233 @@
+## PARTIDA DE EJEMPLO — TABLERO INICIAL PARA PRINCIPIANTES
+## Configuración Oficial de Catan (5ª Edición)
+
+Este documento describe el tablero fijo recomendado para la primera partida de Catan.
+Esta configuración está diseñada para ser equilibrada para todos los jugadores.
+
+---
+
+## DESCRIPCIÓN DEL TABLERO
+
+El tablero de Catan tiene forma hexagonal y se compone de:
+- Un anillo exterior de mar (6 piezas de marco)
+- 19 hexágonos de terreno distribuidos en 5 filas (3-4-5-4-3 hexágonos por fila)
+
+---
+
+## POSICIÓN DE LOS HEXÁGONOS (de arriba a abajo, izquierda a derecha)
+
+### Fila superior (3 hexágonos):
+1. Montaña (Mineral) — ficha número 10
+2. Praderas (Lana) — ficha número 2
+3. Bosques (Madera) — ficha número 9
+
+### Segunda fila (4 hexágonos):
+4. Campos (Cereal) — ficha número 12
+5. Colinas (Ladrillo) — ficha número 6
+6. Praderas (Lana) — ficha número 4
+7. Colinas (Ladrillo) — ficha número 10
+
+### Fila central (5 hexágonos):
+8. Campos (Cereal) — ficha número 9
+9. Bosques (Madera) — ficha número 11
+10. DESIERTO — sin ficha de número (aquí comienza el ladrón)
+11. Bosques (Madera) — ficha número 3
+12. Montaña (Mineral) — ficha número 8
+
+### Cuarta fila (4 hexágonos):
+13. Bosques (Madera) — ficha número 8
+14. Campos (Cereal) — ficha número 3
+15. Montaña (Mineral) — ficha número 4
+16. Praderas (Lana) — ficha número 5
+
+### Fila inferior (3 hexágonos):
+17. Colinas (Ladrillo) — ficha número 5
+18. Campos (Cereal) — ficha número 6
+19. Praderas (Lana) — ficha número 11
+
+---
+
+## PUERTOS EN EL TABLERO INICIAL
+
+Los 9 puertos se ubican en el marco del mar en posiciones fijas:
+
+- Puerto de Lana (2:1) — esquina superior derecha
+- Puerto Genérico (3:1) — borde derecho superior
+- Puerto de Mineral (2:1) — borde derecho inferior
+- Puerto Genérico (3:1) — esquina inferior derecha
+- Puerto de Cereal (2:1) — borde inferior derecho
+- Puerto de Ladrillo (2:1) — borde inferior izquierdo
+- Puerto Genérico (3:1) — esquina inferior izquierda
+- Puerto Genérico (3:1) — borde izquierdo
+- Puerto de Madera (2:1) — borde izquierdo superior
+
+NOTA: Las posiciones exactas de los puertos en el tablero de principiantes están determinadas por el orden de ensamblaje del marco (números 1-1, 2-2, etc. en los extremos de las piezas).
+
+---
+
+## POSICIONES INICIALES DE LOS JUGADORES
+
+En el tablero de principiantes, cada jugador comienza con 2 poblados y 2 caminos ya colocados.
+
+### Jugador Azul (Blue):
+- Primer poblado: intersección izquierda-central (bordea bosques-11, colinas-6, cereal-9)
+- Segundo poblado (estrella blanca): intersección adyacente a montaña-10, praderas-2, bosques-9
+- Los poblados marcados con estrella blanca producen recursos iniciales
+
+### Jugador Rojo (Red):
+- Primer poblado: en la zona media del tablero
+- Segundo poblado (estrella blanca): bordea colinas-6, praderas-4, bosques-11
+
+### Jugador Blanco (White):
+- Posiciones en la parte inferior del tablero
+
+NOTA: En partidas de 3 jugadores, se retiran las piezas rojas del tablero.
+
+---
+
+## RECURSOS INICIALES
+
+Cada jugador recibe recursos de los hexágonos adyacentes a su segundo poblado (el marcado con estrella blanca):
+
+Ejemplo (jugador Azul, según la Ilustración A del reglamento):
+- Recibe 1 carta de Ladrillo
+- Recibe 1 carta de Madera
+- Recibe 1 carta de Mineral
+
+Los recursos específicos dependen de qué hexágonos rodean el segundo poblado de cada jugador en la configuración estándar.
+
+---
+
+## ANÁLISIS DEL TABLERO INICIAL
+
+### Distribución de recursos:
+- Montañas (Mineral): hexágonos con fichas 10, 4, 8 → 3 hexágonos totales
+- Colinas (Ladrillo): hexágonos con fichas 6, 10, 5 → 3 hexágonos totales
+- Bosques (Madera): hexágonos con fichas 9, 11, 8, 3 → 4 hexágonos totales (según configuración estándar)
+- Campos (Cereal): hexágonos con fichas 12, 9, 3, 6 → 4 hexágonos totales
+- Praderas (Lana): hexágonos con fichas 2, 4, 5, 11 → 4 hexágonos totales
+- Desierto: 1 hexágono sin producción
+
+### Hexágonos con mayor probabilidad:
+- Los hexágonos con fichas 6 y 8 (5 puntos/pips cada uno) son los más productivos.
+- En este tablero: Colinas-6, Montaña-8, Bosques-8, Campos-6 son los hexágonos más valiosos.
+
+### Números con puntos (pips):
+- Número 2: 1 punto (3% probabilidad)
+- Número 12: 1 punto (3% probabilidad)
+- Número 3 y 11: 2 puntos cada uno (6% probabilidad)
+- Número 4 y 10: 3 puntos cada uno (8% probabilidad)
+- Número 5 y 9: 4 puntos cada uno (11% probabilidad)
+- Número 6 y 8: 5 puntos cada uno (14% probabilidad)
+
+---
+
+## DESARROLLO DE LA PARTIDA DE EJEMPLO
+
+### Comienzo del juego
+
+El jugador más veterano lanza los dados y comienza la partida. En la configuración de principiantes, ya están colocados los poblados y caminos iniciales, y cada jugador ya tiene sus cartas de recursos iniciales.
+
+### Primer turno (ejemplo)
+
+El jugador activo lanza los dados. Supongamos que sale un "8".
+
+Resultado: Todos los jugadores con poblados o ciudades adyacentes a hexágonos con la ficha "8" reciben recursos.
+
+En el tablero de principiantes:
+- Hexágono Montaña-8: los jugadores adyacentes reciben 1 carta de Mineral cada uno.
+- Hexágono Bosques-8: los jugadores adyentes reciben 1 carta de Madera cada uno.
+- Si algún jugador tiene una ciudad en esas posiciones, recibiría 2 cartas en lugar de 1.
+
+### Fase de Comercio (ejemplo)
+
+Después de producir recursos, el jugador activo puede comerciar. 
+
+Ejemplo: El jugador Azul tiene 2 cartas de Madera y necesita Ladrillo para construir un camino. Puede:
+1. Preguntar: "¿Alguien me da 1 Ladrillo por 1 Madera?"
+2. Si nadie acepta, puede usar el comercio marítimo 4:1 (devolver 4 Maderas al banco y tomar 1 Ladrillo).
+3. Si tiene un poblado en un puerto 3:1, podría intercambiar 3 Maderas por 1 Ladrillo.
+
+### Fase de Construcción (ejemplo)
+
+Con 1 Ladrillo + 1 Madera, el jugador puede construir un camino para expandirse.
+Con 1 Ladrillo + 1 Madera + 1 Lana + 1 Cereal, puede construir un nuevo poblado.
+Con 3 Mineral + 2 Cereal, puede mejorar un poblado a ciudad.
+
+---
+
+## ILUSTRACIÓN DEL TABLERO (Formato Texto)
+
+La siguiente es una representación esquemática del tablero inicial para principiantes.
+Los hexágonos se muestran con [Recurso-Número]:
+
+```
+         [M-10]  [L-2]   [B-9]
+       [C-12]  [H-6]   [P-4]   [H-10]
+     [C-9]   [B-11]  [DST]   [B-3]   [M-8]
+       [B-8]   [C-3]   [M-4]   [P-5]
+         [H-5]   [C-6]   [P-11]
+```
+
+Leyenda:
+- M = Montaña (Mineral)
+- L = Praderas Lana (Wool/Sheep)
+- B = Bosque (Madera/Lumber)
+- C = Campo (Cereal/Grain)
+- H = Colinas (Ladrillo/Brick/Hills)
+- P = Pradera (Lana/Wool)
+- DST = Desierto (sin producción, aquí comienza el ladrón)
+- Número = ficha de número en ese hexágono
+
+NOTA IMPORTANTE: Esta es una representación aproximada en texto. El tablero real tiene forma hexagonal con las piezas encajando perfectamente. La distribución exacta de los puertos y las posiciones de los poblados iniciales se determinan por el mapa de principiantes impreso en el reglamento (Ilustración A y R).
+
+---
+
+## REFERENCIA RÁPIDA — TABLERO DE PRINCIPIANTES
+
+Resumen de los hexágonos y sus números para referencia rápida en la partida:
+
+| Recurso     | Número de ficha |
+|-------------|-----------------|
+| Mineral     | 10              |
+| Lana        | 2               |
+| Madera      | 9               |
+| Cereal      | 12              |
+| Ladrillo    | 6               |
+| Lana        | 4               |
+| Ladrillo    | 10              |
+| Cereal      | 9               |
+| Madera      | 11              |
+| DESIERTO    | (sin número)    |
+| Madera      | 3               |
+| Mineral     | 8               |
+| Madera      | 8               |
+| Cereal      | 3               |
+| Mineral     | 4               |
+| Lana        | 5               |
+| Ladrillo    | 5               |
+| Cereal      | 6               |
+| Lana        | 11              |
+
+Total de hexágonos por recurso:
+- Mineral: 3 (fichas 10, 8, 4)
+- Lana: 4 (fichas 2, 4, 5, 11)
+- Madera: 4 (fichas 9, 11, 3, 8)
+- Cereal: 4 (fichas 12, 9, 3, 6)
+- Ladrillo: 3 (fichas 6, 10, 5)
+- Desierto: 1
+
+---
+
+## NOTAS SOBRE EL TABLERO VARIABLE
+
+En partidas posteriores al tablero de principiantes, la configuración se genera aleatoriamente:
+
+1. Se barajan las 19 losetas de terreno y se colocan boca arriba aleatoriamente.
+2. Se colocan los 9 puertos aleatoriamente en las posiciones de puerto del marco.
+3. Se colocan las fichas de número en orden alfabético (A, B, C...) siguiendo un camino espiral desde una esquina hasta el centro, saltando el desierto.
+
+Esta variabilidad es lo que hace que cada partida de Catan sea diferente y requiera adaptar la estrategia al tablero específico.
+
+Las fichas de número están marcadas con letras en el reverso:
+A(5), B(2), C(6), D(3), E(8), F(10), G(9), H(12), I(11), J(4), K(8), L(10), M(9), N(4), O(5), P(6), Q(3), R(11) — 18 fichas en total (no hay ficha para el desierto).

@@ -1,0 +1,318 @@
+## REGLAMENTO COMPLETO DE CATAN (Los Colonos de Catán)
+## Basado en la 5ª Edición Oficial (2020) — Klaus Teuber / Catan Studio
+
+---
+
+## COMPONENTES DEL JUEGO
+
+El juego incluye los siguientes componentes:
+- 19 hexágonos de terreno (losetas)
+- 6 piezas del marco del mar
+- 9 piezas de puerto
+- 18 fichas de número circulares (del 2 al 12, sin 7, con dos fichas de cada número excepto el 2 y el 12 que solo aparecen una vez)
+- 95 cartas de recurso (ladrillo, cereal, mineral, madera y lana)
+- 25 cartas de desarrollo: 14 cartas de Caballero, 6 cartas de Progreso, 5 cartas de Punto de Victoria
+- 4 cartas de "Costes de Construcción"
+- 2 cartas especiales: "Camino más Largo" y "Ejército más Grande"
+- 16 ciudades (4 de cada color, con forma de iglesia)
+- 20 poblados (5 de cada color, con forma de casa)
+- 60 caminos (15 de cada color, con forma de barra)
+- 2 dados (1 amarillo, 1 rojo)
+- 1 ladrón
+- 1 libro de Reglamento y Almanaque
+
+---
+
+## TIPOS DE TERRENO Y RECURSOS
+
+Catan tiene 5 tipos de terreno productivo y 1 terreno estéril:
+
+- Colinas (Hills): Producen LADRILLO (Brick)
+- Bosques (Forest): Producen MADERA (Lumber)
+- Montañas (Mountains): Producen MINERAL (Ore)
+- Campos (Fields): Producen CEREAL (Grain)
+- Praderas (Pasture): Producen LANA (Wool)
+- Desierto (Desert): No produce nada. El ladrón comienza aquí.
+
+---
+
+## PREPARACIÓN DEL TABLERO
+
+Existen dos formas de preparar el tablero: el Tablero Inicial para Principiantes y el Tablero Variable.
+
+### Tablero Inicial para Principiantes
+
+Para la primera partida se recomienda usar el tablero fijo descrito en el Reglamento (ver sección "Partida de Ejemplo"). Este tablero está equilibrado para todos los jugadores.
+
+Pasos:
+1. Ensamblar el marco (las 6 piezas del mar) uniendo los números de los extremos (1-1, 2-2, etc.).
+2. Colocar los 19 hexágonos de terreno dentro del marco exactamente como se muestra en la Ilustración A del reglamento.
+3. Colocar las fichas de número circulares sobre cada hexágono de terreno designado.
+4. Colocar los poblados y caminos iniciales.
+
+### Tablero Variable (para partidas posteriores)
+
+1. Colocar las piezas del marco en cualquier orden.
+2. Barajar las losetas de terreno y colocarlas boca arriba dentro del marco aleatoriamente.
+3. Colocar los 9 puertos aleatoriamente sobre las posiciones de puerto del marco.
+4. Colocar las fichas de número en orden alfabético (están marcadas con letras en el reverso), comenzando en una esquina de la isla, avanzando en sentido antihorario hacia el centro. Saltarse el desierto.
+5. Alternativamente, se puede colocar las fichas en orden completamente aleatorio, pero entonces los números rojos (6 y 8) no pueden estar adyacentes entre sí.
+
+---
+
+## CONFIGURACIÓN INICIAL DE LA PARTIDA
+
+Cada jugador elige un color y toma:
+- 5 poblados
+- 4 ciudades
+- 15 caminos
+- 1 carta de Costes de Construcción
+
+Se colocan las cartas especiales "Camino más Largo" y "Ejército más Grande" al lado del tablero junto con los dados.
+
+Se separan las cartas de recurso en 5 montones boca arriba junto al tablero.
+
+Se barajan las cartas de desarrollo y se colocan boca abajo al lado de las cartas de recurso.
+
+Se coloca el ladrón en el desierto.
+
+---
+
+## FASE DE COLOCACIÓN INICIAL
+
+La fase de colocación inicial tiene 2 rondas:
+
+### Primera Ronda
+Cada jugador tira ambos dados. El jugador que saque el número más alto es el jugador inicial y empieza.
+
+El jugador inicial coloca un poblado en una intersección libre de su elección, luego coloca un camino adyacente a ese poblado.
+
+Los demás jugadores siguen en sentido horario. Cada uno coloca 1 poblado y 1 camino adyacente.
+
+IMPORTANTE: Siempre se aplica la Regla de Distancia (ningún poblado puede estar a menos de 2 intersecciones de otro poblado).
+
+### Segunda Ronda
+Una vez que todos los jugadores han construido su primer poblado, el último jugador en la primera ronda comienza la segunda ronda. Este jugador construye su segundo poblado y su camino adyacente.
+
+Los demás jugadores siguen en sentido ANTIHORARIO (el jugador inicial de la primera ronda coloca su segundo poblado el último).
+
+El segundo poblado puede colocarse en cualquier intersección libre, siempre que se respete la Regla de Distancia. El segundo camino debe conectarse al segundo poblado (apuntando en cualquiera de las 3 direcciones posibles).
+
+Cada jugador recibe inmediatamente sus recursos iniciales al colocar el segundo poblado. Por cada hexágono de terreno adyacente a ese segundo poblado, el jugador toma una carta del recurso correspondiente.
+
+NOTA: En partidas de 3 jugadores, nadie juega con la posición roja del mapa de principiantes.
+
+---
+
+## TURNO DE JUEGO
+
+A menos que se use el Tablero para Jugadores Experimentados, el jugador más veterano comienza la partida.
+
+En cada turno, el jugador activo sigue este orden:
+
+### 1. Producción de Recursos (Obligatorio)
+
+El jugador activo lanza ambos dados. La suma determina qué hexágonos producen recursos.
+
+Todos los jugadores que tengan un poblado en una intersección adyacente a un hexágono con el número lanzado reciben 1 carta del recurso de ese hexágono. Si un jugador tiene 2 o 3 poblados adyacentes a ese hexágono, recibe 1 carta por cada poblado. Las ciudades producen el doble: 2 cartas de recurso por ciudad adyacente.
+
+Si no hay suficientes recursos en el banco para satisfacer la producción de todos los jugadores, nadie recibe ese recurso ese turno (excepción: si la escasez solo afecta a un jugador, ese jugador recibe todas las cartas de ese recurso que queden en el banco).
+
+### 2. Comercio (Opcional)
+
+Después de lanzar los dados, el jugador puede comerciar libremente usando uno o ambos tipos de comercio:
+
+**a) Comercio Doméstico**
+El jugador activo puede intercambiar cartas de recurso con cualquier otro jugador. Puede anunciar qué recursos necesita y qué está dispuesto a dar. Los demás jugadores también pueden hacer propuestas y contraofertas.
+
+IMPORTANTE: Los jugadores solo pueden comerciar con el jugador cuyo turno es. Los demás jugadores no pueden comerciar entre sí.
+
+**b) Comercio Marítimo**
+El jugador activo puede comerciar con el banco sin involucrar a otros jugadores. La tasa básica es 4:1: devolver 4 cartas idénticas de un recurso al banco y tomar cualquier 1 carta de recurso diferente.
+
+Si el jugador tiene un poblado o ciudad en un puerto, puede comerciar de forma más favorable:
+- Puerto genérico (3:1): Intercambiar 3 cartas idénticas de cualquier recurso por 1 carta de recurso diferente.
+- Puerto especial (2:1): Intercambiar 2 cartas del recurso específico del puerto por 1 carta de cualquier recurso diferente.
+
+IMPORTANTE: El intercambio 4:1 siempre es posible, aunque el jugador no tenga un poblado en un puerto.
+
+### 3. Construcción (Opcional)
+
+El jugador puede construir pagando las combinaciones específicas de cartas de recurso indicadas en la Carta de Costes de Construcción:
+
+**a) Camino (Road)**
+Coste: 1 Ladrillo + 1 Madera
+Un nuevo camino debe conectarse siempre a uno de los caminos, poblados o ciudades existentes del jugador. Solo se puede construir 1 camino por borde de hexágono.
+
+El primer jugador en construir un camino continuo (sin contar bifurcaciones) de al menos 5 segmentos recibe la carta especial "Camino más Largo", que vale 2 puntos de victoria. Si otro jugador construye un camino más largo, toma inmediatamente la carta especial.
+
+**b) Poblado (Settlement)**
+Coste: 1 Ladrillo + 1 Madera + 1 Lana + 1 Cereal
+Solo se puede construir un poblado en una intersección libre y solo si las 3 intersecciones adyacentes también están vacías (Regla de Distancia). Cada poblado debe conectarse a al menos 1 de los propios caminos del jugador.
+
+Cada poblado vale 1 punto de victoria.
+
+**c) Ciudad (City)**
+Coste: 3 Mineral + 2 Cereal
+Solo se puede establecer una ciudad mejorando un poblado existente. Al mejorar, se devuelve el poblado al suministro del jugador y se reemplaza con una ciudad.
+
+Las ciudades producen el doble de recursos que los poblados (2 cartas de recurso por hexágono adyacente). Cada ciudad vale 2 puntos de victoria.
+
+**d) Carta de Desarrollo**
+Coste: 1 Mineral + 1 Lana + 1 Cereal
+Al comprar una carta de desarrollo, se toma la primera carta del mazo boca abajo. Hay 3 tipos: Caballero, Progreso y Punto de Victoria.
+
+Las cartas de desarrollo nunca vuelven al suministro. No se pueden comprar si el mazo está vacío. Se mantienen ocultas en la mano hasta que se juegan.
+
+Se puede jugar 1 carta de desarrollo en cualquier momento durante el turno, pero NO la misma que se acaba de comprar en ese turno (excepto cartas de Punto de Victoria si con ellas se llega a 10 puntos).
+
+---
+
+## CASOS ESPECIALES
+
+### Sacar un "7" — Activar el Ladrón
+
+Si se saca un "7", ningún jugador recibe recursos. En cambio:
+
+1. Cada jugador con más de 7 cartas de recurso en la mano debe descartar la mitad (redondeando hacia abajo). Ejemplo: con 9 cartas, se descartan 4.
+
+2. El jugador que sacó el "7" debe mover el ladrón a la ficha de número de cualquier otro hexágono de terreno (o al desierto). El ladrón bloquea la producción de ese hexágono mientras permanezca en él.
+
+3. Después del descarte, el jugador roba 1 carta de recurso al azar de un jugador que tenga un poblado o ciudad adyacente al hexágono objetivo. Si hay 2 o más jugadores con edificios allí, el jugador activo elige de cuál robar.
+
+El ladrón DEBE moverse. No se puede elegir dejarlo en el mismo hexágono.
+
+### Cartas de Caballero (Knight Cards)
+
+Si un jugador juega una carta de Caballero durante su turno, debe mover inmediatamente el ladrón (siguiendo los mismos pasos que al sacar un "7", pasos 2 y 3).
+
+Una vez jugada, la carta de Caballero permanece boca arriba frente al jugador.
+
+El primer jugador en tener 3 cartas de Caballero boca arriba recibe la carta especial "Ejército más Grande", que vale 2 puntos de victoria. Si otro jugador supera ese número de cartas de Caballero, toma la carta especial.
+
+### Cartas de Progreso (Progress Cards)
+
+Hay 3 tipos de cartas de Progreso (2 de cada tipo):
+
+**Construcción de Caminos (Road Building):** El jugador puede colocar inmediatamente 2 caminos gratis siguiendo las reglas normales de construcción.
+
+**Monopolio (Monopoly):** El jugador anuncia 1 tipo de recurso. Todos los demás jugadores deben darle TODAS sus cartas de ese tipo de recurso.
+
+**Año de la Abundancia (Year of Plenty):** El jugador toma inmediatamente 2 cartas de recurso cualesquiera del banco (pueden ser 2 del mismo tipo o diferentes). Puede usarlas para construir en ese mismo turno.
+
+### Cartas de Punto de Victoria (Victory Point Cards)
+
+Las cartas de Punto de Victoria deben mantenerse ocultas. Solo se revelan durante el turno propio cuando se tienen 10 o más puntos de victoria para ganar la partida. Se puede revelar cualquier número de ellas en el mismo turno, incluso el turno en que se compran.
+
+---
+
+## REGLAS IMPORTANTES
+
+### Regla de Distancia
+No se puede colocar un poblado en una intersección si alguna de las 3 intersecciones adyacentes ya está ocupada por un poblado o ciudad (propio o ajeno). Esta regla aplica siempre, incluso durante la fase de colocación inicial.
+
+### Caminos y Bifurcaciones
+Para la carta "Camino más Largo", solo se cuenta el segmento más largo continuo (sin contar bifurcaciones). Se puede romper el camino de un oponente construyendo un poblado en una intersección desocupada de ese camino.
+
+### Costes de Construcción (resumen)
+- Camino: 1 Ladrillo + 1 Madera
+- Poblado: 1 Ladrillo + 1 Madera + 1 Lana + 1 Cereal
+- Ciudad: 3 Mineral + 2 Cereal
+- Carta de Desarrollo: 1 Mineral + 1 Lana + 1 Cereal
+
+### Límite de Construcciones
+Cada jugador tiene un máximo de 5 poblados, 4 ciudades y 15 caminos. No se pueden construir más piezas de las disponibles en el suministro propio.
+
+---
+
+## PUERTOS (HARBORS)
+
+Los puertos permiten al jugador comerciar con el banco de forma más favorable. Hay dos tipos:
+
+**Puerto Genérico (3:1):** Permite intercambiar 3 cartas idénticas de cualquier recurso por 1 carta de cualquier recurso diferente. Hay varios de estos puertos en el tablero.
+
+**Puerto Especial (2:1):** Hay 5 puertos especiales, uno para cada tipo de recurso (ladrillo, madera, mineral, cereal, lana). Permite intercambiar 2 cartas del recurso específico del puerto por 1 carta de cualquier otro recurso. Esta tasa solo aplica al recurso indicado; otros recursos siguen con la tasa 4:1.
+
+Para controlar un puerto, se debe construir un poblado o ciudad en una intersección costera que bordee ese puerto.
+
+---
+
+## PROBABILIDADES DE LOS DADOS
+
+Los números en las fichas tienen diferentes probabilidades de ser lanzados con 2 dados:
+
+- 2 o 12: 3% (1 de 36 combinaciones) — 1 punto (pip)
+- 3 o 11: 6% (2 de 36 combinaciones) — 2 puntos (pips)
+- 4 o 10: 8% (3 de 36 combinaciones) — 3 puntos (pips)
+- 5 o 9: 11% (4 de 36 combinaciones) — 4 puntos (pips)
+- 6 o 8: 14% (5 de 36 combinaciones) — 5 puntos (pips) — los más frecuentes (en rojo)
+- 7: 17% (6 de 36 combinaciones) — activa el ladrón, no aparece en fichas
+
+Los números 6 y 8 (impresos en rojo en las fichas) son los más frecuentemente lanzados.
+
+---
+
+## PUNTOS DE VICTORIA
+
+El primero en alcanzar 10 o más puntos de victoria durante su turno gana la partida.
+
+Fuentes de puntos de victoria:
+- 1 Poblado = 1 PV
+- 1 Ciudad = 2 PV
+- Carta especial "Camino más Largo" = 2 PV (mínimo 5 segmentos)
+- Carta especial "Ejército más Grande" = 2 PV (mínimo 3 cartas de Caballero)
+- Carta de Punto de Victoria = 1 PV cada una
+
+Cada jugador comienza la partida con 2 poblados, por tanto inicia con 2 puntos de victoria. Solo se necesitan 8 puntos adicionales para ganar.
+
+Si un jugador alcanza 10 puntos durante el turno de otro jugador, debe esperar hasta su propio turno para declarar la victoria.
+
+---
+
+## FIN DE LA PARTIDA
+
+Si un jugador tiene 10 o más puntos de victoria durante su turno, la partida termina y ese jugador gana. Los puntos de victoria de las cartas de Punto de Victoria ocultas solo cuentan cuando el jugador las revela para ganar.
+
+---
+
+## GLOSARIO (ALMANAQUE)
+
+**Intersección:** Punto donde se unen 3 hexágonos (o donde hexágonos se unen con el marco del mar). Los poblados y ciudades solo se construyen en intersecciones.
+
+**Borde/Camino:** Borde entre 2 hexágonos o entre un hexágono y el marco. Solo se puede construir 1 camino por borde.
+
+**Costa:** Hexágono de terreno que bordea el mar. Los poblados costeros acceden a menos hexágonos de terreno pero frecuentemente tienen acceso a puertos.
+
+**Ladrón:** Comienza en el desierto. Se mueve al sacar un "7" o jugar una carta de Caballero. Bloquea la producción del hexágono en que se coloca.
+
+**Camino más Largo:** Carta especial que vale 2 PV. Se otorga al primer jugador con un camino continuo de al menos 5 segmentos. Puede ser arrebatada si otro jugador construye un camino más largo.
+
+**Ejército más Grande:** Carta especial que vale 2 PV. Se otorga al primer jugador con 3 cartas de Caballero jugadas. Puede ser arrebatada si otro jugador juega más cartas de Caballero.
+
+**Fase Combinada de Comercio/Construcción:** Variante recomendada para jugadores experimentados. Después de tirar los dados, se puede comerciar y construir en cualquier orden (sin fases separadas).
+
+---
+
+## SECUENCIA DE TURNO (RESUMEN)
+
+1. Tirar los dados para producción de recursos (obligatorio; aplica a todos los jugadores).
+2. Comerciar con otros jugadores o con el banco (opcional).
+3. Construir caminos, poblados, ciudades y/o comprar cartas de desarrollo (opcional).
+4. Se puede jugar 1 carta de desarrollo en cualquier momento del turno.
+5. Pasar los dados al jugador de la izquierda.
+
+---
+
+## CONSEJOS TÁCTICOS OFICIALES
+
+Del Almanaque oficial:
+
+- El ladrillo y la madera son los recursos más importantes al inicio de la partida. Se necesitan ambos para construir caminos y poblados. Se recomienda colocar al menos 1 de los primeros poblados en un buen hexágono de bosque o colinas.
+
+- No hay que subestimar el valor de los puertos. Por ejemplo, un jugador con poblados o ciudades en campos productivos debería intentar construir un poblado en el puerto de "cereal".
+
+- Al colocar los primeros 2 poblados, hay que dejar suficiente espacio para expandirse. Mirar las posiciones de los oponentes y sus caminos antes de colocar. Hay que tener cuidado de no quedar rodeado.
+
+- Cuanto más se comercia, mayores son las posibilidades de victoria. Incluso cuando no es el turno propio, se debe ofrecer comercios al jugador activo.
+
+- Es extremadamente difícil ganar sin mejorar poblados a ciudades, ya que solo hay 5 poblados disponibles, lo que limita el máximo a 5 puntos de victoria por poblados.
