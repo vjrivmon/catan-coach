@@ -206,9 +206,11 @@ export function ChatInterface() {
     <div className="flex flex-col h-dvh bg-stone-900">
       {/* Header */}
       <header className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0">
-        <div className="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-          C
-        </div>
+        <img
+          src="/logo.jpg"
+          alt="Catan Coach"
+          className="w-10 h-10 rounded-xl object-cover object-center shrink-0"
+        />
         <div>
           <h1 className="text-amber-400 font-semibold text-base leading-tight">Catan Coach</h1>
           <p className="text-stone-400 text-xs">Tu asistente de Catan</p>
