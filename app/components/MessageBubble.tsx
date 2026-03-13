@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown'
 import type { Message } from '@/src/domain/entities'
 
 interface Props {
@@ -17,7 +18,20 @@ export function MessageBubble({ message, isStreaming }: Props) {
             : 'bg-stone-700 text-stone-100 rounded-bl-sm'
         }`}
       >
-        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        ) : (
+          <div className="prose prose-sm prose-invert max-w-none
+            prose-p:my-1 prose-p:leading-relaxed
+            prose-strong:text-amber-300 prose-strong:font-semibold
+            prose-ul:my-1 prose-ul:pl-4 prose-ul:space-y-0.5
+            prose-ol:my-1 prose-ol:pl-4 prose-ol:space-y-0.5
+            prose-li:my-0
+            prose-headings:text-amber-300 prose-headings:font-semibold prose-headings:my-2
+          ">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        )}
         {isStreaming && (
           <span className="inline-block w-1.5 h-4 bg-amber-400 ml-0.5 animate-pulse align-middle" />
         )}
