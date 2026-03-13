@@ -301,23 +301,19 @@ export function ChatInterface() {
       {/* Body: sidebar + chat */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Sidebar (overlay en móvil, inline en desktop) */}
+        {/* Sidebar: full-screen drawer en móvil, inline en desktop */}
         {sidebarOpen && (
-          <>
-            {/* Backdrop móvil */}
-            <div
-              className="absolute inset-0 z-10 bg-black/50 sm:hidden"
-              onClick={() => setSidebarOpen(false)}
+          <div className="
+            absolute inset-0 z-20
+            sm:relative sm:inset-auto sm:z-auto sm:w-60 sm:shrink-0
+          ">
+            <Sidebar
+              conversations={history}
+              activeId={activeConvId}
+              onSelect={loadConversation}
+              onNew={startNewConversation}
             />
-            <div className="absolute left-0 top-[56px] bottom-0 z-20 sm:relative sm:top-auto sm:bottom-auto sm:z-auto">
-              <Sidebar
-                conversations={history}
-                activeId={activeConvId}
-                onSelect={loadConversation}
-                onNew={startNewConversation}
-              />
-            </div>
-          </>
+          </div>
         )}
 
         {/* Chat area */}

@@ -58,7 +58,7 @@ export function Sidebar({ conversations, activeId, onSelect, onNew }: Props) {
   const groups = useMemo(() => groupByDate(filtered), [filtered])
 
   return (
-    <div className="flex flex-col h-full w-60 bg-stone-800 border-r border-stone-700 overflow-hidden">
+    <div className="flex flex-col h-full w-full sm:w-60 bg-stone-800 border-r border-stone-700 overflow-hidden">
       {/* Header */}
       <div className="px-3 py-3 border-b border-stone-700 shrink-0">
         <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Historial</p>
