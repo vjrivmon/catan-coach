@@ -36,16 +36,17 @@ export class ConceptTracker {
 
     const total = CATAN_CONCEPTS.length
     const count = seen.length
+    const listed = seen.slice(-3).join(', ')
 
-    // Suggest next concept only at milestones
-    if (count === 3) {
-      return `Ya tienes claros ${count} conceptos clave de Catan. El siguiente que marca la diferencia es el control del tablero.`
+    // Hitos más espaciados — la lista de conceptos siempre visible
+    if (count === 5) {
+      return `Llevamos un rato hablando y ya hemos repasado conceptos como: ${listed}. ¿Quieres profundizar en alguno o seguimos avanzando?`
     }
-    if (count === 6) {
-      return `Llevas ${count} de ${total} conceptos fundamentales. Vas bien encaminado.`
+    if (count === 8) {
+      return `Llevas ${count} de ${total} conceptos fundamentales cubiertos (${listed}). Vas bien encaminado.`
     }
-    if (count === 10) {
-      return `Con ${count} conceptos dominados ya tienes una base sólida. Ahora es cuestión de práctica y estrategia.`
+    if (count === 12) {
+      return `Con ${count} conceptos trabajados (entre ellos: ${listed}) ya tienes una base sólida. Ahora es cuestión de práctica y estrategia.`
     }
 
     return null

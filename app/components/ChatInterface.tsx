@@ -267,15 +267,21 @@ export function ChatInterface() {
 
       {/* Header */}
       <header className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0 min-h-[56px]">
-        {/* Hamburger */}
+        {/* Hamburger / Close toggle */}
         <button
           onClick={() => setSidebarOpen(o => !o)}
-          aria-label="Historial"
-          className="flex flex-col gap-1 p-1.5 rounded-lg hover:bg-stone-700 transition-colors shrink-0"
+          aria-label={sidebarOpen ? 'Cerrar historial' : 'Abrir historial'}
+          className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-stone-700 transition-colors shrink-0"
         >
-          <span className="block w-4 h-0.5 bg-stone-400 rounded" />
-          <span className="block w-4 h-0.5 bg-stone-400 rounded" />
-          <span className="block w-4 h-0.5 bg-stone-400 rounded" />
+          {sidebarOpen ? (
+            <svg className="w-5 h-5 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
         </button>
 
         <div className="w-9 h-9 rounded-full bg-amber-700 flex items-center justify-center shrink-0 overflow-hidden">
