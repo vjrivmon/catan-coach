@@ -57,10 +57,10 @@ export function VoiceInput({ onTranscript, disabled }: Props) {
       onClick={toggle}
       disabled={disabled}
       aria-label={isListening ? 'Detener grabación' : 'Hablar'}
-      className={`rounded-xl p-3 transition-colors shrink-0 ${
+      className={`rounded-lg p-2 transition-colors shrink-0 ${
         isListening
           ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
-          : 'bg-stone-700 hover:bg-stone-600 text-stone-300 disabled:opacity-40'
+          : 'hover:bg-stone-600 text-stone-400 hover:text-stone-200 disabled:opacity-40'
       }`}
     >
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

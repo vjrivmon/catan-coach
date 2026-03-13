@@ -205,15 +205,18 @@ export function ChatInterface() {
   return (
     <div className="flex flex-col h-dvh bg-stone-900">
       {/* Header */}
-      <header className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0">
-        <img
-          src="/logo.png"
-          alt="Catan Coach"
-          className="w-12 h-12 object-contain shrink-0"
-        />
-        <div>
+      <header className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0 min-h-[56px]">
+        <div className="w-9 h-9 rounded-full bg-amber-700 flex items-center justify-center shrink-0">
+          <img
+            src="/logo.png"
+            alt=""
+            className="w-9 h-9 rounded-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        </div>
+        <div className="flex flex-col justify-center">
           <h1 className="text-amber-400 font-semibold text-base leading-tight">Catan Coach</h1>
-          <p className="text-stone-400 text-xs">Tu asistente de Catan</p>
+          <p className="text-stone-400 text-xs leading-tight">Tu asistente de Catan</p>
         </div>
       </header>
 
@@ -251,8 +254,8 @@ export function ChatInterface() {
 
       {/* Input area */}
       <div className="shrink-0 bg-stone-800 border-t border-stone-700 px-4 py-3">
-        <form onSubmit={handleSubmit} className="flex items-end gap-2 max-w-2xl mx-auto">
-          <div className="flex-1 relative">
+        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-2 bg-stone-700 rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-amber-600">
             <textarea
               ref={inputRef}
               value={input}
@@ -261,21 +264,21 @@ export function ChatInterface() {
               placeholder="Pregunta sobre Catan..."
               rows={1}
               disabled={isLoading}
-              className="w-full bg-stone-700 text-stone-100 placeholder-stone-400 rounded-xl px-4 py-3 pr-12 resize-none focus:outline-none focus:ring-1 focus:ring-amber-600 disabled:opacity-50 text-sm leading-relaxed"
+              className="flex-1 bg-transparent text-stone-100 placeholder-stone-400 resize-none focus:outline-none disabled:opacity-50 text-sm leading-relaxed py-1"
               style={{ maxHeight: '120px', overflowY: 'auto' }}
             />
+            <VoiceInput onTranscript={text => setInput(prev => prev + text)} disabled={isLoading} />
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg p-2 transition-colors shrink-0"
+              aria-label="Enviar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
           </div>
-          <VoiceInput onTranscript={text => setInput(prev => prev + text)} disabled={isLoading} />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl p-3 transition-colors shrink-0"
-            aria-label="Enviar"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </button>
         </form>
       </div>
     </div>
