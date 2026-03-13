@@ -42,6 +42,14 @@ export const CATAN_CONCEPTS = [
   'estrategia',
 ]
 
+export interface Conversation {
+  id: string
+  title: string        // primer mensaje del usuario, truncado
+  session: Session
+  createdAt: number
+  lastActiveAt: number
+}
+
 export function createEmptySession(): Session {
   return {
     messages: [],
