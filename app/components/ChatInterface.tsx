@@ -75,6 +75,14 @@ export function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef       = useRef<HTMLTextAreaElement>(null)
 
+  // Auto-resize del textarea al escribir
+  const autoResize = useCallback(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }, [])
+
   // ── Mount: detectar hard refresh vs recarga normal ────────
   useEffect(() => {
     const loadedHistory = loadHistory()
@@ -116,6 +124,13 @@ export function ChatInterface() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [session.messages, streamingContent])
+
+  // ── Reset altura textarea al vaciar input ─────────────────
+  useEffect(() => {
+    if (!input && inputRef.current) {
+      inputRef.current.style.height = 'auto'
+    }
+  }, [input])
 
   // ── Guardar conversación activa en historial ──────────────
   const persistToHistory = useCallback((updatedSession: Session, convId: string) => {
@@ -351,15 +366,14 @@ export function ChatInterface() {
                 <textarea
                   ref={inputRef}
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={e => { setInput(e.target.value); autoResize() }}
                   onKeyDown={handleKeyDown}
                   placeholder="Pregunta sobre Catan..."
                   rows={1}
                   disabled={isLoading}
-                  className="flex-1 bg-transparent text-stone-100 placeholder-stone-400 resize-none focus:outline-none disabled:opacity-50 text-sm leading-relaxed py-1"
-                  style={{ maxHeight: '120px', overflowY: 'auto' }}
+                  className="flex-1 bg-transparent text-stone-100 placeholder-stone-400 resize-none focus:outline-none disabled:opacity-50 text-sm leading-relaxed py-1 overflow-hidden"
                 />
-                <VoiceInput onTranscript={text => setInput(prev => prev + text)} disabled={isLoading} />
+                <VoiceInput onTranscript={text => { setInput(prev => prev + text); setTimeout(autoResize, 0) }} disabled={isLoading} />
                 <button
                   type="submit"
                   disabled={isLoading || !input.trim()}
