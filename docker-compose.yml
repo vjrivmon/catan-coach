@@ -13,6 +13,7 @@ services:
       - SUGGESTION_MODEL=qwen3:8b
       - EMBEDDING_MODEL=nomic-embed-text:latest
       - CHROMA_URL=http://chromadb:8000
+      - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
       - chromadb
 

@@ -10,6 +10,10 @@ export const config = {
     rulesCollection: 'catan_rules',
     strategyCollection: 'catan_strategy',
   },
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+    whisperModel: process.env.GROQ_WHISPER_MODEL || 'whisper-large-v3-turbo',
+  },
   rag: {
     topK: 5,
     rulesChunkSize: 400,
