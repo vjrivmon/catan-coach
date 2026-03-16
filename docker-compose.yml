@@ -1,0 +1,45 @@
+services:
+  app:
+    build: .
+    container_name: catan-coach
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NODE_ENV=production
+      - OLLAMA_BASE_URL=https://ollama.gti-ia.upv.es
+      - OLLAMA_INSECURE=true
+      - MAIN_MODEL=gemma3:27b
+      - SUGGESTION_MODEL=qwen3:8b
+      - EMBEDDING_MODEL=nomic-embed-text:latest
+      - CHROMA_URL=http://chromadb:8000
+    depends_on:
+      - chromadb
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chromadb
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - ANONYMIZED_TELEMETRY=false
+
+  webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    container_name: catan-webhook
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"
+    environment:
+      - WEBHOOK_SECRET=CAMBIAR_POR_SECRET_ALEATORIO
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/gti/catan-coach:/repo
+
+volumes:
+  chroma-data:

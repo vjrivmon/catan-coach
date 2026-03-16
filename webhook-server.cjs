@@ -84,6 +84,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Webhook server listening on 127.0.0.1:${PORT}`);
+const HOST = process.env.LISTEN_HOST || '127.0.0.1';
+server.listen(PORT, HOST, () => {
+  console.log(`Webhook server listening on ${HOST}:${PORT}`);
 });

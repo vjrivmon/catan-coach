@@ -3,27 +3,26 @@
 ## Arquitectura
 
 ```
-Usuario → Apache2 (:80) → ProxyPass → Next.js (:3000, PM2)
+Usuario → Apache2 (:80) → ProxyPass → Next.js (:3000, Docker)
                                           ├── ChromaDB (:8000, Docker)
                                           └── Ollama (remoto: ollama.gti-ia.upv.es)
 
-Webhook: GitHub → Apache /webhook → webhook-server (:9000, PM2)
+Webhook: GitHub → Apache /webhook → webhook-server (:9000, Docker)
 ```
 
 ### Servicios
 
 | Servicio | Puerto | Gestión | Notas |
 |----------|--------|---------|-------|
-| Next.js (catan-coach) | 3000 | PM2 | App principal |
-| Webhook server | 9000 | PM2 | Auto-deploy desde GitHub |
-| ChromaDB | 8000 | Docker | Base de datos vectorial |
+| Next.js (catan-coach) | 3000 | Docker Compose | App principal |
+| Webhook server | 9000 | Docker Compose | Auto-deploy desde GitHub |
+| ChromaDB | 8000 | Docker Compose | Base de datos vectorial |
 | Apache2 | 80 | systemd | Reverse proxy |
 | Ollama | remoto | — | `ollama.gti-ia.upv.es` |
 
 ### Rutas de ficheros
 
 - **Proyecto**: `/home/gti/catan-coach/`
-- **Logs PM2**: `/home/gti/catan-coach/logs/`
 - **Apache config**: `/etc/apache2/sites-available/catan-coach.conf`
 - **Backup Apache original**: `~/apache2-backup-YYYYMMDD/`
 - **Backup HTML original**: `~/html-backup-YYYYMMDD/`
@@ -32,7 +31,7 @@ Webhook: GitHub → Apache /webhook → webhook-server (:9000, PM2)
 
 ## Variables de entorno
 
-Definidas en `ecosystem.config.cjs` (PM2):
+Definidas en `docker-compose.yml`:
 
 | Variable | Valor |
 |----------|-------|
@@ -41,8 +40,8 @@ Definidas en `ecosystem.config.cjs` (PM2):
 | `MAIN_MODEL` | `gemma3:27b` |
 | `SUGGESTION_MODEL` | `qwen3:8b` |
 | `EMBEDDING_MODEL` | `nomic-embed-text:latest` |
-| `CHROMA_URL` | `http://localhost:8000` |
-| `WEBHOOK_SECRET` | (configurado en ecosystem.config.cjs) |
+| `CHROMA_URL` | `http://chromadb:8000` |
+| `WEBHOOK_SECRET` | (configurado en docker-compose.yml) |
 
 ---
 
@@ -50,30 +49,30 @@ Definidas en `ecosystem.config.cjs` (PM2):
 
 ### Ver estado de los servicios
 ```bash
-pm2 status
-docker ps | grep chromadb
+cd ~/catan-coach
+docker compose ps
 ```
 
 ### Ver logs
 ```bash
-pm2 logs catan-coach --lines 50
-pm2 logs catan-webhook --lines 20
+docker compose logs app --tail 50
+docker compose logs webhook --tail 20
+docker compose logs chromadb --tail 20
 cat /home/gti/catan-coach/logs/deploy.log
 sudo tail -f /var/log/apache2/catan-coach-error.log
 ```
 
 ### Reiniciar la app
 ```bash
-pm2 restart catan-coach
+cd ~/catan-coach
+docker compose restart app
 ```
 
 ### Rebuild manual
 ```bash
-cd /home/gti/catan-coach
+cd ~/catan-coach
 git pull origin master
-npm ci --production=false
-npm run build
-pm2 restart catan-coach
+docker compose up -d --build app
 ```
 
 ### Re-ingestar datos de conocimiento
@@ -83,7 +82,13 @@ curl -X POST http://localhost:3000/api/ingest
 
 ### Reiniciar ChromaDB
 ```bash
-docker restart chromadb
+docker compose restart chromadb
+```
+
+### Parar todo
+```bash
+cd ~/catan-coach
+docker compose down
 ```
 
 ---
@@ -94,7 +99,8 @@ Si es necesario volver al estado previo a catan-coach:
 
 ```bash
 # 1. Parar catan-coach
-pm2 stop catan-coach catan-webhook
+cd ~/catan-coach
+docker compose down
 
 # 2. Reactivar el site original de Apache
 sudo a2dissite catan-coach.conf
@@ -114,7 +120,7 @@ Para volver a activar catan-coach después:
 sudo a2dissite 000-default.conf
 sudo a2ensite catan-coach.conf
 sudo systemctl reload apache2
-pm2 start catan-coach catan-webhook
+cd ~/catan-coach && docker compose up -d
 ```
 
 ---
@@ -123,11 +129,11 @@ pm2 start catan-coach catan-webhook
 
 - **URL en GitHub**: `http://ireves.gti-ia.dsic.upv.es/webhook`
 - **Content type**: `application/json`
-- **Secret**: debe coincidir con `WEBHOOK_SECRET` en `ecosystem.config.cjs`
+- **Secret**: debe coincidir con `WEBHOOK_SECRET` en `docker-compose.yml`
 - **Events**: solo `push`
 - **Rama**: solo deploys en `master`
 
-El webhook listener corre en PM2 (`catan-webhook`) en puerto 9000, ruteado a través de Apache en `/webhook`.
+El webhook listener corre en Docker (`catan-webhook`) en puerto 9000, ruteado a través de Apache en `/webhook`.
 
 ---
 
@@ -135,17 +141,16 @@ El webhook listener corre en PM2 (`catan-webhook`) en puerto 9000, ruteado a tra
 
 ### La app no responde
 ```bash
-pm2 status                        # ¿está online?
-pm2 logs catan-coach --lines 30   # errores recientes
-curl http://localhost:3000         # responde localmente?
-sudo apache2ctl configtest         # config Apache OK?
+docker compose ps                     # ¿está running?
+docker compose logs app --tail 30     # errores recientes
+curl http://localhost:3000            # responde localmente?
+sudo apache2ctl configtest            # config Apache OK?
 ```
 
 ### ChromaDB no responde
 ```bash
-docker ps | grep chromadb                    # ¿está running?
-docker logs chromadb --tail 20               # errores
-curl http://localhost:8000/api/v1/heartbeat  # heartbeat
+docker compose logs chromadb --tail 20               # errores
+curl http://localhost:8000/api/v1/heartbeat           # heartbeat
 ```
 
 ### El chat no genera respuestas (Ollama)
@@ -155,8 +160,8 @@ curl https://ollama.gti-ia.upv.es/api/tags   # ¿Ollama accesible?
 
 ### Deploy automático no funciona
 ```bash
-pm2 logs catan-webhook --lines 20   # errores del webhook
-cat logs/deploy.log                  # historial de deploys
+docker compose logs webhook --tail 20   # errores del webhook
+cat logs/deploy.log                     # historial de deploys
 ```
 
 ### Puerto ocupado
@@ -164,14 +169,4 @@ cat logs/deploy.log                  # historial de deploys
 ss -tlnp | grep :3000
 ss -tlnp | grep :8000
 ss -tlnp | grep :9000
-```
-
----
-
-## Node.js
-
-Instalado via **nvm** (no toca el Node 16 global):
-```bash
-nvm use 18   # o la versión que corresponda
-node --version
 ```
