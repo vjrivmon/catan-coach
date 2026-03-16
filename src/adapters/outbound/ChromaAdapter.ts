@@ -6,7 +6,12 @@ export class ChromaAdapter implements VectorStorePort {
   private client: ChromaClient
 
   constructor() {
-    this.client = new ChromaClient({ path: config.chroma.url })
+    const url = new URL(config.chroma.url)
+    this.client = new ChromaClient({
+      host: url.hostname,
+      port: parseInt(url.port, 10),
+      ssl: url.protocol === 'https:',
+    })
   }
 
   async query(collectionName: string, embedding: number[], topK: number): Promise<string[]> {
