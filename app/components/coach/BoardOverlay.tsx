@@ -115,30 +115,41 @@ function buildGraph() {
   }
 }
 
-// ─── Ports (standard beginner board, clockwise from top-left) ─────────────────
-// Each port: position in SVG coords (center of the port badge) + type
-const TERRAIN_COLOR: Record<string, string> = {
-  wood:    '#166534', clay: '#b45309', cereal: '#92400e',
-  wool:    '#4d7c0f', mineral: '#64748b', desert: '#d97706',
-}
+// ─── Ports (standard beginner board) ──────────────────────────────────────────
+// Each port defined by (hexIndex, edgeIndex) so position is computed exactly
+// Edges of a pointy-top hex: 0=BR, 1=BL, 2=L, 3=TL, 4=TR, 5=R
 type PortType = 'mineral'|'clay'|'cereal'|'wool'|'wood'|'3:1'
-interface Port { type: PortType; x: number; y: number; label: string }
+interface PortDef { hexIdx: number; edgeIdx: number; type: PortType }
 
-const PORTS: Port[] = [
-  // Top (above row 0)
-  { type: 'mineral', x: 108,  y: 26,  label: '⛏ 2:1' },
-  { type: '3:1',     x: 195,  y: 18,  label: '⚖ 3:1' },
-  { type: 'wood',    x: 282,  y: 26,  label: '🪵 2:1' },
-  // Right side
-  { type: '3:1',     x: 374,  y: 110, label: '⚖ 3:1' },
-  { type: 'cereal',  x: 374,  y: 198, label: '🌾 2:1' },
-  { type: '3:1',     x: 355,  y: 285, label: '⚖ 3:1' },
-  // Bottom (below row 4)
-  { type: 'clay',    x: 264,  y: 362, label: '🧱 2:1' },
-  { type: '3:1',     x: 126,  y: 362, label: '⚖ 3:1' },
-  // Left side
-  { type: 'wool',    x: 16,   y: 198, label: '🐑 2:1' },
+const PORT_DEFS: PortDef[] = [
+  { hexIdx: 0,  edgeIdx: 3, type: 'mineral' }, // top-left (ore 2:1)
+  { hexIdx: 0,  edgeIdx: 4, type: '3:1'     }, // top-center-left
+  { hexIdx: 2,  edgeIdx: 4, type: 'wood'    }, // top-right (wood 2:1)
+  { hexIdx: 6,  edgeIdx: 5, type: '3:1'     }, // right-top
+  { hexIdx: 11, edgeIdx: 5, type: 'cereal'  }, // right-mid (wheat 2:1)
+  { hexIdx: 15, edgeIdx: 0, type: '3:1'     }, // right-bottom
+  { hexIdx: 18, edgeIdx: 0, type: 'clay'    }, // bottom-right (brick 2:1)
+  { hexIdx: 16, edgeIdx: 1, type: '3:1'     }, // bottom-left
+  { hexIdx: 7,  edgeIdx: 2, type: 'wool'    }, // left (sheep 2:1)
 ]
+
+const PORT_EMOJI: Record<PortType, string> = {
+  mineral: '⛏', clay: '🧱', cereal: '🌾', wool: '🐑', wood: '🪵', '3:1': '⚖',
+}
+
+/** Compute port geometry from hex/edge definition */
+function portGeom(def: PortDef) {
+  const [cx, cy] = HEX_CENTERS[def.hexIdx]
+  const verts = hexVertices(cx, cy)
+  const [vx1, vy1] = verts[def.edgeIdx]
+  const [vx2, vy2] = verts[(def.edgeIdx + 1) % 6]
+  const mx = (vx1 + vx2) / 2
+  const my = (vy1 + vy2) / 2
+  const dx = mx - cx, dy = my - cy
+  const len = Math.sqrt(dx * dx + dy * dy)
+  const push = 24
+  return { vx1, vy1, vx2, vy2, px: mx + push * dx / len, py: my + push * dy / len }
+}
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 const PLAYER_COLORS: Record<string, string> = {
@@ -193,7 +204,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
   }, [selPiece, selColor])
 
   const pieceCount = Object.keys(pieces).length
-  const svgH = PAD_TOP + 4 * ROW_H + R + 30  // ≈ 355
+  const svgH = PAD_TOP + 4 * ROW_H + R + 40  // ≈ 365
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-stone-900">
@@ -245,7 +256,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
       <div className="flex-1 overflow-auto" style={{ background: '#1a2f5a' }}>
         <svg
           width="100%"
-          viewBox={`0 0 ${SVG_W} ${svgH}`}
+          viewBox={`-22 -8 ${SVG_W + 44} ${svgH + 16}`}
           style={{ display: 'block', maxWidth: '100%' }}
         >
           <defs>
@@ -318,21 +329,27 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
           })}
 
           {/* ── Ports ── */}
-          {PORTS.map((port, i) => {
-            const isGeneric = port.type === '3:1'
-            const emoji = port.type === 'mineral' ? '⛏' : port.type === 'clay' ? '🧱' :
-                          port.type === 'cereal'  ? '🌾' : port.type === 'wool' ? '🐑' :
-                          port.type === 'wood'    ? '🪵' : '🔄'
+          {PORT_DEFS.map((def, i) => {
+            const { vx1, vy1, vx2, vy2, px, py } = portGeom(def)
+            const isGeneric = def.type === '3:1'
+            const emoji = PORT_EMOJI[def.type]
             const ratio = isGeneric ? '3:1' : '2:1'
-            // Small pill: semi-transparent dark background, emoji + ratio
-            const pw = 34, ph = 18
+            const mx = (vx1 + vx2) / 2, my = (vy1 + vy2) / 2
+            const pw = 36, ph = 18
             return (
               <g key={i}>
-                <rect x={port.x - pw/2} y={port.y - ph/2} width={pw} height={ph} rx={5}
-                  fill="rgba(15,23,42,0.82)" stroke="rgba(255,255,255,0.3)" strokeWidth={1}/>
-                <text x={port.x - 6} y={port.y + 5} textAnchor="middle" fontSize={10}
+                {/* Connector line: pill → edge midpoint */}
+                <line x1={px} y1={py} x2={mx} y2={my}
+                  stroke="rgba(251,191,36,0.55)" strokeWidth={1.5} strokeDasharray="3 2"/>
+                {/* Vertex access dots */}
+                <circle cx={vx1} cy={vy1} r={4} fill="#fbbf24" opacity={0.8}/>
+                <circle cx={vx2} cy={vy2} r={4} fill="#fbbf24" opacity={0.8}/>
+                {/* Port pill */}
+                <rect x={px - pw/2} y={py - ph/2} width={pw} height={ph} rx={5}
+                  fill="rgba(15,23,42,0.88)" stroke="rgba(251,191,36,0.6)" strokeWidth={1}/>
+                <text x={px - 7} y={py + 5} textAnchor="middle" fontSize={10}
                   style={{ userSelect: 'none' }}>{emoji}</text>
-                <text x={port.x + 10} y={port.y + 5} textAnchor="middle" fontSize={9}
+                <text x={px + 9} y={py + 5} textAnchor="middle" fontSize={9}
                   fill="white" fontWeight="bold" style={{ userSelect: 'none' }}>{ratio}</text>
               </g>
             )
@@ -354,7 +371,8 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
             return (
               <g key={id}
                 onClick={() => toggleEdge(id)}
-                style={{ cursor: selPiece === 'road' ? 'pointer' : 'default' }}>
+                onTouchEnd={(e) => { e.preventDefault(); toggleEdge(id) }}
+                style={{ cursor: selPiece === 'road' ? 'pointer' : 'default', touchAction: 'none' }}>
                 {/* Fat polygon hit area — no CSS transform, iOS Safari safe */}
                 <polygon points={pts} fill="rgba(0,0,0,0.001)" />
                 {/* Hover hint when in road mode & no piece */}
@@ -384,7 +402,8 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
             return (
               <g key={id}
                 onClick={() => toggleVertex(id)}
-                style={{ cursor: isClickable ? 'pointer' : 'default' }}>
+                onTouchEnd={(e) => { e.preventDefault(); toggleVertex(id) }}
+                style={{ cursor: isClickable ? 'pointer' : 'default', touchAction: 'none' }}>
                 {/* Hit area — rgba(0,0,0,0.001) instead of transparent (iOS Safari fix) */}
                 <circle cx={x} cy={y} r={14} fill="rgba(0,0,0,0.001)" />
 
