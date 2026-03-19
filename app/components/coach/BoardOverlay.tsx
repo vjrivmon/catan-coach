@@ -50,18 +50,19 @@ function polyPoints(verts: [number, number][]): string {
   return verts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
 }
 
-// ─── Board data (from game_0.json) ────────────────────────────────────────────
+// ─── Board data (tablero estándar de principiantes — desierto en el centro) ───
 const TERRAIN_ORDER = [
-  'clay','mineral','wood',
-  'cereal','wool','cereal','mineral',
-  'desert','clay','wood','clay','wood',
-  'cereal','mineral','mineral','wool',
-  'wool','wood','clay',
+  'mineral','wool','wood',           // fila 0 (3 hexes)
+  'cereal','clay','wool','clay',     // fila 1 (4 hexes)
+  'clay','cereal','desert','wood','mineral', // fila 2 — desert en posición central (idx 9)
+  'wood','mineral','cereal','wool',  // fila 3 (4 hexes)
+  'cereal','wood','wool',            // fila 4 (3 hexes)
 ] as const
 
 type TerrainType = typeof TERRAIN_ORDER[number]
 
-const NUMBERS = [11,12,9, 4,6,5,10, 0,3,11,4,8, 8,10,9,3, 5,2,6]
+// Standard numbers: 2×1, 3×2, 4×2, 5×2, 6×2, 8×2, 9×2, 10×2, 11×2, 12×1
+const NUMBERS = [10,2,9, 12,6,4,10, 9,11,0,3,8, 8,3,4,5, 5,6,11]
 
 const TEXTURE: Record<TerrainType, string> = {
   clay:    '/board-textures/quarry.jpg',
@@ -210,7 +211,7 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
         <svg
           width="100%"
           viewBox={`0 0 ${SVG_W} ${svgH}`}
-          style={{ display: 'block', maxWidth: '100%' }}
+          style={{ display: 'block', maxWidth: '100%', touchAction: 'none' }}
         >
           <defs>
             {/* Water/background pattern */}
@@ -284,11 +285,23 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
           {/* ── Roads (edges) ── */}
           {edges.map(({ id, x1, y1, x2, y2 }) => {
             const piece = pieces[`e${id}`]
+            // Build a rotated rect as hit area (works on iOS Safari unlike transparent stroke)
+            const dx = x2 - x1, dy = y2 - y1
+            const len = Math.sqrt(dx*dx + dy*dy)
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI
+            const mx = (x1+x2)/2, my = (y1+y2)/2
             return (
-              <g key={id} onClick={() => toggleEdge(id)} style={{ cursor: selPiece === 'road' ? 'pointer' : 'default' }}>
-                {/* Invisible hit area — always present for tap */}
-                <line x1={x1} y1={y1} x2={x2} y2={y2}
-                  stroke="transparent" strokeWidth={20} />
+              <g key={id}
+                onPointerDown={(e) => { e.stopPropagation(); toggleEdge(id) }}
+                onClick={() => toggleEdge(id)}
+                style={{ cursor: selPiece === 'road' ? 'pointer' : 'default' }}>
+                {/* Fat rotated rect hit area — iOS Safari compatible */}
+                <rect
+                  x={mx - len/2} y={my - 12}
+                  width={len} height={24}
+                  fill="rgba(0,0,0,0.001)"
+                  transform={`rotate(${angle},${mx},${my})`}
+                />
                 {/* Hover hint when in road mode & no piece */}
                 {!piece && selPiece === 'road' && (
                   <line x1={x1} y1={y1} x2={x2} y2={y2}
@@ -314,10 +327,12 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
             const isClickable = selPiece !== 'road'
             const col = piece ? PLAYER_COLORS[piece.color] : undefined
             return (
-              <g key={id} onClick={() => toggleVertex(id)}
+              <g key={id}
+                onPointerDown={(e) => { e.stopPropagation(); toggleVertex(id) }}
+                onClick={() => toggleVertex(id)}
                 style={{ cursor: isClickable ? 'pointer' : 'default' }}>
-                {/* Hit area */}
-                <circle cx={x} cy={y} r={14} fill="transparent" />
+                {/* Hit area — rgba(0,0,0,0.001) instead of transparent (iOS Safari fix) */}
+                <circle cx={x} cy={y} r={14} fill="rgba(0,0,0,0.001)" />
 
                 {/* Hover hint when in build mode & no piece */}
                 {!piece && selPiece !== 'road' && (

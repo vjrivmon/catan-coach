@@ -6,7 +6,7 @@ if (process.env.OLLAMA_INSECURE === 'true') {
 }
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: ['catan-coach.loca.lt'],
 };
 
 export default nextConfig;
