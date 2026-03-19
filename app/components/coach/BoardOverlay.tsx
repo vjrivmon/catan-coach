@@ -9,7 +9,7 @@ const ROW_H = 1.5 * R        // vertical dist between row centers = 60
 
 // SVG canvas
 const SVG_W = 390
-const PAD_TOP = 55    // space for water top + offset
+const PAD_TOP = 78    // space for port badges at top + offset
 
 // Board rows: [hexCount, xStart column offset]
 // even rows align at 0, 1, 2...  odd rows offset by 0.5
@@ -114,6 +114,31 @@ function buildGraph() {
     edges:    [...edgeMap.values()],
   }
 }
+
+// ─── Ports (standard beginner board, clockwise from top-left) ─────────────────
+// Each port: position in SVG coords (center of the port badge) + type
+const TERRAIN_COLOR: Record<string, string> = {
+  wood:    '#166534', clay: '#b45309', cereal: '#92400e',
+  wool:    '#4d7c0f', mineral: '#64748b', desert: '#d97706',
+}
+type PortType = 'mineral'|'clay'|'cereal'|'wool'|'wood'|'3:1'
+interface Port { type: PortType; x: number; y: number; label: string }
+
+const PORTS: Port[] = [
+  // Top (above row 0)
+  { type: 'mineral', x: 108,  y: 26,  label: '⛏ 2:1' },
+  { type: '3:1',     x: 195,  y: 18,  label: '⚖ 3:1' },
+  { type: 'wood',    x: 282,  y: 26,  label: '🪵 2:1' },
+  // Right side
+  { type: '3:1',     x: 374,  y: 110, label: '⚖ 3:1' },
+  { type: 'cereal',  x: 374,  y: 198, label: '🌾 2:1' },
+  { type: '3:1',     x: 355,  y: 285, label: '⚖ 3:1' },
+  // Bottom (below row 4)
+  { type: 'clay',    x: 264,  y: 362, label: '🧱 2:1' },
+  { type: '3:1',     x: 126,  y: 362, label: '⚖ 3:1' },
+  // Left side
+  { type: 'wool',    x: 16,   y: 198, label: '🐑 2:1' },
+]
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 const PLAYER_COLORS: Record<string, string> = {
@@ -287,6 +312,35 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
                 {terrain === 'desert' && (
                   <text x={cx} y={cy + 4} textAnchor="middle" fontSize={18}>🏴</text>
                 )}
+              </g>
+            )
+          })}
+
+          {/* ── Ports ── */}
+          {PORTS.map((port, i) => {
+            const isGeneric = port.type === '3:1'
+            const bg = isGeneric ? '#1e3a6e' : (TERRAIN_COLOR[port.type] ?? '#374151')
+            const PR = 22  // port badge radius
+            // Hexagonal badge (flat-top mini-hex)
+            const pv = [0,60,120,180,240,300].map(a => {
+              const rad = a * Math.PI / 180
+              return `${(port.x + PR * Math.cos(rad)).toFixed(1)},${(port.y + PR * Math.sin(rad)).toFixed(1)}`
+            }).join(' ')
+            return (
+              <g key={i}>
+                <polygon points={pv} fill={bg} stroke="rgba(255,255,255,0.6)" strokeWidth={1.5}/>
+                {/* Resource label */}
+                <text x={port.x} y={port.y - 4} textAnchor="middle" fontSize={10} fill="white"
+                  fontWeight="bold" style={{ userSelect: 'none' }}>
+                  {isGeneric ? '3:1' : '2:1'}
+                </text>
+                {/* Resource emoji */}
+                <text x={port.x} y={port.y + 9} textAnchor="middle" fontSize={10}
+                  style={{ userSelect: 'none' }}>
+                  {port.type === 'mineral' ? '⛏' : port.type === 'clay' ? '🧱' :
+                   port.type === 'cereal'  ? '🌾' : port.type === 'wool' ? '🐑' :
+                   port.type === 'wood'    ? '🪵' : '⚖'}
+                </text>
               </g>
             )
           })}
