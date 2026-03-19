@@ -166,16 +166,23 @@ interface BoardOverlayProps {
 }
 
 export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOverlayProps) {
-  // colorToLabel: which label each color has been assigned ('Tú', 'J2', 'J3', 'J4')
-  const [colorToLabel, setColorToLabel] = useState<Record<string, string>>(() => {
-    if (Object.values(initialPieces).length === 0) return {}
+  // assignments[i] = color for player i: [Tú, J2, J3, J4]
+  const ALL_COLORS = ['red','blue','orange','white'] as const
+  const PLAYER_LABELS = ['Tú','J2','J3','J4']
+
+  const [assignments, setAssignments] = useState<string[]>(() => {
+    if (Object.values(initialPieces).length === 0) return []
     const myC = Object.values(initialPieces)[0].color
-    const others = (['red','blue','orange','white'] as const).filter(c => c !== myC)
-    return { [myC]: 'Tú', [others[0]]: 'J2', [others[1]]: 'J3', [others[2]]: 'J4' }
+    const others = ALL_COLORS.filter(c => c !== myC)
+    return [myC, others[0], others[1], others[2]]
   })
   const [colorsConfirmed, setColorsConfirmed] = useState(Object.values(initialPieces).length > 0)
 
-  const myColor = Object.entries(colorToLabel).find(([,l]) => l === 'Tú')?.[0] ?? null
+  // Derived color → label map
+  const colorToLabel: Record<string, string> = {}
+  assignments.forEach((c, i) => { colorToLabel[c] = PLAYER_LABELS[i] })
+
+  const myColor = assignments[0] ?? null
   const [selColor, setSelColor] = useState(myColor ?? 'red')
   const [selPiece, setSelPiece] = useState<'settlement' | 'city' | 'road'>('settlement')
   const [pieces, setPieces]     = useState<Record<string, Piece>>(initialPieces)
@@ -233,73 +240,64 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
         </div>
       </div>
 
-      {/* Color assignment (first open) or Player selector */}
+      {/* Color assignment (sequential) or Player selector */}
       {!colorsConfirmed ? (
-        /* Step 0: assign a color to each player */
-        <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 shrink-0">
-          <p className="text-stone-400 text-xs mb-2">Asigna un color a cada jugador:</p>
-          <div className="grid grid-cols-4 gap-1.5">
-            {(['Tú','J2','J3','J4'] as const).map(label => {
-              const assigned = Object.entries(colorToLabel).find(([,l]) => l === label)?.[0]
-              const takenByOther = (c: string) => colorToLabel[c] && colorToLabel[c] !== label
-              return (
-                <div key={label} className="flex flex-col items-center gap-1">
-                  <span className={`text-xs font-bold ${label === 'Tú' ? 'text-amber-400' : 'text-stone-300'}`}>
-                    {label}
-                  </span>
-                  <div className="flex gap-1">
-                    {(['red','blue','orange','white'] as const).map(c => (
-                      <button key={c}
-                        disabled={!!takenByOther(c)}
-                        onClick={() => {
-                          setColorToLabel(prev => {
-                            const next = { ...prev }
-                            // Remove previous assignment for this label
-                            Object.keys(next).forEach(k => { if (next[k] === label) delete next[k] })
-                            // Toggle: if already assigned, unassign; else assign
-                            if (next[c] === label) delete next[c]
-                            else next[c] = label
-                            return next
-                          })
-                          if (label === 'Tú') setSelColor(c)
-                        }}
-                        className={`w-6 h-6 rounded-full transition-all ${
-                          assigned === c ? 'ring-2 ring-white scale-110' :
-                          takenByOther(c) ? 'opacity-20 cursor-not-allowed' :
-                          'opacity-70 hover:opacity-100'
-                        }`}
-                        style={{ background: PLAYER_COLORS[c] }}
-                      />
-                    ))}
-                  </div>
+        /* Step-by-step: pick color for each player in turn */
+        <div className="bg-stone-800 border-b border-stone-700 px-4 py-3 shrink-0">
+          {(() => {
+            const step = assignments.length  // 0=Tú, 1=J2, 2=J3, 3→auto
+            const remaining = ALL_COLORS.filter(c => !assignments.includes(c))
+            const currentLabel = PLAYER_LABELS[step]
+            return (
+              <div className="flex items-center gap-4">
+                <span className={`text-sm font-bold shrink-0 ${step === 0 ? 'text-amber-400' : 'text-stone-300'}`}>
+                  {currentLabel}
+                </span>
+                <div className="flex gap-3 flex-1 justify-center">
+                  {remaining.map(c => (
+                    <button key={c}
+                      onClick={() => {
+                        const next = [...assignments, c]
+                        setAssignments(next)
+                        if (step === 0) setSelColor(c)
+                        // After picking J3 (step 2), auto-assign J4 and confirm
+                        if (step === 2) {
+                          const last = ALL_COLORS.find(x => !next.includes(x))!
+                          setAssignments([...next, last])
+                          setColorsConfirmed(true)
+                        }
+                      }}
+                      className="w-10 h-10 rounded-full border-2 border-stone-600 hover:scale-110 active:scale-95 transition-transform"
+                      style={{ background: PLAYER_COLORS[c] }}
+                    />
+                  ))}
                 </div>
-              )
-            })}
-          </div>
-          {myColor && (
-            <button
-              onClick={() => { setColorsConfirmed(true); setSelColor(myColor) }}
-              className="mt-2 w-full py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-colors">
-              Empezar →
-            </button>
-          )}
+                {/* Progress dots */}
+                <div className="flex gap-1 shrink-0">
+                  {PLAYER_LABELS.map((_, i) => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${
+                      i < step ? 'bg-amber-400' : i === step ? 'bg-white' : 'bg-stone-600'
+                    }`}/>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
         </div>
       ) : (
         /* Player selector once colors assigned */
         <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
           <span className="text-stone-500 text-xs shrink-0">Jugador:</span>
-          {(['red','blue','orange','white'] as const)
-            .filter(c => colorToLabel[c])   // only assigned colors
-            .map(c => (
-              <button key={c} onClick={() => setSelColor(c)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold shrink-0 transition-all ${
-                  selColor === c ? 'bg-current/10' : 'border-stone-600 text-stone-400'
-                }`}
-                style={selColor === c ? { color: PLAYER_COLORS[c], borderColor: PLAYER_COLORS[c] } : {}}>
-                <div className="w-2 h-2 rounded-full" style={{ background: PLAYER_COLORS[c] }} />
-                {colorToLabel[c]}
-              </button>
-            ))}
+          {assignments.map((c, i) => (
+            <button key={c} onClick={() => setSelColor(c)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold shrink-0 transition-all ${
+                selColor === c ? 'bg-current/10' : 'border-stone-600 text-stone-400'
+              }`}
+              style={selColor === c ? { color: PLAYER_COLORS[c], borderColor: PLAYER_COLORS[c] } : {}}>
+              <div className="w-2 h-2 rounded-full" style={{ background: PLAYER_COLORS[c] }} />
+              {PLAYER_LABELS[i]}
+            </button>
+          ))}
         </div>
       )}
 
