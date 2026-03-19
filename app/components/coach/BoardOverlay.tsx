@@ -249,15 +249,33 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
             const remaining = ALL_COLORS.filter(c => !assignments.includes(c))
             const label = step === 0 ? '¿Tu color?' : `¿Color de J${step + 1}?`
 
+            // Step 3: J3 already picked, confirm J4 or skip
+            if (step === 3) {
+              const j4Color = remaining[0]
+              return (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-stone-300 font-bold shrink-0">¿Hay J4?</span>
+                  <button
+                    onClick={() => { setAssignments([...assignments, j4Color]); setColorsConfirmed(true) }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-stone-600 text-xs font-bold text-stone-300 hover:border-stone-400 transition-colors">
+                    <div className="w-4 h-4 rounded-full" style={{ background: PLAYER_COLORS[j4Color] }} />
+                    Sí (somos 4)
+                  </button>
+                  <button
+                    onClick={() => setColorsConfirmed(true)}
+                    className="px-3 py-1.5 rounded-full border border-stone-600 text-xs text-stone-500 hover:text-stone-300 transition-colors">
+                    No (somos 3)
+                  </button>
+                </div>
+              )
+            }
+
             const pickColor = (c: string) => {
               const next = [...assignments, c]
               setAssignments(next)
               if (step === 0) setSelColor(c)
-              if (step === 2) {   // J3 picked → auto-assign J4 and done
-                const last = ALL_COLORS.find(x => !next.includes(x))!
-                setAssignments([...next, last])
-                setColorsConfirmed(true)
-              }
+              // After J3 picks (step 2), advance to step 3 (J4 confirmation)
+              // colorsConfirmed stays false → step 3 renders
             }
 
             return (
@@ -276,10 +294,11 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
                     ))}
                   </div>
                 </div>
-                {step >= 1 && (
+                {/* Escape only at J2 step — at J3 step, must pick color first */}
+                {step === 1 && (
                   <button onClick={() => setColorsConfirmed(true)}
                     className="self-start text-xs text-stone-500 hover:text-stone-300 transition-colors underline underline-offset-2">
-                    {step === 1 ? 'No hay J3 ni J4 (somos 2)' : 'No hay J4 (somos 3)'}
+                    No hay J3 ni J4 (somos 2)
                   </button>
                 )}
               </div>
