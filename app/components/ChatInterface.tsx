@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { CoachAnalyzeModal } from './coach/CoachAnalyzeModal'
+import { CameraOverlay } from './coach/CameraOverlay'
+import { BoardOverlay } from './coach/BoardOverlay'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
 import { VoiceInput } from './VoiceInput'
@@ -70,6 +73,11 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [history, setHistory]             = useState<Conversation[]>([])
   const [sidebarOpen, setSidebarOpen]     = useState(false)
   const [input, setInput]                 = useState('')
+  // Coach mode state
+  const [coachMode, setCoachMode]           = useState(false)
+  const [showAnalyzeModal, setShowAnalyzeModal] = useState(false)
+  const [showCamera, setShowCamera]         = useState(false)
+  const [showBoard, setShowBoard]           = useState(false)
   const [isLoading, setIsLoading]         = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [lastSuggestions, setLastSuggestions]   = useState<string[]>([])
@@ -320,10 +328,39 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         </div>
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-center flex-1">
           <h1 className="text-amber-400 font-semibold text-base leading-tight">Catan Coach</h1>
-          <p className="text-stone-400 text-xs leading-tight">Tu asistente de Catan</p>
+          <p className="text-stone-400 text-xs leading-tight">
+            {coachMode ? 'Modo Coach en partida' : 'Tu asistente de Catán'}
+          </p>
         </div>
+
+        {/* Coach mode toggle */}
+        {coachMode ? (
+          /* Back to chat button */
+          <button
+            onClick={() => { setCoachMode(false); setShowAnalyzeModal(false); setShowCamera(false); setShowBoard(false); }}
+            title="Volver al chat"
+            className="flex items-center justify-center w-9 h-9 rounded-xl border border-stone-600 bg-stone-700 hover:border-stone-500 transition-colors shrink-0"
+          >
+            <svg className="w-5 h-5 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+            </svg>
+          </button>
+        ) : (
+          /* Hexagon coach trigger */
+          <button
+            onClick={() => { setCoachMode(true); setShowAnalyzeModal(true); }}
+            title="Coach en partida"
+            className="relative flex items-center justify-center w-9 h-9 rounded-xl border border-stone-600 bg-stone-700 hover:border-amber-600 hover:bg-amber-900/20 transition-colors shrink-0"
+          >
+            <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round"/>
+              <path d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z" fill="rgba(245,158,11,0.25)" stroke="#f59e0b" strokeWidth="1.2" strokeLinejoin="round"/>
+            </svg>
+            <div className="absolute top-[-2px] right-[-2px] w-2 h-2 bg-amber-400 rounded-full border border-stone-800" />
+          </button>
+        )}
       </header>
 
       {/* Body: sidebar + chat */}
@@ -403,6 +440,63 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
         </div>
       </div>
+
+      {/* ── Coach overlays ── */}
+      {showAnalyzeModal && (
+        <CoachAnalyzeModal
+          onClose={() => { setShowAnalyzeModal(false); setCoachMode(false); }}
+          onPhoto={() => { setShowAnalyzeModal(false); setShowCamera(true); }}
+          onBoard={() => { setShowAnalyzeModal(false); setShowBoard(true); }}
+        />
+      )}
+
+      {showCamera && (
+        <CameraOverlay
+          onClose={() => { setShowCamera(false); setShowAnalyzeModal(true); }}
+          onCapture={async (file) => {
+            setShowCamera(false)
+            // Add user message showing photo was sent
+            const photoMsg: import('@/src/domain/entities').Message = {
+              id: `photo-${Date.now()}`, role: 'user',
+              content: '📷 Foto del tablero enviada',
+              timestamp: Date.now(),
+            }
+            setSession(s => ({ ...s, messages: [...s.messages, photoMsg] }))
+            // Simulate analysis response
+            setIsLoading(true)
+            await new Promise(r => setTimeout(r, 1200))
+            const analysisMsg: import('@/src/domain/entities').Message = {
+              id: `analysis-${Date.now()}`, role: 'assistant',
+              content: '✅ He detectado: **Arcilla(11), Mineral(12, 10, 3), Madera(9, 11, 8), Trigo(4, 5, 8), Oveja(6, 3, 5)**. Puerto 2:1 Mineral al este, 3:1 ×3.\n\nIndícame ahora tus recursos actuales y te doy la mejor jugada.',
+              timestamp: Date.now(),
+            }
+            setSession(s => ({ ...s, messages: [...s.messages, analysisMsg] }))
+            setIsLoading(false)
+          }}
+        />
+      )}
+
+      {showBoard && (
+        <BoardOverlay
+          onClose={() => { setShowBoard(false); setShowAnalyzeModal(true); }}
+          onConfirm={(pieces) => {
+            setShowBoard(false)
+            const count = Object.keys(pieces).length
+            const boardMsg: import('@/src/domain/entities').Message = {
+              id: `board-${Date.now()}`, role: 'user',
+              content: `🗺️ Tablero configurado (${count} piezas)`,
+              timestamp: Date.now(),
+            }
+            const replyMsg: import('@/src/domain/entities').Message = {
+              id: `board-reply-${Date.now()}`, role: 'assistant',
+              content: 'Tablero recibido. Ahora indícame tus recursos actuales y te doy la mejor jugada.',
+              timestamp: Date.now(),
+            }
+            setSession(s => ({ ...s, messages: [...s.messages, boardMsg, replyMsg] }))
+          }}
+        />
+      )}
+
     </div>
   )
 }
