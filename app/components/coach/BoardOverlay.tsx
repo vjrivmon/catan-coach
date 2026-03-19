@@ -166,12 +166,16 @@ interface BoardOverlayProps {
 }
 
 export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOverlayProps) {
-  const [myColor, setMyColor]   = useState<string | null>(
-    // If there are already pieces (reopening mid-game), infer myColor from pieces
-    Object.values(initialPieces).length > 0
-      ? Object.values(initialPieces)[0].color
-      : null
-  )
+  // colorToLabel: which label each color has been assigned ('Tú', 'J2', 'J3', 'J4')
+  const [colorToLabel, setColorToLabel] = useState<Record<string, string>>(() => {
+    if (Object.values(initialPieces).length === 0) return {}
+    const myC = Object.values(initialPieces)[0].color
+    const others = (['red','blue','orange','white'] as const).filter(c => c !== myC)
+    return { [myC]: 'Tú', [others[0]]: 'J2', [others[1]]: 'J3', [others[2]]: 'J4' }
+  })
+  const [colorsConfirmed, setColorsConfirmed] = useState(Object.values(initialPieces).length > 0)
+
+  const myColor = Object.entries(colorToLabel).find(([,l]) => l === 'Tú')?.[0] ?? null
   const [selColor, setSelColor] = useState(myColor ?? 'red')
   const [selPiece, setSelPiece] = useState<'settlement' | 'city' | 'road'>('settlement')
   const [pieces, setPieces]     = useState<Record<string, Piece>>(initialPieces)
@@ -229,45 +233,73 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
         </div>
       </div>
 
-      {/* Color picker (first open) or Player selector */}
-      {myColor === null ? (
-        /* Step 0: choose own color */
-        <div className="bg-stone-800 border-b border-stone-700 px-3 py-2.5 flex items-center gap-3 shrink-0">
-          <span className="text-stone-300 text-xs font-medium shrink-0">¿Tu color?</span>
-          <div className="flex gap-2">
-            {(['red','blue','orange','white'] as const).map(c => (
-              <button key={c}
-                onClick={() => { setMyColor(c); setSelColor(c) }}
-                className="w-8 h-8 rounded-full border-2 border-stone-600 hover:scale-110 transition-transform active:scale-95"
-                style={{ background: PLAYER_COLORS[c] }}
-              />
-            ))}
+      {/* Color assignment (first open) or Player selector */}
+      {!colorsConfirmed ? (
+        /* Step 0: assign a color to each player */
+        <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 shrink-0">
+          <p className="text-stone-400 text-xs mb-2">Asigna un color a cada jugador:</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {(['Tú','J2','J3','J4'] as const).map(label => {
+              const assigned = Object.entries(colorToLabel).find(([,l]) => l === label)?.[0]
+              const takenByOther = (c: string) => colorToLabel[c] && colorToLabel[c] !== label
+              return (
+                <div key={label} className="flex flex-col items-center gap-1">
+                  <span className={`text-xs font-bold ${label === 'Tú' ? 'text-amber-400' : 'text-stone-300'}`}>
+                    {label}
+                  </span>
+                  <div className="flex gap-1">
+                    {(['red','blue','orange','white'] as const).map(c => (
+                      <button key={c}
+                        disabled={!!takenByOther(c)}
+                        onClick={() => {
+                          setColorToLabel(prev => {
+                            const next = { ...prev }
+                            // Remove previous assignment for this label
+                            Object.keys(next).forEach(k => { if (next[k] === label) delete next[k] })
+                            // Toggle: if already assigned, unassign; else assign
+                            if (next[c] === label) delete next[c]
+                            else next[c] = label
+                            return next
+                          })
+                          if (label === 'Tú') setSelColor(c)
+                        }}
+                        className={`w-6 h-6 rounded-full transition-all ${
+                          assigned === c ? 'ring-2 ring-white scale-110' :
+                          takenByOther(c) ? 'opacity-20 cursor-not-allowed' :
+                          'opacity-70 hover:opacity-100'
+                        }`}
+                        style={{ background: PLAYER_COLORS[c] }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
+          {myColor && (
+            <button
+              onClick={() => { setColorsConfirmed(true); setSelColor(myColor) }}
+              className="mt-2 w-full py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-colors">
+              Empezar →
+            </button>
+          )}
         </div>
       ) : (
-        /* Player selector once color chosen */
+        /* Player selector once colors assigned */
         <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
           <span className="text-stone-500 text-xs shrink-0">Jugador:</span>
-          {(['red','blue','orange','white'] as const).map(c => {
-            const isMe = c === myColor
-            const others = (['red','blue','orange','white'] as const).filter(x => x !== myColor)
-            const label = isMe ? 'Tú' : `J${others.indexOf(c) + 2}`
-            return (
+          {(['red','blue','orange','white'] as const)
+            .filter(c => colorToLabel[c])   // only assigned colors
+            .map(c => (
               <button key={c} onClick={() => setSelColor(c)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold shrink-0 transition-all ${
                   selColor === c ? 'bg-current/10' : 'border-stone-600 text-stone-400'
                 }`}
                 style={selColor === c ? { color: PLAYER_COLORS[c], borderColor: PLAYER_COLORS[c] } : {}}>
                 <div className="w-2 h-2 rounded-full" style={{ background: PLAYER_COLORS[c] }} />
-                {label}
+                {colorToLabel[c]}
               </button>
-            )
-          })}
-          {/* Allow changing own color */}
-          <button onClick={() => setMyColor(null)}
-            className="ml-auto text-stone-600 hover:text-stone-400 text-xs shrink-0">
-            cambiar
-          </button>
+            ))}
         </div>
       )}
 
