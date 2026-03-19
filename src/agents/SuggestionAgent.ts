@@ -1,14 +1,38 @@
 import type { Message, UserLevel } from '../domain/entities'
 import { config } from '../config'
 
+export interface CoachState {
+  boardSummary: string          // e.g. "Rojo: 2 poblados, 3 caminos. Verde: 1 poblado."
+  resources: Record<string, number> | null  // e.g. { madera: 2, arcilla: 1 }
+}
+
 export class SuggestionAgent {
-  async suggest(message: string, history: Message[], level: UserLevel): Promise<string[]> {
+  async suggest(
+    message: string,
+    history: Message[],
+    level: UserLevel,
+    coachState?: CoachState,
+  ): Promise<string[]> {
     const levelLabel = level === 'beginner' ? 'principiante' : level === 'intermediate' ? 'intermedio' : 'avanzado'
     const recentHistory = history.slice(-4).map(m =>
       `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${m.content.slice(0, 200)}`
     ).join('\n')
 
-    const prompt = `Historial reciente sobre Catan:
+    const isCoach = !!coachState?.boardSummary
+
+    const prompt = isCoach
+      ? `Eres un asistente de Catan en modo Coach en partida.
+
+Estado actual del tablero: ${coachState!.boardSummary}
+${coachState!.resources ? `Recursos del jugador: ${Object.entries(coachState!.resources).filter(([,v])=>v>0).map(([k,v])=>`${k}×${v}`).join(', ') || 'ninguno'}` : ''}
+
+Última interacción: ${message || 'El jugador acaba de configurar su tablero'}
+
+Genera exactamente 3 preguntas/acciones que el jugador podría querer consultar ahora.
+Deben ser CONCRETAS al estado del tablero: posibles jugadas, cálculo de probabilidades, uso de puertos, expansión, bloqueo, intercambio.
+Devuelve SOLO un array JSON válido: ["pregunta1", "pregunta2", "pregunta3"]
+Sin explicaciones, solo el array JSON.`
+      : `Historial reciente sobre Catan:
 ${recentHistory}
 
 Última pregunta del usuario (nivel ${levelLabel}): ${message}
@@ -43,10 +67,18 @@ Sin explicaciones adicionales, solo el array JSON.`
         return parsed.slice(0, 3).map((q: unknown) => String(q))
       }
 
-      return this.fallbackSuggestions(level)
+      return isCoach ? this.fallbackCoachSuggestions() : this.fallbackSuggestions(level)
     } catch {
-      return this.fallbackSuggestions(level)
+      return isCoach ? this.fallbackCoachSuggestions() : this.fallbackSuggestions(level)
     }
+  }
+
+  private fallbackCoachSuggestions(): string[] {
+    return [
+      '¿Cuál es mi mejor jugada en este turno?',
+      '¿Me conviene usar el puerto para intercambiar ahora?',
+      '¿Dónde debo expandir para maximizar mis puntos?',
+    ]
   }
 
   private fallbackSuggestions(level: UserLevel): string[] {

@@ -3,7 +3,7 @@ import { RouterAgent } from '@/src/agents/RouterAgent'
 import { RulesAgent } from '@/src/agents/RulesAgent'
 import { StrategyAgent } from '@/src/agents/StrategyAgent'
 import { GeneratorAgent } from '@/src/agents/GeneratorAgent'
-import { SuggestionAgent } from '@/src/agents/SuggestionAgent'
+import { SuggestionAgent, type CoachState } from '@/src/agents/SuggestionAgent'
 import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
 import type { Message, UserLevel } from '@/src/domain/entities'
@@ -18,11 +18,12 @@ const suggestionAgent = new SuggestionAgent()
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, history, userLevel, seenConcepts } = await req.json() as {
+    const { message, history, userLevel, seenConcepts, coachState } = await req.json() as {
       message: string
       history: Message[]
       userLevel: UserLevel
       seenConcepts: string[]
+      coachState?: CoachState
     }
 
     if (!message?.trim()) {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
         : route === 'strategy'
           ? strategyAgent.retrieve(message)
           : Promise.resolve(''),
-      suggestionAgent.suggest(message, history, userLevel),
+      suggestionAgent.suggest(message, history, userLevel, coachState),
     ])
 
     // 3. Stream the response

@@ -82,7 +82,24 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [coachStep, setCoachStep]               = useState<null | 'waiting-resources'>(null)
   // Persisted board pieces across opens — only reset on "nueva conversación"
   const [savedPieces, setSavedPieces]           = useState<Record<string, {type:'settlement'|'city'|'road';color:string}>>({})
+  const [savedResources, setSavedResources]     = useState<Record<string,number> | null>(null)
   const boardConfigured                         = Object.keys(savedPieces).length > 0
+
+  /** Summarise savedPieces as a readable string for the SuggestionAgent */
+  const buildBoardSummary = useCallback((): string => {
+    const byColor: Record<string, {settlements:number;cities:number;roads:number}> = {}
+    const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
+    for (const piece of Object.values(savedPieces)) {
+      const c = piece.color
+      if (!byColor[c]) byColor[c] = { settlements: 0, cities: 0, roads: 0 }
+      if (piece.type === 'settlement') byColor[c].settlements++
+      else if (piece.type === 'city')  byColor[c].cities++
+      else if (piece.type === 'road')  byColor[c].roads++
+    }
+    return Object.entries(byColor).map(([c, s]) =>
+      `${colorNames[c]||c}: ${s.settlements} poblado${s.settlements!==1?'s':''}, ${s.cities} ciudad${s.cities!==1?'es':''}, ${s.roads} camino${s.roads!==1?'s':''}`
+    ).join('. ') || 'Tablero vacío'
+  }, [savedPieces])
   const [isLoading, setIsLoading]         = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [lastSuggestions, setLastSuggestions]   = useState<string[]>([])
@@ -185,6 +202,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSidebarOpen(false)
     // Reset coach state completely
     setSavedPieces({})
+    setSavedResources(null)
     setCoachMode(false)
     setCoachStep(null)
     setShowAnalyzeModal(false)
@@ -238,6 +256,12 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           history: session.messages.slice(-10),
           userLevel: updatedLevel,
           seenConcepts,
+          ...(coachMode && boardConfigured ? {
+            coachState: {
+              boardSummary: buildBoardSummary(),
+              resources: savedResources,
+            }
+          } : {}),
         }),
       })
 
@@ -423,6 +447,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               <ResourceStepperBubble
                 onConfirm={async (counts) => {
                   setCoachStep(null)
+                  setSavedResources(counts)   // persist for future turns
                   const total = Object.values(counts).reduce((a, b) => a + b, 0)
                   const lines = [
                     counts.wood    > 0 ? `Madera: ${counts.wood}`   : '',
@@ -455,6 +480,16 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   }
                   setSession(s => ({ ...s, messages: [...s.messages, botMsg] }))
                   setIsLoading(false)
+                  // Proactive board-aware suggestions after resource confirmation
+                  setLastSuggestions([
+                    '¿Cuál es mi mejor jugada en este turno?',
+                    total === 0
+                      ? '¿Qué estrategia de producción me recomiendas?'
+                      : counts.wood >= 1 && counts.clay >= 1
+                        ? '¿Debo construir el camino ahora o esperar?'
+                        : '¿Cuándo conviene hacer intercambio marítimo?',
+                    '¿Cómo afectan mis puertos a la estrategia?',
+                  ])
                 }}
               />
             )}
