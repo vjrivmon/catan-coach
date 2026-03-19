@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Link from 'next/link'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
 import { VoiceInput } from './VoiceInput'
@@ -63,7 +64,7 @@ function titleFromSession(session: Session): string {
 }
 
 // ── Component ─────────────────────────────────────────────
-export function ChatInterface() {
+export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [session, setSession]             = useState<Session>(createEmptySession)
   const [activeConvId, setActiveConvId]   = useState<string>('')
   const [history, setHistory]             = useState<Conversation[]>([])
@@ -282,7 +283,18 @@ export function ChatInterface() {
 
       {/* Header */}
       <header className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0 min-h-[56px]">
-        {/* Hamburger / Close toggle */}
+        {/* Back link or Hamburger */}
+        {backHref ? (
+          <Link
+            href={backHref}
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-stone-700 transition-colors shrink-0"
+            aria-label="Volver"
+          >
+            <svg className="w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+        ) : (
         <button
           onClick={() => setSidebarOpen(o => !o)}
           aria-label={sidebarOpen ? 'Cerrar historial' : 'Abrir historial'}
@@ -298,6 +310,7 @@ export function ChatInterface() {
             </svg>
           )}
         </button>
+        )}
 
         <div className="w-9 h-9 rounded-full bg-amber-700 flex items-center justify-center shrink-0 overflow-hidden">
           <img
