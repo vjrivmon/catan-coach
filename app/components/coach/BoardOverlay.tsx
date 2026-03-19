@@ -242,44 +242,46 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
 
       {/* Color assignment (sequential) or Player selector */}
       {!colorsConfirmed ? (
-        /* Step-by-step: pick color for each player in turn */
+        /* Step-by-step color assignment */
         <div className="bg-stone-800 border-b border-stone-700 px-4 py-3 shrink-0">
           {(() => {
-            const step = assignments.length  // 0=Tú, 1=J2, 2=J3, 3→auto
+            const step = assignments.length   // 0=Tú, 1=J2, 2=J3
             const remaining = ALL_COLORS.filter(c => !assignments.includes(c))
-            const currentLabel = PLAYER_LABELS[step]
+            const label = step === 0 ? '¿Tu color?' : `¿Color de J${step + 1}?`
+
+            const pickColor = (c: string) => {
+              const next = [...assignments, c]
+              setAssignments(next)
+              if (step === 0) setSelColor(c)
+              if (step === 2) {   // J3 picked → auto-assign J4 and done
+                const last = ALL_COLORS.find(x => !next.includes(x))!
+                setAssignments([...next, last])
+                setColorsConfirmed(true)
+              }
+            }
+
             return (
-              <div className="flex items-center gap-4">
-                <span className={`text-sm font-bold shrink-0 ${step === 0 ? 'text-amber-400' : 'text-stone-300'}`}>
-                  {currentLabel}
-                </span>
-                <div className="flex gap-3 flex-1 justify-center">
-                  {remaining.map(c => (
-                    <button key={c}
-                      onClick={() => {
-                        const next = [...assignments, c]
-                        setAssignments(next)
-                        if (step === 0) setSelColor(c)
-                        // After picking J3 (step 2), auto-assign J4 and confirm
-                        if (step === 2) {
-                          const last = ALL_COLORS.find(x => !next.includes(x))!
-                          setAssignments([...next, last])
-                          setColorsConfirmed(true)
-                        }
-                      }}
-                      className="w-10 h-10 rounded-full border-2 border-stone-600 hover:scale-110 active:scale-95 transition-transform"
-                      style={{ background: PLAYER_COLORS[c] }}
-                    />
-                  ))}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-4">
+                  <span className={`text-sm font-bold shrink-0 w-28 ${step === 0 ? 'text-amber-400' : 'text-stone-300'}`}>
+                    {label}
+                  </span>
+                  <div className="flex gap-3">
+                    {remaining.map(c => (
+                      <button key={c}
+                        onClick={() => pickColor(c)}
+                        className="w-10 h-10 rounded-full border-2 border-stone-600 hover:scale-110 active:scale-95 transition-transform"
+                        style={{ background: PLAYER_COLORS[c] }}
+                      />
+                    ))}
+                  </div>
                 </div>
-                {/* Progress dots */}
-                <div className="flex gap-1 shrink-0">
-                  {PLAYER_LABELS.map((_, i) => (
-                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${
-                      i < step ? 'bg-amber-400' : i === step ? 'bg-white' : 'bg-stone-600'
-                    }`}/>
-                  ))}
-                </div>
+                {step >= 1 && (
+                  <button onClick={() => setColorsConfirmed(true)}
+                    className="self-start text-xs text-stone-500 hover:text-stone-300 transition-colors underline underline-offset-2">
+                    {step === 1 ? 'No hay J3 ni J4 (somos 2)' : 'No hay J4 (somos 3)'}
+                  </button>
+                )}
               </div>
             )
           })()}
