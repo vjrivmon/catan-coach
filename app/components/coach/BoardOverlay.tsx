@@ -123,7 +123,7 @@ interface PortDef { hexIdx: number; edgeIdx: number; type: PortType }
 
 const PORT_DEFS: PortDef[] = [
   { hexIdx: 0,  edgeIdx: 3, type: 'mineral' }, // top-left (ore 2:1)
-  { hexIdx: 0,  edgeIdx: 4, type: '3:1'     }, // top-center-left
+  { hexIdx: 1,  edgeIdx: 3, type: '3:1'     }, // top-center (hex 1, sin vértice compartido)
   { hexIdx: 2,  edgeIdx: 4, type: 'wood'    }, // top-right (wood 2:1)
   { hexIdx: 6,  edgeIdx: 5, type: '3:1'     }, // right-top
   { hexIdx: 11, edgeIdx: 5, type: 'cereal'  }, // right-mid (wheat 2:1)
