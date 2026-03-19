@@ -75,11 +75,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [sidebarOpen, setSidebarOpen]     = useState(false)
   const [input, setInput]                 = useState('')
   // Coach mode state
-  const [coachMode, setCoachMode]           = useState(false)
+  const [coachMode, setCoachMode]               = useState(false)
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false)
-  const [showCamera, setShowCamera]         = useState(false)
-  const [showBoard, setShowBoard]           = useState(false)
-  const [coachStep, setCoachStep]           = useState<null | 'waiting-resources'>(null)
+  const [showCamera, setShowCamera]             = useState(false)
+  const [showBoard, setShowBoard]               = useState(false)
+  const [coachStep, setCoachStep]               = useState<null | 'waiting-resources'>(null)
+  // Persisted board pieces across opens — only reset on "nueva conversación"
+  const [savedPieces, setSavedPieces]           = useState<Record<string, {type:'settlement'|'city'|'road';color:string}>>({})
+  const boardConfigured                         = Object.keys(savedPieces).length > 0
   const [isLoading, setIsLoading]         = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [lastSuggestions, setLastSuggestions]   = useState<string[]>([])
@@ -180,6 +183,13 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setInput('')
     saveCurrentSession(freshSession)
     setSidebarOpen(false)
+    // Reset coach state completely
+    setSavedPieces({})
+    setCoachMode(false)
+    setCoachStep(null)
+    setShowAnalyzeModal(false)
+    setShowBoard(false)
+    setShowCamera(false)
   }, [])
 
   // ── Cargar conversación del historial ─────────────────────
@@ -337,32 +347,32 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           </p>
         </div>
 
-        {/* Coach mode toggle */}
-        {coachMode ? (
-          /* Back to chat button */
-          <button
-            onClick={() => { setCoachMode(false); setShowAnalyzeModal(false); setShowCamera(false); setShowBoard(false); }}
-            title="Volver al chat"
-            className="flex items-center justify-center w-9 h-9 rounded-xl border border-stone-600 bg-stone-700 hover:border-stone-500 transition-colors shrink-0"
-          >
-            <svg className="w-5 h-5 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-            </svg>
-          </button>
-        ) : (
-          /* Hexagon coach trigger */
-          <button
-            onClick={() => { setCoachMode(true); setShowAnalyzeModal(true); }}
-            title="Coach en partida"
-            className="relative flex items-center justify-center w-9 h-9 rounded-xl border border-stone-600 bg-stone-700 hover:border-amber-600 hover:bg-amber-900/20 transition-colors shrink-0"
-          >
-            <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round"/>
-              <path d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z" fill="rgba(245,158,11,0.25)" stroke="#f59e0b" strokeWidth="1.2" strokeLinejoin="round"/>
-            </svg>
-            <div className="absolute top-[-2px] right-[-2px] w-2 h-2 bg-amber-400 rounded-full border border-stone-800" />
-          </button>
-        )}
+        {/* Hexagon coach button — always visible, behaviour depends on state */}
+        <button
+          onClick={() => {
+            setCoachMode(true)
+            if (boardConfigured) {
+              setShowBoard(true)       // board exists → reopen to update
+            } else {
+              setShowAnalyzeModal(true) // first time → show 2-option modal
+            }
+          }}
+          title="Coach en partida"
+          className={`relative flex items-center justify-center w-9 h-9 rounded-xl border transition-colors shrink-0 ${
+            coachMode
+              ? 'border-amber-500 bg-amber-900/30'
+              : 'border-stone-600 bg-stone-700 hover:border-amber-600 hover:bg-amber-900/20'
+          }`}
+        >
+          <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round"/>
+            <path d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z" fill="rgba(245,158,11,0.25)" stroke="#f59e0b" strokeWidth="1.2" strokeLinejoin="round"/>
+          </svg>
+          {/* Dot: amber = no board yet, green = board active */}
+          <div className={`absolute top-[-2px] right-[-2px] w-2 h-2 rounded-full border border-stone-800 ${
+            boardConfigured ? 'bg-green-400' : 'bg-amber-400'
+          }`} />
+        </button>
       </header>
 
       {/* Body: sidebar + chat */}
@@ -522,18 +532,29 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
       {showBoard && (
         <BoardOverlay
-          onClose={() => { setShowBoard(false); setShowAnalyzeModal(true); }}
+          initialPieces={savedPieces}
+          onClose={() => {
+            setShowBoard(false)
+            // If board was already configured, just close — don't re-trigger the modal
+            if (!boardConfigured) setShowAnalyzeModal(true)
+          }}
           onConfirm={(pieces) => {
             setShowBoard(false)
+            setSavedPieces(pieces)   // persist for future opens
             const count = Object.keys(pieces).length
+            const isUpdate = boardConfigured
             const boardMsg: import('@/src/domain/entities').Message = {
               id: `board-${Date.now()}`, role: 'user',
-              content: `🗺️ Tablero configurado (${count > 0 ? count + ' piezas' : 'vacío'})`,
+              content: isUpdate
+                ? `🗺️ Tablero actualizado (${count} piezas)`
+                : `🗺️ Tablero configurado (${count > 0 ? count + ' piezas' : 'vacío'})`,
               timestamp: Date.now(),
             }
             const replyMsg: import('@/src/domain/entities').Message = {
               id: `board-reply-${Date.now()}`, role: 'assistant',
-              content: 'Tablero recibido. ¿Cuántos recursos tienes ahora?',
+              content: isUpdate
+                ? '✅ Tablero actualizado. ¿Cuántos recursos tienes ahora?'
+                : 'Tablero recibido. ¿Cuántos recursos tienes ahora?',
               timestamp: Date.now(),
             }
             setSession(s => ({ ...s, messages: [...s.messages, boardMsg, replyMsg] }))

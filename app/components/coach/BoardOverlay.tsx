@@ -149,14 +149,15 @@ type Piece = { type: 'settlement' | 'city' | 'road'; color: string }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 interface BoardOverlayProps {
-  onClose:   () => void
-  onConfirm: (pieces: Record<string, Piece>) => void
+  onClose:       () => void
+  onConfirm:     (pieces: Record<string, Piece>) => void
+  initialPieces?: Record<string, Piece>
 }
 
-export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
+export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOverlayProps) {
   const [selColor, setSelColor] = useState('red')
   const [selPiece, setSelPiece] = useState<'settlement' | 'city' | 'road'>('settlement')
-  const [pieces, setPieces]     = useState<Record<string, Piece>>({})
+  const [pieces, setPieces]     = useState<Record<string, Piece>>(initialPieces)
 
   const { vertices, edges } = useMemo(buildGraph, [])
 
