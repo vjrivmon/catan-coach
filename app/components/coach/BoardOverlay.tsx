@@ -292,8 +292,7 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
             const mx = (x1+x2)/2, my = (y1+y2)/2
             return (
               <g key={id}
-                onPointerDown={(e) => { e.stopPropagation(); toggleEdge(id) }}
-                onClick={() => toggleEdge(id)}
+                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleEdge(id) }}
                 style={{ cursor: selPiece === 'road' ? 'pointer' : 'default' }}>
                 {/* Fat rotated rect hit area — iOS Safari compatible */}
                 <rect
@@ -328,8 +327,7 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
             const col = piece ? PLAYER_COLORS[piece.color] : undefined
             return (
               <g key={id}
-                onPointerDown={(e) => { e.stopPropagation(); toggleVertex(id) }}
-                onClick={() => toggleVertex(id)}
+                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleVertex(id) }}
                 style={{ cursor: isClickable ? 'pointer' : 'default' }}>
                 {/* Hit area — rgba(0,0,0,0.001) instead of transparent (iOS Safari fix) */}
                 <circle cx={x} cy={y} r={14} fill="rgba(0,0,0,0.001)" />
