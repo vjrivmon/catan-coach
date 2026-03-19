@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { CoachAnalyzeModal } from './coach/CoachAnalyzeModal'
 import { CameraOverlay } from './coach/CameraOverlay'
 import { BoardOverlay } from './coach/BoardOverlay'
+import { ResourceStepperBubble } from './coach/ResourceStepperBubble'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
 import { VoiceInput } from './VoiceInput'
@@ -78,6 +79,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false)
   const [showCamera, setShowCamera]         = useState(false)
   const [showBoard, setShowBoard]           = useState(false)
+  const [coachStep, setCoachStep]           = useState<null | 'waiting-resources'>(null)
   const [isLoading, setIsLoading]         = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [lastSuggestions, setLastSuggestions]   = useState<string[]>([])
@@ -402,8 +404,49 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 : <TypingIndicator />
             )}
 
-            {!isLoading && lastSuggestions.length > 0 && (
+            {!isLoading && lastSuggestions.length > 0 && coachStep === null && (
               <SuggestionChips suggestions={lastSuggestions} onSelect={sendMessage} />
+            )}
+
+            {/* ── Coach: resource stepper ── */}
+            {coachStep === 'waiting-resources' && !isLoading && (
+              <ResourceStepperBubble
+                onConfirm={async (counts) => {
+                  setCoachStep(null)
+                  const total = Object.values(counts).reduce((a, b) => a + b, 0)
+                  const lines = [
+                    counts.wood    > 0 ? `Madera: ${counts.wood}`   : '',
+                    counts.clay    > 0 ? `Arcilla: ${counts.clay}`  : '',
+                    counts.cereal  > 0 ? `Trigo: ${counts.cereal}`  : '',
+                    counts.wool    > 0 ? `Oveja: ${counts.wool}`    : '',
+                    counts.mineral > 0 ? `Mineral: ${counts.mineral}` : '',
+                  ].filter(Boolean).join(' · ')
+
+                  const userMsg: import('@/src/domain/entities').Message = {
+                    id: `res-${Date.now()}`, role: 'user',
+                    content: `Recursos: ${lines || 'ninguno'}`,
+                    timestamp: Date.now(),
+                  }
+                  setSession(s => ({ ...s, messages: [...s.messages, userMsg] }))
+                  setIsLoading(true)
+                  await new Promise(r => setTimeout(r, 1000))
+
+                  // Recommendation based on resources
+                  let rec = ''
+                  if (counts.wood >= 1 && counts.clay >= 1) rec = '🛤️ **Construye un camino** hacia la zona de puertos del norte — tienes los recursos para expandirte.'
+                  else if (counts.cereal >= 2 && counts.mineral >= 3) rec = '🏙️ **Mejora tu pueblo a ciudad** en el hex 11 (cereal) — máxima producción con tu stock actual.'
+                  else if (counts.wood >= 1 && counts.clay >= 1 && counts.cereal >= 1 && counts.wool >= 1) rec = '🏠 **Construye un pueblo** en el vértice entre cereal(11) y mineral(8) — intersección óptima según el GeneticAgent.'
+                  else rec = `Con ${total} recurso${total !== 1 ? 's' : ''} conviene esperar al siguiente turno y acumular antes de construir.`
+
+                  const botMsg: import('@/src/domain/entities').Message = {
+                    id: `rec-${Date.now()}`, role: 'assistant',
+                    content: rec,
+                    timestamp: Date.now(),
+                  }
+                  setSession(s => ({ ...s, messages: [...s.messages, botMsg] }))
+                  setIsLoading(false)
+                }}
+              />
             )}
 
             <div ref={messagesEndRef} />
@@ -467,11 +510,12 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             await new Promise(r => setTimeout(r, 1200))
             const analysisMsg: import('@/src/domain/entities').Message = {
               id: `analysis-${Date.now()}`, role: 'assistant',
-              content: '✅ He detectado: **Arcilla(11), Mineral(12, 10, 3), Madera(9, 11, 8), Trigo(4, 5, 8), Oveja(6, 3, 5)**. Puerto 2:1 Mineral al este, 3:1 ×3.\n\nIndícame ahora tus recursos actuales y te doy la mejor jugada.',
+              content: '✅ He detectado el tablero. ¿Cuántos recursos tienes ahora?',
               timestamp: Date.now(),
             }
             setSession(s => ({ ...s, messages: [...s.messages, analysisMsg] }))
             setIsLoading(false)
+            setCoachStep('waiting-resources')
           }}
         />
       )}
@@ -484,15 +528,16 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             const count = Object.keys(pieces).length
             const boardMsg: import('@/src/domain/entities').Message = {
               id: `board-${Date.now()}`, role: 'user',
-              content: `🗺️ Tablero configurado (${count} piezas)`,
+              content: `🗺️ Tablero configurado (${count > 0 ? count + ' piezas' : 'vacío'})`,
               timestamp: Date.now(),
             }
             const replyMsg: import('@/src/domain/entities').Message = {
               id: `board-reply-${Date.now()}`, role: 'assistant',
-              content: 'Tablero recibido. Ahora indícame tus recursos actuales y te doy la mejor jugada.',
+              content: 'Tablero recibido. ¿Cuántos recursos tienes ahora?',
               timestamp: Date.now(),
             }
             setSession(s => ({ ...s, messages: [...s.messages, boardMsg, replyMsg] }))
+            setCoachStep('waiting-resources')
           }}
         />
       )}
