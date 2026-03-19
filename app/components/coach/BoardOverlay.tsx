@@ -9,7 +9,7 @@ const ROW_H = 1.5 * R        // vertical dist between row centers = 60
 
 // SVG canvas
 const SVG_W = 390
-const PAD_TOP = 78    // space for port badges at top + offset
+const PAD_TOP = 50    // space for ports (computed geometrically, minimal margin needed)
 
 // Board rows: [hexCount, xStart column offset]
 // even rows align at 0, 1, 2...  odd rows offset by 0.5
@@ -253,11 +253,11 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
       </div>
 
       {/* SVG Board */}
-      <div className="flex-1 overflow-auto" style={{ background: '#1a2f5a' }}>
+      <div className="flex-1 flex justify-center items-center overflow-hidden" style={{ background: '#0f1f40' }}>
         <svg
-          width="100%"
-          viewBox={`-22 -8 ${SVG_W + 44} ${svgH + 16}`}
-          style={{ display: 'block', maxWidth: '100%' }}
+          viewBox={`-22 -14 ${SVG_W + 44} ${svgH + 28}`}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ display: 'block', width: '100%', height: '100%', maxWidth: 420 }}
         >
           <defs>
             {/* Water/background pattern */}
@@ -273,9 +273,6 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
               </clipPath>
             ))}
           </defs>
-
-          {/* Background */}
-          <rect width={SVG_W} height={svgH} fill="url(#bgGrad)" />
 
           {/* ── Hexes ── */}
           {HEX_CENTERS.map(([cx, cy], i) => {
