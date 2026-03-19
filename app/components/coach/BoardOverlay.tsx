@@ -284,27 +284,25 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
           {/* ── Roads (edges) ── */}
           {edges.map(({ id, x1, y1, x2, y2 }) => {
             const piece = pieces[`e${id}`]
-            const mx = (x1 + x2) / 2, my = (y1 + y2) / 2
-            const dx = x2 - x1, dy = y2 - y1
-            const len = Math.sqrt(dx * dx + dy * dy)
-
             return (
               <g key={id} onClick={() => toggleEdge(id)} style={{ cursor: selPiece === 'road' ? 'pointer' : 'default' }}>
-                {/* Hit area */}
+                {/* Invisible hit area — always present for tap */}
                 <line x1={x1} y1={y1} x2={x2} y2={y2}
-                  stroke="transparent" strokeWidth={18} />
-                {/* Visual road */}
-                {piece ? (
+                  stroke="transparent" strokeWidth={20} />
+                {/* Hover hint when in road mode & no piece */}
+                {!piece && selPiece === 'road' && (
                   <line x1={x1} y1={y1} x2={x2} y2={y2}
-                    stroke={PLAYER_COLORS[piece.color]}
-                    strokeWidth={6} strokeLinecap="round"
-                    opacity={0.95}
-                  />
-                ) : (
-                  <line x1={x1} y1={y1} x2={x2} y2={y2}
-                    stroke="rgba(255,255,255,0.12)" strokeWidth={2}
-                    strokeDasharray="4,4"
-                  />
+                    stroke="rgba(245,158,11,0.25)" strokeWidth={4} strokeLinecap="round"/>
+                )}
+                {/* Placed road */}
+                {piece && (
+                  <>
+                    <line x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke="rgba(0,0,0,0.5)" strokeWidth={8} strokeLinecap="round"/>
+                    <line x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke={PLAYER_COLORS[piece.color]}
+                      strokeWidth={6} strokeLinecap="round"/>
+                  </>
                 )}
               </g>
             )
@@ -314,46 +312,60 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
           {vertices.map(({ id, x, y }) => {
             const piece = pieces[`v${id}`]
             const isClickable = selPiece !== 'road'
+            const col = piece ? PLAYER_COLORS[piece.color] : undefined
             return (
               <g key={id} onClick={() => toggleVertex(id)}
                 style={{ cursor: isClickable ? 'pointer' : 'default' }}>
                 {/* Hit area */}
-                <circle cx={x} cy={y} r={12} fill="transparent" />
+                <circle cx={x} cy={y} r={14} fill="transparent" />
 
-                {piece ? (
-                  piece.type === 'settlement' ? (
-                    /* Settlement: circle with border */
-                    <>
-                      <circle cx={x} cy={y} r={8}
-                        fill={PLAYER_COLORS[piece.color]}
-                        stroke="white" strokeWidth={1.5}
-                      />
-                      <polygon
-                        points={`${x},${y - 8} ${x - 5},${y - 3} ${x + 5},${y - 3}`}
-                        fill={PLAYER_COLORS[piece.color]}
-                        stroke="white" strokeWidth={1}
-                      />
-                    </>
-                  ) : (
-                    /* City: rounded square */
-                    <>
-                      <rect x={x - 9} y={y - 9} width={18} height={18} rx={3}
-                        fill={PLAYER_COLORS[piece.color]}
-                        stroke="white" strokeWidth={1.5}
-                      />
-                      <rect x={x - 9} y={y - 15} width={10} height={8} rx={2}
-                        fill={PLAYER_COLORS[piece.color]}
-                        stroke="white" strokeWidth={1}
-                      />
-                    </>
-                  )
-                ) : (
-                  /* Empty vertex dot */
-                  <circle cx={x} cy={y} r={4}
-                    fill="rgba(255,255,255,0.2)"
-                    stroke="rgba(255,255,255,0.4)"
-                    strokeWidth={1}
+                {/* Hover hint when in build mode & no piece */}
+                {!piece && selPiece !== 'road' && (
+                  <circle cx={x} cy={y} r={5}
+                    fill="rgba(245,158,11,0.3)"
+                    stroke="rgba(245,158,11,0.6)" strokeWidth={1}
                   />
+                )}
+
+                {piece?.type === 'settlement' && col && (
+                  /* House shape: base rect + triangle roof */
+                  <g>
+                    {/* Shadow */}
+                    <rect x={x - 7} y={y - 4} width={14} height={10} rx={1.5}
+                      fill="rgba(0,0,0,0.5)"/>
+                    {/* Body */}
+                    <rect x={x - 7} y={y - 4} width={14} height={10} rx={1.5}
+                      fill={col} stroke="white" strokeWidth={1.5}/>
+                    {/* Roof */}
+                    <polygon points={`${x},${y - 13} ${x - 9},${y - 4} ${x + 9},${y - 4}`}
+                      fill={col} stroke="white" strokeWidth={1.5} strokeLinejoin="round"/>
+                    {/* Door */}
+                    <rect x={x - 2} y={y + 1} width={4} height={5} rx={1}
+                      fill="rgba(0,0,0,0.4)"/>
+                  </g>
+                )}
+
+                {piece?.type === 'city' && col && (
+                  /* City: two buildings */
+                  <g>
+                    {/* Shadow */}
+                    <rect x={x - 10} y={y - 10} width={20} height={14} rx={1.5}
+                      fill="rgba(0,0,0,0.5)"/>
+                    {/* Main building */}
+                    <rect x={x - 10} y={y - 10} width={20} height={14} rx={1.5}
+                      fill={col} stroke="white" strokeWidth={1.5}/>
+                    {/* Tower left */}
+                    <rect x={x - 10} y={y - 18} width={8} height={10} rx={1}
+                      fill={col} stroke="white" strokeWidth={1.5}/>
+                    {/* Tower right */}
+                    <rect x={x + 2} y={y - 15} width={8} height={7} rx={1}
+                      fill={col} stroke="white" strokeWidth={1.2}/>
+                    {/* Merlons left tower */}
+                    <rect x={x - 10} y={y - 21} width={3} height={4} rx={0.5}
+                      fill={col} stroke="white" strokeWidth={1}/>
+                    <rect x={x - 5} y={y - 21} width={3} height={4} rx={0.5}
+                      fill={col} stroke="white" strokeWidth={1}/>
+                  </g>
                 )}
               </g>
             )
