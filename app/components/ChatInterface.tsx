@@ -366,9 +366,20 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         </div>
         <div className="flex flex-col justify-center flex-1">
           <h1 className="text-amber-400 font-semibold text-base leading-tight">Catan Coach</h1>
-          <p className="text-stone-400 text-xs leading-tight">
-            {coachMode ? 'Modo Coach en partida' : 'Tu asistente de Catán'}
-          </p>
+          {coachMode ? (
+            <span className="inline-flex items-center gap-1 self-start mt-0.5
+              bg-amber-900/50 border border-amber-600/60 rounded-full
+              px-2 py-0.5 text-xs text-amber-300 font-medium leading-none">
+              Coach activo
+              <button
+                onClick={() => setCoachMode(false)}
+                className="ml-0.5 text-amber-400 hover:text-white transition-colors leading-none"
+                title="Salir del modo Coach"
+              >×</button>
+            </span>
+          ) : (
+            <p className="text-stone-400 text-xs leading-tight">Tu asistente de Catán</p>
+          )}
         </div>
 
         {/* Hexagon coach button — always visible, behaviour depends on state */}
