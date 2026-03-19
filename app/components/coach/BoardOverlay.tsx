@@ -322,8 +322,8 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
         </div>
       )}
 
-      {/* Piece selector */}
-      <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex gap-2 shrink-0">
+      {/* Piece selector + Board — only shown once colors confirmed */}
+      {colorsConfirmed && <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex gap-2 shrink-0">
         {(['settlement','city','road'] as const).map(p => (
           <button key={p} onClick={() => setSelPiece(p)}
             className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
@@ -334,10 +334,10 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
             {p === 'settlement' ? 'Pueblo' : p === 'city' ? 'Ciudad' : 'Camino'}
           </button>
         ))}
-      </div>
+      </div>}
 
-      {/* SVG Board */}
-      <div className="flex-1 flex justify-center items-center overflow-hidden" style={{ background: '#0f1f40' }}>
+      {/* SVG Board — locked until colors confirmed */}
+      {colorsConfirmed && <div className="flex-1 flex justify-center items-center overflow-hidden" style={{ background: '#0f1f40' }}>
         <svg
           viewBox={`-22 -14 ${SVG_W + 44} ${svgH + 28}`}
           preserveAspectRatio="xMidYMid meet"
@@ -540,10 +540,10 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
             )
           })}
         </svg>
-      </div>
+      </div>}
 
-      {/* Bottom bar */}
-      <div className="bg-stone-800 border-t border-stone-700 px-4 py-3 flex gap-3 shrink-0">
+      {/* Bottom bar — only shown once colors confirmed */}
+      {colorsConfirmed && <div className="bg-stone-800 border-t border-stone-700 px-4 py-3 flex gap-3 shrink-0">
         <button onClick={() => setPieces({})}
           className="flex-1 py-2.5 rounded-xl border border-stone-600 bg-stone-700 text-stone-200 text-sm font-semibold">
           Limpiar
@@ -552,7 +552,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
           className="flex-[2] py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors">
           Confirmar tablero{pieceCount > 0 ? ` (${pieceCount})` : ''} →
         </button>
-      </div>
+      </div>}
     </div>
   )
 }
