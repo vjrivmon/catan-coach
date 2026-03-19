@@ -166,7 +166,13 @@ interface BoardOverlayProps {
 }
 
 export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOverlayProps) {
-  const [selColor, setSelColor] = useState('red')
+  const [myColor, setMyColor]   = useState<string | null>(
+    // If there are already pieces (reopening mid-game), infer myColor from pieces
+    Object.values(initialPieces).length > 0
+      ? Object.values(initialPieces)[0].color
+      : null
+  )
+  const [selColor, setSelColor] = useState(myColor ?? 'red')
   const [selPiece, setSelPiece] = useState<'settlement' | 'city' | 'road'>('settlement')
   const [pieces, setPieces]     = useState<Record<string, Piece>>(initialPieces)
 
@@ -223,20 +229,47 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
         </div>
       </div>
 
-      {/* Player selector */}
-      <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
-        <span className="text-stone-500 text-xs shrink-0">Jugador:</span>
-        {(['red','blue','orange','white'] as const).map((c, i) => (
-          <button key={c} onClick={() => setSelColor(c)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold shrink-0 transition-all ${
-              selColor === c ? 'bg-current/10' : 'border-stone-600 text-stone-400'
-            }`}
-            style={selColor === c ? { color: PLAYER_COLORS[c], borderColor: PLAYER_COLORS[c] } : {}}>
-            <div className="w-2 h-2 rounded-full" style={{ background: PLAYER_COLORS[c] }} />
-            {['Tú','J2','J3','J4'][i]}
+      {/* Color picker (first open) or Player selector */}
+      {myColor === null ? (
+        /* Step 0: choose own color */
+        <div className="bg-stone-800 border-b border-stone-700 px-3 py-2.5 flex items-center gap-3 shrink-0">
+          <span className="text-stone-300 text-xs font-medium shrink-0">¿Tu color?</span>
+          <div className="flex gap-2">
+            {(['red','blue','orange','white'] as const).map(c => (
+              <button key={c}
+                onClick={() => { setMyColor(c); setSelColor(c) }}
+                className="w-8 h-8 rounded-full border-2 border-stone-600 hover:scale-110 transition-transform active:scale-95"
+                style={{ background: PLAYER_COLORS[c] }}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* Player selector once color chosen */
+        <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
+          <span className="text-stone-500 text-xs shrink-0">Jugador:</span>
+          {(['red','blue','orange','white'] as const).map(c => {
+            const isMe = c === myColor
+            const others = (['red','blue','orange','white'] as const).filter(x => x !== myColor)
+            const label = isMe ? 'Tú' : `J${others.indexOf(c) + 2}`
+            return (
+              <button key={c} onClick={() => setSelColor(c)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold shrink-0 transition-all ${
+                  selColor === c ? 'bg-current/10' : 'border-stone-600 text-stone-400'
+                }`}
+                style={selColor === c ? { color: PLAYER_COLORS[c], borderColor: PLAYER_COLORS[c] } : {}}>
+                <div className="w-2 h-2 rounded-full" style={{ background: PLAYER_COLORS[c] }} />
+                {label}
+              </button>
+            )
+          })}
+          {/* Allow changing own color */}
+          <button onClick={() => setMyColor(null)}
+            className="ml-auto text-stone-600 hover:text-stone-400 text-xs shrink-0">
+            cambiar
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Piece selector */}
       <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex gap-2 shrink-0">
