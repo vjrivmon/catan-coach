@@ -319,28 +319,20 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
           {/* ── Ports ── */}
           {PORTS.map((port, i) => {
             const isGeneric = port.type === '3:1'
-            const bg = isGeneric ? '#1e3a6e' : (TERRAIN_COLOR[port.type] ?? '#374151')
-            const PR = 22  // port badge radius
-            // Hexagonal badge (flat-top mini-hex)
-            const pv = [0,60,120,180,240,300].map(a => {
-              const rad = a * Math.PI / 180
-              return `${(port.x + PR * Math.cos(rad)).toFixed(1)},${(port.y + PR * Math.sin(rad)).toFixed(1)}`
-            }).join(' ')
+            const emoji = port.type === 'mineral' ? '⛏' : port.type === 'clay' ? '🧱' :
+                          port.type === 'cereal'  ? '🌾' : port.type === 'wool' ? '🐑' :
+                          port.type === 'wood'    ? '🪵' : '🔄'
+            const ratio = isGeneric ? '3:1' : '2:1'
+            // Small pill: semi-transparent dark background, emoji + ratio
+            const pw = 34, ph = 18
             return (
               <g key={i}>
-                <polygon points={pv} fill={bg} stroke="rgba(255,255,255,0.6)" strokeWidth={1.5}/>
-                {/* Resource label */}
-                <text x={port.x} y={port.y - 4} textAnchor="middle" fontSize={10} fill="white"
-                  fontWeight="bold" style={{ userSelect: 'none' }}>
-                  {isGeneric ? '3:1' : '2:1'}
-                </text>
-                {/* Resource emoji */}
-                <text x={port.x} y={port.y + 9} textAnchor="middle" fontSize={10}
-                  style={{ userSelect: 'none' }}>
-                  {port.type === 'mineral' ? '⛏' : port.type === 'clay' ? '🧱' :
-                   port.type === 'cereal'  ? '🌾' : port.type === 'wool' ? '🐑' :
-                   port.type === 'wood'    ? '🪵' : '⚖'}
-                </text>
+                <rect x={port.x - pw/2} y={port.y - ph/2} width={pw} height={ph} rx={5}
+                  fill="rgba(15,23,42,0.82)" stroke="rgba(255,255,255,0.3)" strokeWidth={1}/>
+                <text x={port.x - 6} y={port.y + 5} textAnchor="middle" fontSize={10}
+                  style={{ userSelect: 'none' }}>{emoji}</text>
+                <text x={port.x + 10} y={port.y + 5} textAnchor="middle" fontSize={9}
+                  fill="white" fontWeight="bold" style={{ userSelect: 'none' }}>{ratio}</text>
               </g>
             )
           })}
