@@ -1,97 +1,171 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import './board.css'
+import { useState, useMemo, useCallback } from 'react'
 
-const PLAYER_COLORS: Record<string, string> = {
-  red: '#ef4444', blue: '#3b82f6', orange: '#f97316', white: '#d1d5db'
+// ─── Geometry ──────────────────────────────────────────────────────────────────
+const R = 40          // hex radius (center → vertex)
+const W = Math.sqrt(3) * R   // hex width  ≈ 69.28
+const ROW_H = 1.5 * R        // vertical dist between row centers = 60
+
+// SVG canvas
+const SVG_W = 390
+const PAD_TOP = 55    // space for water top + offset
+
+// Board rows: [hexCount, xStart column offset]
+// even rows align at 0, 1, 2...  odd rows offset by 0.5
+//   row  count  col-start
+const ROWS = [
+  { n: 3, colStart: 1 },   // row 0 - 3 hexes, starting at column 1
+  { n: 4, colStart: 0.5 }, // row 1
+  { n: 5, colStart: 0 },   // row 2 (widest)
+  { n: 4, colStart: 0.5 }, // row 3
+  { n: 3, colStart: 1 },   // row 4
+]
+
+// Center x of column 0 for widest row (5 hexes)
+// total width of 5 hexes = 5*W, centered in SVG_W
+const X0 = (SVG_W - 5 * W) / 2 + W / 2   // ≈ 56.44
+
+function hexCenter(row: number, col: number): [number, number] {
+  const { colStart } = ROWS[row]
+  const cx = X0 + (colStart + col) * W
+  const cy = PAD_TOP + row * ROW_H
+  return [cx, cy]
 }
 
-// From PyCatan/Visualizer/JS/general.js nodeCoordinates
-const NODE_COORDS = [
-  {top:'97px',left:'184px'},{top:'75px',left:'232px'},{top:'97px',left:'282px'},
-  {top:'75px',left:'330px'},{top:'97px',left:'379px'},{top:'75px',left:'428px'},
-  {top:'97px',left:'477px'},{top:'184px',left:'138px'},{top:'157px',left:'184px'},
-  {top:'184px',left:'234px'},{top:'157px',left:'282px'},{top:'184px',left:'334px'},
-  {top:'157px',left:'379px'},{top:'184px',left:'432px'},{top:'157px',left:'477px'},
-  {top:'184px',left:'530px'},{top:'270px',left:'86px'},{top:'247px',left:'138px'},
-  {top:'270px',left:'184px'},{top:'247px',left:'232px'},{top:'270px',left:'282px'},
-  {top:'247px',left:'330px'},{top:'270px',left:'379px'},{top:'247px',left:'428px'},
-  {top:'270px',left:'477px'},{top:'247px',left:'530px'},{top:'270px',left:'578px'},
-  {top:'330px',left:'86px'},{top:'355px',left:'138px'},{top:'330px',left:'184px'},
-  {top:'355px',left:'234px'},{top:'330px',left:'282px'},{top:'355px',left:'334px'},
-  {top:'330px',left:'379px'},{top:'355px',left:'432px'},{top:'330px',left:'477px'},
-  {top:'355px',left:'530px'},{top:'330px',left:'578px'},{top:'419px',left:'138px'},
-  {top:'442px',left:'184px'},{top:'419px',left:'232px'},{top:'442px',left:'282px'},
-  {top:'419px',left:'330px'},{top:'442px',left:'379px'},{top:'419px',left:'428px'},
-  {top:'442px',left:'477px'},{top:'419px',left:'530px'},{top:'502px',left:'184px'},
-  {top:'529px',left:'234px'},{top:'502px',left:'282px'},{top:'529px',left:'334px'},
-  {top:'502px',left:'379px'},{top:'529px',left:'432px'},{top:'502px',left:'477px'},
-]
+// All 19 hex centers in board order
+const HEX_CENTERS: [number, number][] = []
+for (let r = 0; r < ROWS.length; r++) {
+  for (let c = 0; c < ROWS[r].n; c++) {
+    HEX_CENTERS.push(hexCenter(r, c))
+  }
+}
 
-// Terrain from game_0.json
-const TERRAIN_DATA = [
-  {id:0,type:'clay',prob:11},{id:1,type:'mineral',prob:12},{id:2,type:'wood',prob:9},
-  {id:3,type:'cereal',prob:4},{id:4,type:'wool',prob:6},{id:5,type:'cereal',prob:5},
-  {id:6,type:'mineral',prob:10},{id:7,type:'desert',prob:0},{id:8,type:'clay',prob:3},
-  {id:9,type:'wood',prob:11},{id:10,type:'clay',prob:4},{id:11,type:'wood',prob:8},
-  {id:12,type:'cereal',prob:8},{id:13,type:'mineral',prob:10},{id:14,type:'mineral',prob:9},
-  {id:15,type:'wool',prob:3},{id:16,type:'wool',prob:5},{id:17,type:'wood',prob:2},
-  {id:18,type:'clay',prob:6},
-]
+// Pointy-top hex vertices (angles: 30,90,150,210,270,330°)
+const ANGLES = [30, 90, 150, 210, 270, 330].map(d => (d * Math.PI) / 180)
+function hexVertices(cx: number, cy: number): [number, number][] {
+  return ANGLES.map(a => [cx + R * Math.cos(a), cy + R * Math.sin(a)] as [number, number])
+}
+function polyPoints(verts: [number, number][]): string {
+  return verts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+}
 
-const CSS_CLASS: Record<string, string> = {
-  wood:'terrain_wood', wool:'terrain_wool', cereal:'terrain_cereal',
-  clay:'terrain_clay', mineral:'terrain_mineral', desert:'terrain_desert',
+// ─── Board data (from game_0.json) ────────────────────────────────────────────
+const TERRAIN_ORDER = [
+  'clay','mineral','wood',
+  'cereal','wool','cereal','mineral',
+  'desert','clay','wood','clay','wood',
+  'cereal','mineral','mineral','wool',
+  'wool','wood','clay',
+] as const
+
+type TerrainType = typeof TERRAIN_ORDER[number]
+
+const NUMBERS = [11,12,9, 4,6,5,10, 0,3,11,4,8, 8,10,9,3, 5,2,6]
+
+const TEXTURE: Record<TerrainType, string> = {
+  clay:    '/board-textures/quarry.jpg',
+  mineral: '/board-textures/mountain.jpg',
+  wood:    '/board-textures/forest.jpg',
+  cereal:  '/board-textures/cereal.jpg',
+  wool:    '/board-textures/wool.jpg',
+  desert:  '/board-textures/desert.jpg',
+}
+
+// ─── Vertex / Edge deduplication ──────────────────────────────────────────────
+function approxKey(x: number, y: number) {
+  return `${Math.round(x)},${Math.round(y)}`
+}
+
+type Vertex = { id: number; x: number; y: number }
+type Edge   = { id: string; x1: number; y1: number; x2: number; y2: number }
+
+function buildGraph() {
+  const vertMap = new Map<string, Vertex>()
+  const edgeMap = new Map<string, Edge>()
+  let vId = 0
+
+  for (const [cx, cy] of HEX_CENTERS) {
+    const verts = hexVertices(cx, cy)
+    const vIds: number[] = []
+
+    for (const [vx, vy] of verts) {
+      const k = approxKey(vx, vy)
+      if (!vertMap.has(k)) vertMap.set(k, { id: vId++, x: vx, y: vy })
+      vIds.push(vertMap.get(k)!.id)
+    }
+
+    // 6 edges per hex
+    for (let i = 0; i < 6; i++) {
+      const a = vIds[i], b = vIds[(i + 1) % 6]
+      const [lo, hi] = a < b ? [a, b] : [b, a]
+      const ek = `${lo}_${hi}`
+      if (!edgeMap.has(ek)) {
+        const va = [...vertMap.values()].find(v => v.id === lo)!
+        const vb = [...vertMap.values()].find(v => v.id === hi)!
+        edgeMap.set(ek, { id: ek, x1: va.x, y1: va.y, x2: vb.x, y2: vb.y })
+      }
+    }
+  }
+
+  return {
+    vertices: [...vertMap.values()],
+    edges:    [...edgeMap.values()],
+  }
+}
+
+// ─── Colors ───────────────────────────────────────────────────────────────────
+const PLAYER_COLORS: Record<string, string> = {
+  red: '#ef4444', blue: '#3b82f6', orange: '#f97316', white: '#e5e7eb',
 }
 
 type Piece = { type: 'settlement' | 'city' | 'road'; color: string }
 
+// ─── Component ────────────────────────────────────────────────────────────────
 interface BoardOverlayProps {
-  onClose: () => void
+  onClose:   () => void
   onConfirm: (pieces: Record<string, Piece>) => void
 }
 
 export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
-  const [selColor, setSelColor] = useState<string>('red')
+  const [selColor, setSelColor] = useState('red')
   const [selPiece, setSelPiece] = useState<'settlement' | 'city' | 'road'>('settlement')
-  const [pieces, setPieces] = useState<Record<string, Piece>>({})
+  const [pieces, setPieces]     = useState<Record<string, Piece>>({})
 
-  // Set --s CSS variable on mount for mobile sizing
-  useEffect(() => {
-    const el = document.getElementById('catan-gamefield')
-    if (el) el.style.setProperty('--s', '52px')
-  }, [])
+  const { vertices, edges } = useMemo(buildGraph, [])
 
-  function clickNode(id: number) {
+  const toggleVertex = useCallback((id: number) => {
     if (selPiece === 'road') return
-    const k = `node_${id}`
+    const k = `v${id}`
     setPieces(p => {
-      const next = { ...p }
-      if (next[k]) delete next[k]
-      else next[k] = { type: selPiece, color: selColor }
-      return next
+      const n = { ...p }
+      if (n[k]?.color === selColor && n[k]?.type === selPiece) delete n[k]
+      else n[k] = { type: selPiece, color: selColor }
+      return n
     })
-  }
+  }, [selPiece, selColor])
 
-  function clickRoad(roadId: string) {
+  const toggleEdge = useCallback((id: string) => {
     if (selPiece !== 'road') return
+    const k = `e${id}`
     setPieces(p => {
-      const next = { ...p }
-      if (next[roadId]) delete next[roadId]
-      else next[roadId] = { type: 'road', color: selColor }
-      return next
+      const n = { ...p }
+      if (n[k]?.color === selColor) delete n[k]
+      else n[k] = { type: 'road', color: selColor }
+      return n
     })
-  }
+  }, [selColor])
 
   const pieceCount = Object.keys(pieces).length
+  const svgH = PAD_TOP + 4 * ROW_H + R + 30  // ≈ 355
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-stone-900">
+
       {/* Header */}
       <div className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0">
         <button onClick={onClose}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:bg-stone-700 transition-colors">
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:bg-stone-700">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
@@ -103,15 +177,14 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
       </div>
 
       {/* Player selector */}
-      <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 flex-shrink-0 overflow-x-auto">
-        <span className="text-stone-500 text-xs flex-shrink-0">Jugador:</span>
+      <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
+        <span className="text-stone-500 text-xs shrink-0">Jugador:</span>
         {(['red','blue','orange','white'] as const).map((c, i) => (
           <button key={c} onClick={() => setSelColor(c)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold flex-shrink-0 transition-all ${
-              selColor === c ? 'border-current bg-current/10' : 'border-stone-600 text-stone-400'
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold shrink-0 transition-all ${
+              selColor === c ? 'bg-current/10' : 'border-stone-600 text-stone-400'
             }`}
-            style={{ color: selColor === c ? PLAYER_COLORS[c] : undefined,
-                     borderColor: selColor === c ? PLAYER_COLORS[c] : undefined }}>
+            style={selColor === c ? { color: PLAYER_COLORS[c], borderColor: PLAYER_COLORS[c] } : {}}>
             <div className="w-2 h-2 rounded-full" style={{ background: PLAYER_COLORS[c] }} />
             {['Tú','J2','J3','J4'][i]}
           </button>
@@ -119,218 +192,184 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
       </div>
 
       {/* Piece selector */}
-      <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 flex-shrink-0">
-        {([
-          { key: 'settlement', label: 'Pueblo' },
-          { key: 'city',       label: 'Ciudad' },
-          { key: 'road',       label: 'Camino' },
-        ] as const).map(({ key, label }) => (
-          <button key={key} onClick={() => setSelPiece(key)}
+      <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex gap-2 shrink-0">
+        {(['settlement','city','road'] as const).map(p => (
+          <button key={p} onClick={() => setSelPiece(p)}
             className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
-              selPiece === key
+              selPiece === p
                 ? 'border-amber-500 text-amber-400 bg-amber-500/10'
                 : 'border-stone-600 text-stone-400 bg-stone-700'
             }`}>
-            {label}
+            {p === 'settlement' ? 'Pueblo' : p === 'city' ? 'Ciudad' : 'Camino'}
           </button>
         ))}
       </div>
 
-      {/* Board */}
-      <div className="flex-1 overflow-auto flex items-center justify-center"
-        style={{ background: '#1a2744' }}>
-        <div id="catan-gamefield" className="gamefield" style={{ '--s': '52px' } as React.CSSProperties}>
+      {/* SVG Board */}
+      <div className="flex-1 overflow-auto" style={{ background: '#1a2f5a' }}>
+        <svg
+          width="100%"
+          viewBox={`0 0 ${SVG_W} ${svgH}`}
+          style={{ display: 'block', maxWidth: '100%' }}
+        >
+          <defs>
+            {/* Water/background pattern */}
+            <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#1e3a6e" />
+              <stop offset="100%" stopColor="#0f1f40" />
+            </radialGradient>
 
-          {/* Nodes layer */}
-          <div className="nodes" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10 }}>
-            {NODE_COORDS.map((c, i) => {
-              const piece = pieces[`node_${i}`]
-              const col = piece ? PLAYER_COLORS[piece.color] : undefined
-              return (
-                <div key={i} id={`node_${i}`}
-                  className="node filler_node"
-                  style={{
-                    top: c.top, left: c.left,
-                    cursor: selPiece !== 'road' ? 'pointer' : 'default',
-                    background: col || undefined,
-                    borderRadius: piece?.type === 'city' ? '3px' : '50%',
-                    transform: piece ? 'scale(1.3)' : undefined,
-                    zIndex: piece ? 5 : undefined,
-                  }}
-                  onClick={() => clickNode(i)}
+            {/* Hex clip paths */}
+            {HEX_CENTERS.map(([cx, cy], i) => (
+              <clipPath key={i} id={`hclip${i}`}>
+                <polygon points={polyPoints(hexVertices(cx, cy))} />
+              </clipPath>
+            ))}
+          </defs>
+
+          {/* Background */}
+          <rect width={SVG_W} height={svgH} fill="url(#bgGrad)" />
+
+          {/* ── Hexes ── */}
+          {HEX_CENTERS.map(([cx, cy], i) => {
+            const terrain = TERRAIN_ORDER[i] as TerrainType
+            const num     = NUMBERS[i]
+            const verts   = hexVertices(cx, cy)
+            const pts     = polyPoints(verts)
+            const imgUrl  = TEXTURE[terrain]
+
+            return (
+              <g key={i}>
+                {/* Texture fill via image + clipPath */}
+                <image
+                  href={imgUrl}
+                  x={cx - W / 2} y={cy - R}
+                  width={W} height={2 * R}
+                  clipPath={`url(#hclip${i})`}
+                  preserveAspectRatio="xMidYMid slice"
                 />
-              )
-            })}
-          </div>
+                {/* Hex border */}
+                <polygon points={pts} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth={1} />
 
-          {/* Roads */}
-          <div className="roads" id="roads-layer">
-            {[
-              ['road_0_1','first_row third_col left_road'],
-              ['road_1_2','first_row fourth_col right_road'],
-              ['road_2_3','first_row fifth_col left_road'],
-              ['road_3_4','first_row sixth_col right_road'],
-              ['road_4_5','first_row seventh_col left_road'],
-              ['road_5_6','first_row eighth_col right_road'],
-              ['road_0_8','vertical_road vertical_first_row vertical_third_col'],
-              ['road_2_10','vertical_road vertical_first_row vertical_fifth_col'],
-              ['road_4_12','vertical_road vertical_first_row vertical_seventh_col'],
-              ['road_6_14','vertical_road vertical_first_row vertical_ninth_col'],
-              ['road_7_8','second_row second_col left_road'],
-              ['road_8_9','second_row third_col right_road'],
-              ['road_9_10','second_row fourth_col left_road'],
-              ['road_10_11','second_row fifth_col right_road'],
-              ['road_11_12','second_row sixth_col left_road'],
-              ['road_12_13','second_row seventh_col right_road'],
-              ['road_13_14','second_row eighth_col left_road'],
-              ['road_14_15','second_row ninth_col right_road'],
-              ['road_7_17','vertical_road vertical_second_row vertical_second_col'],
-              ['road_9_19','vertical_road vertical_second_row vertical_fourth_col'],
-              ['road_11_21','vertical_road vertical_second_row vertical_sixth_col'],
-              ['road_13_23','vertical_road vertical_second_row vertical_eighth_col'],
-              ['road_15_25','vertical_road vertical_second_row vertical_tenth_col'],
-              ['road_16_17','third_row first_col left_road'],
-              ['road_17_18','third_row second_col right_road'],
-              ['road_18_19','third_row third_col left_road'],
-              ['road_19_20','third_row fourth_col right_road'],
-              ['road_20_21','third_row fifth_col left_road'],
-              ['road_21_22','third_row sixth_col right_road'],
-              ['road_22_23','third_row seventh_col left_road'],
-              ['road_23_24','third_row eighth_col right_road'],
-              ['road_24_25','third_row ninth_col left_road'],
-              ['road_25_26','third_row tenth_col right_road'],
-              ['road_16_27','vertical_road vertical_third_row vertical_first_col'],
-              ['road_18_29','vertical_road vertical_third_row vertical_third_col'],
-              ['road_20_31','vertical_road vertical_third_row vertical_fifth_col'],
-              ['road_22_33','vertical_road vertical_third_row vertical_seventh_col'],
-              ['road_24_35','vertical_road vertical_third_row vertical_ninth_col'],
-              ['road_26_37','vertical_road vertical_third_row vertical_eleventh_col'],
-              ['road_27_28','fourth_row first_col right_road'],
-              ['road_28_29','fourth_row second_col left_road'],
-              ['road_29_30','fourth_row third_col right_road'],
-              ['road_30_31','fourth_row fourth_col left_road'],
-              ['road_31_32','fourth_row fifth_col right_road'],
-              ['road_32_33','fourth_row sixth_col left_road'],
-              ['road_33_34','fourth_row seventh_col right_road'],
-              ['road_34_35','fourth_row eighth_col left_road'],
-              ['road_35_36','fourth_row ninth_col right_road'],
-              ['road_36_37','fourth_row tenth_col left_road'],
-              ['road_27_38','vertical_road vertical_fourth_row vertical_second_col'],
-              ['road_29_40','vertical_road vertical_fourth_row vertical_fourth_col'],
-              ['road_31_42','vertical_road vertical_fourth_row vertical_sixth_col'],
-              ['road_33_44','vertical_road vertical_fourth_row vertical_eighth_col'],
-              ['road_35_46','vertical_road vertical_fourth_row vertical_tenth_col'],
-              ['road_38_39','fifth_row second_col right_road'],
-              ['road_39_40','fifth_row third_col left_road'],
-              ['road_40_41','fifth_row fourth_col right_road'],
-              ['road_41_42','fifth_row fifth_col left_road'],
-              ['road_42_43','fifth_row sixth_col right_road'],
-              ['road_43_44','fifth_row seventh_col left_road'],
-              ['road_44_45','fifth_row eighth_col right_road'],
-              ['road_45_46','fifth_row ninth_col left_road'],
-              ['road_39_47','vertical_road vertical_fifth_row vertical_third_col'],
-              ['road_41_49','vertical_road vertical_fifth_row vertical_fifth_col'],
-              ['road_43_51','vertical_road vertical_fifth_row vertical_seventh_col'],
-              ['road_45_53','vertical_road vertical_fifth_row vertical_ninth_col'],
-              ['road_47_48','sixth_row third_col left_road'],
-              ['road_48_49','sixth_row fourth_col right_road'],
-              ['road_49_50','sixth_row fifth_col left_road'],
-              ['road_50_51','sixth_row sixth_col right_road'],
-              ['road_51_52','sixth_row seventh_col left_road'],
-              ['road_52_53','sixth_row eighth_col right_road'],
-            ].map(([id, cls]) => {
-              const piece = pieces[id]
-              return (
-                <div key={id} id={id} className={`road ${cls}`}
-                  style={{
-                    cursor: selPiece === 'road' ? 'pointer' : 'default',
-                    background: piece ? PLAYER_COLORS[piece.color] : undefined,
-                    opacity: piece ? 1 : undefined,
-                  }}
-                  onClick={() => clickRoad(id)}
-                />
-              )
-            })}
-          </div>
+                {/* Number token */}
+                {num > 0 && (
+                  <g>
+                    <circle cx={cx} cy={cy} r={14} fill="rgba(255,255,255,0.92)" />
+                    <text
+                      x={cx} y={cy + 4}
+                      textAnchor="middle"
+                      fontSize={11} fontWeight="bold"
+                      fill={num === 6 || num === 8 ? '#dc2626' : '#1c1917'}
+                    >
+                      {num}
+                    </text>
+                    {/* Probability dots for 6 and 8 */}
+                    {(num === 6 || num === 8) && (
+                      <>
+                        <circle cx={cx - 5} cy={cy + 8} r={1.5} fill="#dc2626" />
+                        <circle cx={cx}     cy={cy + 8} r={1.5} fill="#dc2626" />
+                        <circle cx={cx + 5} cy={cy + 8} r={1.5} fill="#dc2626" />
+                      </>
+                    )}
+                  </g>
+                )}
+                {/* Desert banner */}
+                {terrain === 'desert' && (
+                  <text x={cx} y={cy + 4} textAnchor="middle" fontSize={18}>🏴</text>
+                )}
+              </g>
+            )
+          })}
 
-          {/* Terrain */}
-          <div className="terrain_pieces" id="terrain_pieces">
-            {/* Row 0: top fillers */}
-            {Array(8).fill(0).map((_,i) => <div key={`t${i}`} className="terrain top_terrain"/>)}
-            <br/>
-            {/* Row 1: spacers + row1 terrains */}
-            <div className="terrain"/><div className="terrain"/>
-            {TERRAIN_DATA.slice(0,3).map(t => (
-              <div key={t.id} id={`terrain_${t.id}`} className={`terrain ${CSS_CLASS[t.type]}`}>
-                <div className="terrain_number">{t.prob > 0 && (
-                  <span style={{
-                    display:'inline-flex',alignItems:'center',justifyContent:'center',
-                    width:20,height:20,borderRadius:'50%',
-                    background:'rgba(255,255,255,0.9)',
-                    fontSize:9,fontWeight:800,
-                    color: t.prob===6||t.prob===8 ? '#dc2626' : '#1c1c1e',
-                    boxShadow:'0 1px 3px rgba(0,0,0,0.3)',
-                  }}>{t.prob}</span>
-                )}</div>
-              </div>
-            ))}
-            <div className="terrain"/><div className="terrain"/><br/>
-            {/* Row 2 */}
-            <div className="terrain"/><div className="terrain"/>
-            {TERRAIN_DATA.slice(3,7).map(t => (
-              <div key={t.id} id={`terrain_${t.id}`} className={`terrain ${CSS_CLASS[t.type]}`}>
-                <div className="terrain_number">{t.prob > 0 && (
-                  <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:20,height:20,borderRadius:'50%',background:'rgba(255,255,255,0.9)',fontSize:9,fontWeight:800,color:t.prob===6||t.prob===8?'#dc2626':'#1c1c1e',boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}>{t.prob}</span>
-                )}</div>
-              </div>
-            ))}
-            <div className="terrain"/><div className="terrain"/><br/>
-            {/* Row 3 (middle) */}
-            <div className="terrain"/>
-            {TERRAIN_DATA.slice(7,12).map(t => (
-              <div key={t.id} id={`terrain_${t.id}`} className={`terrain ${CSS_CLASS[t.type]}`}>
-                <div className="terrain_number">{t.prob > 0 ? (
-                  <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:20,height:20,borderRadius:'50%',background:'rgba(255,255,255,0.9)',fontSize:9,fontWeight:800,color:t.prob===6||t.prob===8?'#dc2626':'#1c1c1e',boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}>{t.prob}</span>
-                ) : <span style={{fontSize:16}}>🏴</span>}</div>
-              </div>
-            ))}
-            <div className="terrain"/><br/>
-            {/* Row 4 */}
-            <div className="terrain"/><div className="terrain"/>
-            {TERRAIN_DATA.slice(12,16).map(t => (
-              <div key={t.id} id={`terrain_${t.id}`} className={`terrain ${CSS_CLASS[t.type]}`}>
-                <div className="terrain_number">{t.prob > 0 && (
-                  <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:20,height:20,borderRadius:'50%',background:'rgba(255,255,255,0.9)',fontSize:9,fontWeight:800,color:t.prob===6||t.prob===8?'#dc2626':'#1c1c1e',boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}>{t.prob}</span>
-                )}</div>
-              </div>
-            ))}
-            <div className="terrain"/><div className="terrain"/><br/>
-            {/* Row 5 */}
-            <div className="terrain"/><div className="terrain"/>
-            {TERRAIN_DATA.slice(16,19).map(t => (
-              <div key={t.id} id={`terrain_${t.id}`} className={`terrain ${CSS_CLASS[t.type]}`}>
-                <div className="terrain_number">{t.prob > 0 && (
-                  <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:20,height:20,borderRadius:'50%',background:'rgba(255,255,255,0.9)',fontSize:9,fontWeight:800,color:t.prob===6||t.prob===8?'#dc2626':'#1c1c1e',boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}>{t.prob}</span>
-                )}</div>
-              </div>
-            ))}
-            <div className="terrain"/><div className="terrain"/><br/>
-            {/* Bottom fillers */}
-            {Array(8).fill(0).map((_,i) => <div key={`b${i}`} className="terrain bottom_terrain"/>)}
-          </div>
+          {/* ── Roads (edges) ── */}
+          {edges.map(({ id, x1, y1, x2, y2 }) => {
+            const piece = pieces[`e${id}`]
+            const mx = (x1 + x2) / 2, my = (y1 + y2) / 2
+            const dx = x2 - x1, dy = y2 - y1
+            const len = Math.sqrt(dx * dx + dy * dy)
 
-        </div>
+            return (
+              <g key={id} onClick={() => toggleEdge(id)} style={{ cursor: selPiece === 'road' ? 'pointer' : 'default' }}>
+                {/* Hit area */}
+                <line x1={x1} y1={y1} x2={x2} y2={y2}
+                  stroke="transparent" strokeWidth={18} />
+                {/* Visual road */}
+                {piece ? (
+                  <line x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke={PLAYER_COLORS[piece.color]}
+                    strokeWidth={6} strokeLinecap="round"
+                    opacity={0.95}
+                  />
+                ) : (
+                  <line x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke="rgba(255,255,255,0.12)" strokeWidth={2}
+                    strokeDasharray="4,4"
+                  />
+                )}
+              </g>
+            )
+          })}
+
+          {/* ── Vertices (settlements/cities) ── */}
+          {vertices.map(({ id, x, y }) => {
+            const piece = pieces[`v${id}`]
+            const isClickable = selPiece !== 'road'
+            return (
+              <g key={id} onClick={() => toggleVertex(id)}
+                style={{ cursor: isClickable ? 'pointer' : 'default' }}>
+                {/* Hit area */}
+                <circle cx={x} cy={y} r={12} fill="transparent" />
+
+                {piece ? (
+                  piece.type === 'settlement' ? (
+                    /* Settlement: circle with border */
+                    <>
+                      <circle cx={x} cy={y} r={8}
+                        fill={PLAYER_COLORS[piece.color]}
+                        stroke="white" strokeWidth={1.5}
+                      />
+                      <polygon
+                        points={`${x},${y - 8} ${x - 5},${y - 3} ${x + 5},${y - 3}`}
+                        fill={PLAYER_COLORS[piece.color]}
+                        stroke="white" strokeWidth={1}
+                      />
+                    </>
+                  ) : (
+                    /* City: rounded square */
+                    <>
+                      <rect x={x - 9} y={y - 9} width={18} height={18} rx={3}
+                        fill={PLAYER_COLORS[piece.color]}
+                        stroke="white" strokeWidth={1.5}
+                      />
+                      <rect x={x - 9} y={y - 15} width={10} height={8} rx={2}
+                        fill={PLAYER_COLORS[piece.color]}
+                        stroke="white" strokeWidth={1}
+                      />
+                    </>
+                  )
+                ) : (
+                  /* Empty vertex dot */
+                  <circle cx={x} cy={y} r={4}
+                    fill="rgba(255,255,255,0.2)"
+                    stroke="rgba(255,255,255,0.4)"
+                    strokeWidth={1}
+                  />
+                )}
+              </g>
+            )
+          })}
+        </svg>
       </div>
 
       {/* Bottom bar */}
-      <div className="bg-stone-800 border-t border-stone-700 px-4 py-3 flex gap-3 flex-shrink-0">
+      <div className="bg-stone-800 border-t border-stone-700 px-4 py-3 flex gap-3 shrink-0">
         <button onClick={() => setPieces({})}
           className="flex-1 py-2.5 rounded-xl border border-stone-600 bg-stone-700 text-stone-200 text-sm font-semibold">
           Limpiar
         </button>
         <button onClick={() => onConfirm(pieces)}
-          className="flex-2 flex-[2] py-2.5 rounded-xl bg-amber-500 text-black text-sm font-bold transition-colors hover:bg-amber-400">
-          Confirmar tablero {pieceCount > 0 && `(${pieceCount})`} →
+          className="flex-[2] py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors">
+          Confirmar tablero{pieceCount > 0 ? ` (${pieceCount})` : ''} →
         </button>
       </div>
     </div>
