@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 
 // ─── Geometry ──────────────────────────────────────────────────────────────────
 const R = 40          // hex radius (center → vertex)
@@ -135,8 +135,14 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
 
   const { vertices, edges } = useMemo(buildGraph, [])
 
+  // lastTap prevents double-fire from pointerdown+click on mobile
+  const lastTap = useRef(0)
+
   const toggleVertex = useCallback((id: number) => {
     if (selPiece === 'road') return
+    const now = Date.now()
+    if (now - lastTap.current < 300) return
+    lastTap.current = now
     const k = `v${id}`
     setPieces(p => {
       const n = { ...p }
@@ -148,6 +154,9 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
 
   const toggleEdge = useCallback((id: string) => {
     if (selPiece !== 'road') return
+    const now = Date.now()
+    if (now - lastTap.current < 300) return
+    lastTap.current = now
     const k = `e${id}`
     setPieces(p => {
       const n = { ...p }
@@ -155,7 +164,7 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
       else n[k] = { type: 'road', color: selColor }
       return n
     })
-  }, [selColor])
+  }, [selPiece, selColor])
 
   const pieceCount = Object.keys(pieces).length
   const svgH = PAD_TOP + 4 * ROW_H + R + 30  // ≈ 355
@@ -211,7 +220,7 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
         <svg
           width="100%"
           viewBox={`0 0 ${SVG_W} ${svgH}`}
-          style={{ display: 'block', maxWidth: '100%', touchAction: 'none' }}
+          style={{ display: 'block', maxWidth: '100%' }}
         >
           <defs>
             {/* Water/background pattern */}
@@ -285,22 +294,22 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
           {/* ── Roads (edges) ── */}
           {edges.map(({ id, x1, y1, x2, y2 }) => {
             const piece = pieces[`e${id}`]
-            // Build a rotated rect as hit area (works on iOS Safari unlike transparent stroke)
+            // Compute polygon hit area in SVG coords (no transform — iOS Safari safe)
             const dx = x2 - x1, dy = y2 - y1
             const len = Math.sqrt(dx*dx + dy*dy)
-            const angle = Math.atan2(dy, dx) * 180 / Math.PI
-            const mx = (x1+x2)/2, my = (y1+y2)/2
+            const nx = -dy / len * 12, ny = dx / len * 12  // perpendicular, half-width 12px
+            const pts = [
+              `${(x1+nx).toFixed(1)},${(y1+ny).toFixed(1)}`,
+              `${(x1-nx).toFixed(1)},${(y1-ny).toFixed(1)}`,
+              `${(x2-nx).toFixed(1)},${(y2-ny).toFixed(1)}`,
+              `${(x2+nx).toFixed(1)},${(y2+ny).toFixed(1)}`,
+            ].join(' ')
             return (
               <g key={id}
-                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleEdge(id) }}
+                onClick={() => toggleEdge(id)}
                 style={{ cursor: selPiece === 'road' ? 'pointer' : 'default' }}>
-                {/* Fat rotated rect hit area — iOS Safari compatible */}
-                <rect
-                  x={mx - len/2} y={my - 12}
-                  width={len} height={24}
-                  fill="rgba(0,0,0,0.001)"
-                  transform={`rotate(${angle},${mx},${my})`}
-                />
+                {/* Fat polygon hit area — no CSS transform, iOS Safari safe */}
+                <polygon points={pts} fill="rgba(0,0,0,0.001)" />
                 {/* Hover hint when in road mode & no piece */}
                 {!piece && selPiece === 'road' && (
                   <line x1={x1} y1={y1} x2={x2} y2={y2}
@@ -327,7 +336,7 @@ export function BoardOverlay({ onClose, onConfirm }: BoardOverlayProps) {
             const col = piece ? PLAYER_COLORS[piece.color] : undefined
             return (
               <g key={id}
-                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleVertex(id) }}
+                onClick={() => toggleVertex(id)}
                 style={{ cursor: isClickable ? 'pointer' : 'default' }}>
                 {/* Hit area — rgba(0,0,0,0.001) instead of transparent (iOS Safari fix) */}
                 <circle cx={x} cy={y} r={14} fill="rgba(0,0,0,0.001)" />

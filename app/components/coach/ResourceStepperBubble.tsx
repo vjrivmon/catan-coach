@@ -42,7 +42,7 @@ export function ResourceStepperBubble({ onConfirm }: ResourceStepperBubbleProps)
               <span className="text-stone-200 text-sm flex-1">{label}</span>
               <div className="flex items-center gap-0 rounded-lg overflow-hidden border border-stone-600">
                 <button
-                  onPointerDown={(e) => { e.preventDefault(); adjust(key, -1) }}
+                  onClick={() => adjust(key, -1)}
                   className="w-8 h-8 flex items-center justify-center bg-stone-600 hover:bg-stone-500 active:bg-stone-400 text-stone-200 text-base font-bold transition-colors"
                 >−</button>
                 <span
@@ -52,7 +52,7 @@ export function ResourceStepperBubble({ onConfirm }: ResourceStepperBubbleProps)
                   {counts[key]}
                 </span>
                 <button
-                  onPointerDown={(e) => { e.preventDefault(); adjust(key, 1) }}
+                  onClick={() => adjust(key, 1)}
                   className="w-8 h-8 flex items-center justify-center bg-stone-600 hover:bg-stone-500 active:bg-stone-400 text-stone-200 text-base font-bold transition-colors"
                 >+</button>
               </div>
@@ -61,7 +61,7 @@ export function ResourceStepperBubble({ onConfirm }: ResourceStepperBubbleProps)
         </div>
 
         <button
-          onPointerDown={(e) => { e.preventDefault(); onConfirm(counts) }}
+          onClick={() => onConfirm(counts)}
           disabled={total === 0}
           className="mt-4 w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition-colors"
         >
