@@ -18,13 +18,17 @@ const suggestionAgent = new SuggestionAgent()
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, history, userLevel, seenConcepts, coachState } = await req.json() as {
+    const { message, history, userLevel, seenConcepts, coachState, mode } = await req.json() as {
       message: string
       history: Message[]
       userLevel: UserLevel
       seenConcepts: string[]
       coachState?: CoachState
+      mode?: 'aprende' | 'coach'
     }
+
+    // Strict separation: aprende mode never gets coach state
+    const activeCoachState = mode === 'coach' ? coachState : undefined
 
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: 'Mensaje vacío' }), { status: 400 })
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
         : route === 'strategy'
           ? strategyAgent.retrieve(message)
           : Promise.resolve(''),
-      suggestionAgent.suggest(message, history, userLevel, coachState),
+      suggestionAgent.suggest(message, history, userLevel, activeCoachState),
     ])
 
     // 3. Stream the response

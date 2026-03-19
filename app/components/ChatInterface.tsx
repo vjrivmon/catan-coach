@@ -256,6 +256,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           history: session.messages.slice(-10),
           userLevel: updatedLevel,
           seenConcepts,
+          mode: coachMode ? 'coach' : 'aprende',
+          // coachState ONLY in coach mode — never leaks to aprende
           ...(coachMode && boardConfigured ? {
             coachState: {
               boardSummary: buildBoardSummary(),
@@ -364,50 +366,59 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         </div>
-        <div className="flex flex-col justify-center flex-1">
+        <div className="flex flex-col justify-center flex-1 min-w-0">
           <h1 className="text-amber-400 font-semibold text-base leading-tight">Catan Coach</h1>
-          {coachMode ? (
-            <span className="inline-flex items-center gap-1 self-start mt-0.5
-              bg-amber-900/50 border border-amber-600/60 rounded-full
-              px-2 py-0.5 text-xs text-amber-300 font-medium leading-none">
-              Coach activo
-              <button
-                onClick={() => setCoachMode(false)}
-                className="ml-0.5 text-amber-400 hover:text-white transition-colors leading-none"
-                title="Salir del modo Coach"
-              >×</button>
-            </span>
-          ) : (
-            <p className="text-stone-400 text-xs leading-tight">Tu asistente de Catán</p>
-          )}
+          <p className="text-stone-400 text-xs leading-tight truncate">
+            {coachMode ? 'Coach en partida' : 'Aprende Catán'}
+          </p>
         </div>
 
-        {/* Hexagon coach button — always visible, behaviour depends on state */}
-        <button
-          onClick={() => {
-            setCoachMode(true)
-            if (boardConfigured) {
-              setShowBoard(true)       // board exists → reopen to update
-            } else {
-              setShowAnalyzeModal(true) // first time → show 2-option modal
-            }
-          }}
-          title="Coach en partida"
-          className={`relative flex items-center justify-center w-9 h-9 rounded-xl border transition-colors shrink-0 ${
-            coachMode
-              ? 'border-amber-500 bg-amber-900/30'
-              : 'border-stone-600 bg-stone-700 hover:border-amber-600 hover:bg-amber-900/20'
-          }`}
-        >
-          <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round"/>
-            <path d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z" fill="rgba(245,158,11,0.25)" stroke="#f59e0b" strokeWidth="1.2" strokeLinejoin="round"/>
-          </svg>
-          {/* Dot: amber = no board yet, green = board active */}
-          <div className={`absolute top-[-2px] right-[-2px] w-2 h-2 rounded-full border border-stone-800 ${
-            boardConfigured ? 'bg-green-400' : 'bg-amber-400'
-          }`} />
-        </button>
+        {/* Mode toggle — 💬 Aprende | ⬡ Coach */}
+        <div className="flex items-center gap-1 shrink-0 bg-stone-900/60 rounded-xl p-1 border border-stone-700">
+
+          {/* Aprende (chat) button */}
+          <button
+            onClick={() => setCoachMode(false)}
+            title="Aprende Catán"
+            className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+              !coachMode
+                ? 'bg-stone-600 text-stone-100'
+                : 'text-stone-500 hover:text-stone-300'
+            }`}
+          >
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+            </svg>
+          </button>
+
+          {/* Coach (hex) button */}
+          <button
+            onClick={() => {
+              setCoachMode(true)
+              if (boardConfigured) setShowBoard(true)
+              else setShowAnalyzeModal(true)
+            }}
+            title="Coach en partida"
+            className={`relative flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+              coachMode
+                ? 'bg-amber-700/60 text-amber-200'
+                : 'text-stone-500 hover:text-amber-400'
+            }`}
+          >
+            <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z"
+                stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+              <path d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z"
+                fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+            </svg>
+            {/* Status dot */}
+            {boardConfigured && (
+              <div className="absolute top-0 right-0 w-2 h-2 bg-green-400 rounded-full border border-stone-800" />
+            )}
+          </button>
+
+        </div>
       </header>
 
       {/* Body: sidebar + chat */}
