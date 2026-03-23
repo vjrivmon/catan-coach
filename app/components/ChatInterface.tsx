@@ -142,25 +142,39 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     }
     const myLabel = colorNames[savedMyColor] ?? savedMyColor
 
-    // Build vertex → hex index map
-    const vertToHexes = new Map<string, number[]>()
+    // Build complete vertex id → hex indices map (mirrors buildGraph in BoardOverlay)
+    const ANGLES_rad = [30,90,150,210,270,330].map(d => d * Math.PI / 180)
+    const vertIdToHexes = new Map<number, number[]>()
+    const vertMap = new Map<string, number>() // approxKey → vertId
+    let vId = 0
     HEX_CENTERS_CI.forEach(([cx, cy], hi) => {
-      for (const [vx, vy] of hexVerticesCI(cx, cy)) {
+      for (const a of ANGLES_rad) {
+        const vx = cx + R_CI * Math.cos(a)
+        const vy = cy + R_CI * Math.sin(a)
         const k = approxKeyCI(vx, vy)
-        if (!vertToHexes.has(k)) vertToHexes.set(k, [])
-        vertToHexes.get(k)!.push(hi)
+        if (!vertMap.has(k)) { vertMap.set(k, vId++); }
+        const vid = vertMap.get(k)!
+        if (!vertIdToHexes.has(vid)) vertIdToHexes.set(vid, [])
+        const arr = vertIdToHexes.get(vid)!
+        if (!arr.includes(hi)) arr.push(hi)
       }
     })
 
-    // Build edge → hex index map (midpoint key)
+    // Build edge id → hex indices map (edge id = "lo_hi" vertex ids)
     const edgeToHexes = new Map<string, number[]>()
     HEX_CENTERS_CI.forEach(([cx, cy], hi) => {
-      const verts = hexVerticesCI(cx, cy)
+      const vIds: number[] = []
+      for (const a of ANGLES_rad) {
+        const vx = cx + R_CI * Math.cos(a); const vy = cy + R_CI * Math.sin(a)
+        vIds.push(vertMap.get(approxKeyCI(vx, vy)) ?? -1)
+      }
       for (let i = 0; i < 6; i++) {
-        const [x1, y1] = verts[i]; const [x2, y2] = verts[(i+1)%6]
-        const k = approxKeyCI((x1+x2)/2, (y1+y2)/2)
-        if (!edgeToHexes.has(k)) edgeToHexes.set(k, [])
-        edgeToHexes.get(k)!.push(hi)
+        const a = vIds[i], b = vIds[(i+1)%6]
+        if (a < 0 || b < 0) continue
+        const eid = `${Math.min(a,b)}_${Math.max(a,b)}`
+        if (!edgeToHexes.has(eid)) edgeToHexes.set(eid, [])
+        const arr = edgeToHexes.get(eid)!
+        if (!arr.includes(hi)) arr.push(hi)
       }
     })
 
@@ -170,16 +184,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       const c = piece.color
       if (!byColor[c]) byColor[c] = { settlements: [], cities: [], roads: [] }
 
-      // Resolve which hexes this piece touches
+      // Resolve which hexes this piece touches using the full maps
       let hexIndices: number[] = []
       if (key.startsWith('v')) {
         const id = parseInt(key.slice(1))
-        // Find vertex by id via rebuild (simplified: use key from DOM — we store approxKey)
-        // Since we can't easily map id→coords without full graph rebuild, use hex centers approximation
-        // Instead, find the vertex key from saved pieces context — we store by approxKey in the overlay
-        hexIndices = [] // will be enriched below via alternative lookup
+        hexIndices = vertIdToHexes.get(id) ?? []
       } else if (key.startsWith('e')) {
-        hexIndices = edgeToHexes.get(key) ?? []
+        const eid = key.slice(1) // "lo_hi"
+        hexIndices = edgeToHexes.get(eid) ?? []
       }
 
       const terrainDesc = hexIndices
