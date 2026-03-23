@@ -732,6 +732,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
           Limpiar
         </button>
         <button
+          data-tour="confirm-board-btn"
           onClick={() => allPlayersReady && onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments, robberHex })}
           disabled={!allPlayersReady}
           title={!allPlayersReady ? `Faltan piezas: cada jugador necesita ${MIN_SETTLEMENTS} poblados y ${MIN_ROADS} caminos` : ''}

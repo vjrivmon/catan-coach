@@ -32,25 +32,38 @@ html, body {
   color: #78716c !important; /* stone-500 */
   font-size: 0.75rem !important;
 }
+.catan-tour-popover .driver-popover-footer button {
+  /* Reset browser defaults */
+  all: unset !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 7px 16px !important;
+  border-radius: 8px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  transition: background 0.15s !important;
+}
 .catan-tour-popover button.driver-popover-next-btn,
 .catan-tour-popover button.driver-popover-done-btn {
-  background: #d97706 !important; /* amber-600 */
+  background: #d97706 !important;
   color: #000 !important;
-  border: none !important;
-  border-radius: 8px !important;
-  font-weight: 700 !important;
-  padding: 6px 14px !important;
 }
 .catan-tour-popover button.driver-popover-next-btn:hover,
 .catan-tour-popover button.driver-popover-done-btn:hover {
   background: #f59e0b !important;
 }
 .catan-tour-popover button.driver-popover-prev-btn {
-  color: #a8a29e !important; /* stone-400 */
   background: transparent !important;
+  color: #a8a29e !important;
   border: 1px solid #57534e !important;
-  border-radius: 8px !important;
-  padding: 6px 12px !important;
+}
+.catan-tour-popover button.driver-popover-prev-btn:hover {
+  background: #44403c !important;
+  color: #e7e5e4 !important;
 }
 .catan-tour-popover button.driver-popover-close-btn {
   color: #78716c !important;

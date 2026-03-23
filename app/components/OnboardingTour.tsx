@@ -6,9 +6,11 @@ import 'driver.js/dist/driver.css'
 
 interface OnboardingTourProps {
   onDone: () => void
+  onOpenBoard: () => void
+  onCloseBoard: () => void
 }
 
-export function OnboardingTour({ onDone }: OnboardingTourProps) {
+export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: OnboardingTourProps) {
   useEffect(() => {
     const driverObj = driver({
       showProgress: true,
@@ -17,19 +19,19 @@ export function OnboardingTour({ onDone }: OnboardingTourProps) {
       stagePadding: 8,
       stageRadius: 12,
       allowClose: true,
-      onCloseClick: onDone,
-      nextBtnText: 'Siguiente →',
-      prevBtnText: '← Anterior',
-      doneBtnText: 'Empezar',
-      progressText: '{{current}} / {{total}}',
+      nextBtnText: 'Siguiente',
+      prevBtnText: 'Anterior',
+      doneBtnText: 'Empezar a jugar',
+      progressText: '{{current}} de {{total}}',
       popoverClass: 'catan-tour-popover',
       onDestroyed: onDone,
+
       steps: [
         {
           element: 'header',
           popover: {
             title: 'Catan Coach',
-            description: 'Tu asistente para aprender y mejorar en Catan. Te ayuda con reglas, estrategia y recomendaciones en partida real con IA.',
+            description: 'Tu asistente personal para aprender y mejorar en Catan. Te guía durante la partida con consejos basados en el estado real del tablero.',
             side: 'bottom',
             align: 'center',
           },
@@ -37,8 +39,8 @@ export function OnboardingTour({ onDone }: OnboardingTourProps) {
         {
           element: '[data-tour="mode-select"]',
           popover: {
-            title: '3 formas de empezar',
-            description: '<b>Escanear tablero</b> — haz una foto a tu partida real.<br/><b>Tablero interactivo</b> — coloca piezas manualmente y recibe consejos en tiempo real.<br/><b>Solo dudas</b> — pregunta sobre reglas y estrategia sin tablero.',
+            title: '¿Cómo quieres empezar?',
+            description: 'Elige según tu situación:<br/><br/><b>Escanear tablero</b> — haz una foto a tu partida real.<br/><b>Tablero interactivo</b> — coloca las piezas tú mismo.<br/><b>Solo dudas</b> — pregunta sobre reglas sin tablero.',
             side: 'top',
             align: 'center',
           },
@@ -47,16 +49,47 @@ export function OnboardingTour({ onDone }: OnboardingTourProps) {
           element: '[data-tour="board-btn"]',
           popover: {
             title: 'Tablero interactivo',
-            description: 'Abre el tablero para colocar tus piezas y las de los rivales. El agente GeneticAgent — entrenado en 40.000 partidas — usa esta información para darte recomendaciones precisas.',
+            description: 'Toca aquí para abrir el tablero y colocar las piezas de todos los jugadores. Ahora lo abrimos para que veas cómo funciona.',
             side: 'bottom',
             align: 'end',
+            onNextClick: () => {
+              onOpenBoard()
+              // Wait for board to render, then advance
+              setTimeout(() => driverObj.moveNext(), 400)
+            },
+          },
+        },
+        {
+          element: '[data-tour="board-overlay"]',
+          popover: {
+            title: 'El tablero de juego',
+            description: 'Toca un vértice para colocar un poblado o ciudad. Toca una arista para colocar un camino. Puedes colocar piezas de todos los jugadores y asignar colores.',
+            side: 'bottom',
+            align: 'center',
+            onPrevClick: () => {
+              onCloseBoard()
+              setTimeout(() => driverObj.movePrevious(), 400)
+            },
+          },
+        },
+        {
+          element: '[data-tour="confirm-board-btn"]',
+          popover: {
+            title: 'Confirmar tablero',
+            description: 'Cuando hayas colocado todas las piezas, confirma el tablero. A partir de ahí recibirás recomendaciones basadas en tu posición real.',
+            side: 'top',
+            align: 'center',
+            onNextClick: () => {
+              onCloseBoard()
+              setTimeout(() => driverObj.moveNext(), 400)
+            },
           },
         },
         {
           element: '[data-tour="chat-input"]',
           popover: {
             title: 'Pregunta lo que quieras',
-            description: 'Escribe cualquier duda: reglas, costes, estrategia, o pide directamente "¿cuál es mi mejor jugada?".',
+            description: 'Escribe cualquier duda: reglas, costes de construcción, estrategia, o pide directamente <i>"¿cuál es mi mejor jugada?"</i>',
             side: 'top',
             align: 'center',
           },
@@ -64,10 +97,9 @@ export function OnboardingTour({ onDone }: OnboardingTourProps) {
       ],
     })
 
-    // Small delay so DOM is ready
     const t = setTimeout(() => driverObj.drive(), 300)
     return () => { clearTimeout(t); driverObj.destroy() }
-  }, [onDone])
+  }, [onDone, onOpenBoard, onCloseBoard])
 
   return null
 }

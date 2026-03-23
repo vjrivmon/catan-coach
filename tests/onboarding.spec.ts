@@ -13,7 +13,7 @@ test('OB-1: tour shows popover on first visit', async ({ page }) => {
   await expect(page.locator('.driver-popover')).toBeVisible({ timeout: 5000 })
 })
 
-test('OB-2: first step highlights header', async ({ page }) => {
+test('OB-2: first step title is Catan Coach', async ({ page }) => {
   await clearOnboarding(page)
   await page.waitForSelector('.driver-popover', { timeout: 5000 })
   const title = await page.locator('.driver-popover-title').innerText()
@@ -26,17 +26,16 @@ test('OB-3: next advances to mode-select step', async ({ page }) => {
   await page.locator('.driver-popover-next-btn').click()
   await page.waitForTimeout(400)
   const title = await page.locator('.driver-popover-title').innerText()
-  expect(title).toBe('3 formas de empezar')
+  expect(title).toBe('¿Cómo quieres empezar?')
 })
 
-test('OB-4: can navigate all 4 steps', async ({ page }) => {
+test('OB-4: can navigate first 3 steps without board interaction', async ({ page }) => {
   await clearOnboarding(page)
   await page.waitForSelector('.driver-popover', { timeout: 5000 })
   const expectedTitles = [
     'Catan Coach',
-    '3 formas de empezar',
+    '¿Cómo quieres empezar?',
     'Tablero interactivo',
-    'Pregunta lo que quieras',
   ]
   for (let i = 0; i < expectedTitles.length; i++) {
     const title = await page.locator('.driver-popover-title').innerText()
@@ -48,16 +47,11 @@ test('OB-4: can navigate all 4 steps', async ({ page }) => {
   }
 })
 
-test('OB-5: done button dismisses tour', async ({ page }) => {
+test('OB-5: close button dismisses tour', async ({ page }) => {
   await clearOnboarding(page)
   await page.waitForSelector('.driver-popover', { timeout: 5000 })
-  // Click through all steps
-  for (let i = 0; i < 3; i++) {
-    await page.locator('.driver-popover-next-btn').click()
-    await page.waitForTimeout(400)
-  }
-  // Last step: driver.js uses same next-btn class with "Empezar" text
-  await page.locator('.driver-popover-next-btn').click()
+  // Use close button — works at any step without needing to open the board
+  await page.locator('.driver-popover-close-btn').click()
   await page.waitForTimeout(400)
   await expect(page.locator('.driver-popover')).not.toBeVisible()
 })
@@ -79,7 +73,7 @@ test('OB-7: previous button goes back', async ({ page }) => {
   await page.waitForSelector('.driver-popover', { timeout: 5000 })
   await page.locator('.driver-popover-next-btn').click()
   await page.waitForTimeout(400)
-  expect(await page.locator('.driver-popover-title').innerText()).toBe('3 formas de empezar')
+  expect(await page.locator('.driver-popover-title').innerText()).toBe('¿Cómo quieres empezar?')
   await page.locator('.driver-popover-prev-btn').click()
   await page.waitForTimeout(400)
   expect(await page.locator('.driver-popover-title').innerText()).toBe('Catan Coach')

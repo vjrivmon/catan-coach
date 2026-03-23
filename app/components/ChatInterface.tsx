@@ -638,6 +638,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
           {/* ── Board overlay — fills chat area, header stays visible ── */}
           {showBoard && (
+            <div data-tour="board-overlay" className="contents">
             <BoardOverlay
               initialPieces={savedPieces}
               initialMyColor={savedMyColor}
@@ -684,6 +685,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 setCoachStep('waiting-resources')
               }}
             />
+            </div>
           )}
 
           {!showBoard && <>
@@ -983,8 +985,15 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         <OnboardingTour
           onDone={() => {
             setShowOnboarding(false)
+            setShowBoard(false)
             localStorage.setItem('catan-onboarding-done', '1')
           }}
+          onOpenBoard={() => {
+            setHasSelectedMode(true)
+            setCoachMode(true)
+            setShowBoard(true)
+          }}
+          onCloseBoard={() => setShowBoard(false)}
         />
       )}
 
