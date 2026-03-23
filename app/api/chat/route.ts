@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { debugLog } from '@/src/lib/debugLog'
 import { RouterAgent } from '@/src/agents/RouterAgent'
 import { RulesAgent } from '@/src/agents/RulesAgent'
 import { StrategyAgent } from '@/src/agents/StrategyAgent'
@@ -18,7 +19,8 @@ const suggestionAgent = new SuggestionAgent()
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, history, userLevel, seenConcepts, coachState, mode } = await req.json() as {
+    const body = await req.json()
+    const { message, history, userLevel, seenConcepts, coachState, mode } = body as {
       message: string
       history: Message[]
       userLevel: UserLevel
@@ -26,6 +28,9 @@ export async function POST(req: NextRequest) {
       coachState?: CoachState
       mode?: 'aprende' | 'coach'
     }
+
+    // Log incoming request
+    debugLog.chatRequest({ message: (message ?? '').slice(0,100), mode: mode ?? 'aprende', userLevel: userLevel ?? 'beginner', coachState: coachState ? { boardSummary: ((coachState as any)?.boardSummary ?? '').slice(0,100), hasGenetic: !!(coachState as any)?.geneticRecommendation, resources: (coachState as any)?.resources } : null })
 
     // Strict separation: aprende mode never gets coach state
     const activeCoachState = mode === 'coach' ? coachState : undefined

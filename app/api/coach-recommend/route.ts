@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { debugLog } from '@/src/lib/debugLog'
 
 const COACH_API_URL = process.env.COACH_API_URL ?? 'http://localhost:8001'
 
@@ -13,11 +14,14 @@ export interface CoachRecommendInput {
   turn?: number
   numPlayers?: number
   gamePhasePlaying?: boolean
+  robberHex?: number                       // hex index 0-18, 9=desert default
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: CoachRecommendInput = await req.json()
+
+    debugLog.coachRequest({ resources: body.resources, settlements: body.settlements, roads: body.roads, vp: body.vp ?? 2, turn: body.turn })
 
     // Translate frontend resource keys → API keys (brick=clay, sheep=wool, wheat=cereal)
     const resources = {
@@ -35,7 +39,7 @@ export async function POST(req: NextRequest) {
     })
 
     const payload = {
-      board_state: { hexes: [], vertices: [], ports: [] },
+      board_state: { hexes: [], vertices: [], ports: [], robber_hex: body.robberHex ?? 9 },
       player: {
         color: 'red',
         resources,
@@ -79,6 +83,8 @@ export async function POST(req: NextRequest) {
       buy_dev_card:     'Comprar carta de desarrollo',
       pass:             'Pasar turno',
     }
+
+    debugLog.coachResponse({ action: data.action, score: data.score, reason: data.reason?.slice(0,100) })
 
     return NextResponse.json({
       action:      data.action,

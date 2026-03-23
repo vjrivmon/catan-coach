@@ -95,6 +95,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedMyColor, setSavedMyColor]         = useState<string>('red')
   const [savedAssignments, setSavedAssignments] = useState<string[]>([])
   const [savedResources, setSavedResources]     = useState<Record<string,number> | null>(null)
+  const [savedRobberHex, setSavedRobberHex]     = useState<number>(9)  // 9 = desert default
   const boardConfigured                         = Object.keys(savedPieces).length > 0
 
   // Terrain + number data mirrors BoardOverlay constants — needed to enrich board summary
@@ -220,6 +221,11 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
     let summary = `TABLERO ACTUAL:\n${playerLines.join('\n') || 'Sin piezas colocadas'}`
     if (resourceLine) summary += `\n\nRECURSOS DE ${myLabel.toUpperCase()}: ${resourceLine}`
+    if (savedRobberHex !== 9) {
+      const rTerrain = TERRAIN_ORDER_CI[savedRobberHex] ?? 'desconocido'
+      const rNum = NUMBERS_CI[savedRobberHex] ?? 0
+      summary += `\n\nLADRON: en hex de ${terrainNames[rTerrain] ?? rTerrain}${rNum > 0 ? `(${rNum})` : ''} — bloquea producción de ese hex`
+    }
 
     return summary
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -331,6 +337,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSavedMyColor('red')
     setSavedAssignments([])
     setSavedResources(null)
+    setSavedRobberHex(9)
     setSavedDevCards(null)
     setCoachStep(null)
     setGameStarted(false)
@@ -568,11 +575,12 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               initialMyColor={savedMyColor}
               initialAssignments={savedAssignments}
               onClose={() => { setShowBoard(false) }}
-              onConfirm={({ pieces, myColor, assignments }) => {
+              onConfirm={({ pieces, myColor, assignments, robberHex }) => {
                 setShowBoard(false)
                 setSavedPieces(pieces)
                 setSavedMyColor(myColor)
                 setSavedAssignments(assignments)
+                setSavedRobberHex(robberHex)
                 const count = Object.keys(pieces).length
                 const isUpdate = boardConfigured
                 const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
@@ -722,6 +730,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                         vp: settlements.length + cities.length * 2,
                         roadLength: roads.length,
                         gamePhasePlaying: true,
+                        robberHex: savedRobberHex,
                       }),
                     })
                     if (apiRes.ok) geneticRec = await apiRes.json()

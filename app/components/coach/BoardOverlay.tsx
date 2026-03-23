@@ -195,17 +195,19 @@ export interface BoardConfirmPayload {
   pieces:      Record<string, Piece>
   myColor:     string
   assignments: string[]   // [Tú, J2, J3?, J4?]
+  robberHex:   number     // hex index 0-18, 9=desert default
 }
 
 interface BoardOverlayProps {
-  onClose:       () => void
-  onConfirm:     (payload: BoardConfirmPayload) => void
-  initialPieces?: Record<string, Piece>
-  initialMyColor?: string
+  onClose:            () => void
+  onConfirm:          (payload: BoardConfirmPayload) => void
+  initialPieces?:     Record<string, Piece>
+  initialMyColor?:    string
   initialAssignments?: string[]
+  initialRobberHex?:  number
 }
 
-export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments }: BoardOverlayProps) {
+export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments, initialRobberHex = 9 }: BoardOverlayProps) {
   // assignments[i] = color for player i: [Tú, J2, J3, J4]
   const ALL_COLORS = ['red','blue','orange','white'] as const
   const PLAYER_LABELS = ['Tú','J2','J3','J4']
@@ -229,9 +231,12 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
     (initialAssignments && initialAssignments.length > 0 ? initialAssignments[0] : null) ?? 'red'
   )
   // Cities disabled in initial placement phase — only settlements & roads
-  const [selPiece, setSelPiece] = useState<'settlement' | 'road'>('settlement')
-  const [pieces, setPieces]     = useState<Record<string, Piece>>(initialPieces)
-  const [warning, setWarning]   = useState<string | null>(null)
+  const [selPiece, setSelPiece]     = useState<'settlement' | 'road'>('settlement')
+  const [pieces, setPieces]         = useState<Record<string, Piece>>(initialPieces)
+  const [warning, setWarning]       = useState<string | null>(null)
+  // Robber — index of hex where ladrón sits (default: 9 = desert center)
+  const [robberHex, setRobberHex]   = useState<number>(initialRobberHex)
+  const [movingRobber, setMovingRobber] = useState(false)
 
   const { vertices, edges, adjacency } = useMemo(buildGraph, [])
 
@@ -423,18 +428,32 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
       {colorsConfirmed && (
         <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex flex-col gap-2 shrink-0">
           {/* Piece type buttons — cities hidden in initial phase */}
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             {(['settlement','road'] as const).map(p => (
-              <button key={p} onClick={() => setSelPiece(p)}
+              <button key={p}
+                onClick={() => { setSelPiece(p); setMovingRobber(false) }}
                 className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
-                  selPiece === p
+                  selPiece === p && !movingRobber
                     ? 'border-amber-500 text-amber-400 bg-amber-500/10'
                     : 'border-stone-600 text-stone-400 bg-stone-700'
                 }`}>
                 {p === 'settlement' ? 'Pueblo' : 'Camino'}
               </button>
             ))}
-            <span className="text-stone-600 text-xs ml-1">Ciudad: no disponible en colocación inicial</span>
+            {/* Mover ladrón button */}
+            <button
+              onClick={() => setMovingRobber(r => !r)}
+              className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                movingRobber
+                  ? 'border-red-500 text-red-400 bg-red-500/10'
+                  : 'border-stone-600 text-stone-500 bg-stone-700'
+              }`}>
+              {movingRobber ? 'Cancelar' : 'Mover ladrón'}
+            </button>
+            {movingRobber && (
+              <span className="text-red-400 text-xs">Toca un hex para mover el ladrón</span>
+            )}
+            {!movingRobber && <span className="text-stone-600 text-xs">Ciudad: no disponible en colocación inicial</span>}
           </div>
 
           {/* Per-player status — desktop visible always, mobile compact */}
@@ -508,8 +527,15 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
             const pts     = polyPoints(verts)
             const imgUrl  = TEXTURE[terrain]
 
+            const hasRobber = robberHex === i
+
             return (
-              <g key={i}>
+              <g key={i}
+                onClick={() => {
+                  if (movingRobber) { setRobberHex(i); setMovingRobber(false) }
+                }}
+                style={{ cursor: movingRobber ? 'pointer' : 'default' }}
+              >
                 {/* Texture fill via image + clipPath */}
                 <image
                   href={imgUrl}
@@ -518,8 +544,16 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                   clipPath={`url(#hclip${i})`}
                   preserveAspectRatio="xMidYMid slice"
                 />
+                {/* Robber overlay — darkens the hex */}
+                {hasRobber && (
+                  <polygon points={pts} fill="rgba(0,0,0,0.45)" stroke="#ef4444" strokeWidth={2} />
+                )}
+                {/* Robber hover hint */}
+                {movingRobber && !hasRobber && (
+                  <polygon points={pts} fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.5)" strokeWidth={1.5} />
+                )}
                 {/* Hex border */}
-                <polygon points={pts} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth={1} />
+                {!hasRobber && <polygon points={pts} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth={1} />}
 
                 {/* Number token */}
                 {num > 0 && (
@@ -543,9 +577,16 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                     )}
                   </g>
                 )}
-                {/* Desert banner */}
-                {terrain === 'desert' && (
-                  <text x={cx} y={cy + 4} textAnchor="middle" fontSize={18}>🏴</text>
+                {/* Desert text */}
+                {terrain === 'desert' && !hasRobber && (
+                  <text x={cx} y={cy + 4} textAnchor="middle" fontSize={11} fill="rgba(255,255,255,0.6)">Desierto</text>
+                )}
+                {/* Robber icon */}
+                {hasRobber && (
+                  <g>
+                    <circle cx={cx} cy={cy - 2} r={11} fill="#1c1917" stroke="#ef4444" strokeWidth={1.5} />
+                    <text x={cx} y={cy + 3} textAnchor="middle" fontSize={13}>🦹</text>
+                  </g>
                 )}
               </g>
             )
@@ -691,7 +732,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
           Limpiar
         </button>
         <button
-          onClick={() => allPlayersReady && onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments })}
+          onClick={() => allPlayersReady && onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments, robberHex })}
           disabled={!allPlayersReady}
           title={!allPlayersReady ? `Faltan piezas: cada jugador necesita ${MIN_SETTLEMENTS} poblados y ${MIN_ROADS} caminos` : ''}
           className={`flex-[2] py-2.5 rounded-xl text-sm font-bold transition-colors ${

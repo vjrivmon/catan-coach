@@ -2,6 +2,7 @@ import type { LLMPort } from '../domain/ports'
 import type { Message, UserLevel } from '../domain/entities'
 import type { CoachState } from './SuggestionAgent'
 import { config } from '../config'
+import { debugLog } from '../lib/debugLog'
 
 export interface GeneticRecommendation {
   action: string
@@ -155,6 +156,8 @@ export class GeneratorAgent {
     coachState?: CoachState
   ): AsyncIterable<string> {
     const systemPrompt = buildSystemPrompt(level, seenConcepts, coachState)
+    debugLog.systemPrompt(systemPrompt)
+    debugLog.llmStart(config.ollama.mainModel)
     const userPrompt = buildUserPrompt(message, context, history)
 
     const ollamaUrl = `${config.ollama.baseUrl}/api/generate`
