@@ -159,24 +159,35 @@ const PLAYER_COLORS: Record<string, string> = {
 type Piece = { type: 'settlement' | 'city' | 'road'; color: string }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-interface BoardOverlayProps {
-  onClose:       () => void
-  onConfirm:     (pieces: Record<string, Piece>) => void
-  initialPieces?: Record<string, Piece>
+export interface BoardConfirmPayload {
+  pieces:      Record<string, Piece>
+  myColor:     string
+  assignments: string[]   // [Tú, J2, J3?, J4?]
 }
 
-export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOverlayProps) {
+interface BoardOverlayProps {
+  onClose:       () => void
+  onConfirm:     (payload: BoardConfirmPayload) => void
+  initialPieces?: Record<string, Piece>
+  initialMyColor?: string
+  initialAssignments?: string[]
+}
+
+export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments }: BoardOverlayProps) {
   // assignments[i] = color for player i: [Tú, J2, J3, J4]
   const ALL_COLORS = ['red','blue','orange','white'] as const
   const PLAYER_LABELS = ['Tú','J2','J3','J4']
 
   const [assignments, setAssignments] = useState<string[]>(() => {
+    if (initialAssignments && initialAssignments.length > 0) return initialAssignments
     if (Object.values(initialPieces).length === 0) return []
-    const myC = Object.values(initialPieces)[0].color
+    const myC = initialMyColor ?? Object.values(initialPieces)[0].color
     const others = ALL_COLORS.filter(c => c !== myC)
     return [myC, others[0], others[1], others[2]]
   })
-  const [colorsConfirmed, setColorsConfirmed] = useState(Object.values(initialPieces).length > 0)
+  const [colorsConfirmed, setColorsConfirmed] = useState(
+    (initialAssignments && initialAssignments.length > 0) || Object.values(initialPieces).length > 0
+  )
 
   // Derived color → label map
   const colorToLabel: Record<string, string> = {}
@@ -548,7 +559,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {} }: BoardOv
           className="flex-1 py-2.5 rounded-xl border border-stone-600 bg-stone-700 text-stone-200 text-sm font-semibold">
           Limpiar
         </button>
-        <button onClick={() => onConfirm(pieces)}
+        <button onClick={() => onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments })}
           className="flex-[2] py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors">
           Confirmar tablero{pieceCount > 0 ? ` (${pieceCount})` : ''} →
         </button>

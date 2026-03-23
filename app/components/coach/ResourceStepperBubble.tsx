@@ -3,14 +3,14 @@
 import { useState } from 'react'
 
 const RESOURCES = [
-  { key: 'wood',    label: 'Madera',   color: '#166534', emoji: '🪵' },
-  { key: 'clay',    label: 'Arcilla',  color: '#b45309', emoji: '🧱' },
-  { key: 'cereal',  label: 'Trigo',    color: '#ca8a04', emoji: '🌾' },
-  { key: 'wool',    label: 'Oveja',    color: '#65a30d', emoji: '🐑' },
-  { key: 'mineral', label: 'Mineral',  color: '#6b7280', emoji: '⛏️' },
+  { key: 'wood',    label: 'Madera',   color: '#166534' },
+  { key: 'clay',    label: 'Arcilla',  color: '#b45309' },
+  { key: 'cereal',  label: 'Trigo',    color: '#ca8a04' },
+  { key: 'wool',    label: 'Oveja',    color: '#65a30d' },
+  { key: 'mineral', label: 'Mineral',  color: '#6b7280' },
 ] as const
 
-type ResourceKey = typeof RESOURCES[number]['key']
+type ResourceKey = (typeof RESOURCES)[number]['key']
 type Counts = Record<ResourceKey, number>
 
 interface ResourceStepperBubbleProps {
@@ -36,9 +36,8 @@ export function ResourceStepperBubble({ onConfirm }: ResourceStepperBubbleProps)
         </p>
 
         <div className="flex flex-col gap-2">
-          {RESOURCES.map(({ key, label, color, emoji }) => (
+          {RESOURCES.map(({ key, label, color }) => (
             <div key={key} className="flex items-center gap-2">
-              <span className="text-base w-5 shrink-0">{emoji}</span>
               <span className="text-stone-200 text-sm flex-1">{label}</span>
               <div className="flex items-center gap-0 rounded-lg overflow-hidden border border-stone-600">
                 <button

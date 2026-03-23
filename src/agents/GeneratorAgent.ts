@@ -1,12 +1,40 @@
 import type { LLMPort } from '../domain/ports'
 import type { Message, UserLevel } from '../domain/entities'
+import type { CoachState } from './SuggestionAgent'
 import { config } from '../config'
 
-function buildSystemPrompt(level: UserLevel, seenConcepts: string[]): string {
+function buildSystemPrompt(level: UserLevel, seenConcepts: string[], coachState?: CoachState): string {
   const levelLabel = level === 'beginner' ? 'principiante' : level === 'intermediate' ? 'intermedio' : 'avanzado'
   const conceptsText = seenConcepts.length > 0
     ? `Conceptos ya vistos en esta sesión: ${seenConcepts.join(', ')}.`
     : 'Es la primera sesión del usuario.'
+
+  if (coachState?.boardSummary && coachState.boardSummary !== 'Tablero vacío') {
+    // Coach mode: full real-time board context
+    const resourceLine = coachState.resources
+      ? Object.entries(coachState.resources)
+          .filter(([, v]) => v > 0)
+          .map(([k, v]) => `${k}×${v}`)
+          .join(', ') || 'ninguno'
+      : 'no especificados aún'
+
+    return `Eres Catan Coach, asistente estratégico en partida real de Catan (juego base, en español).
+Analizas el estado actual del tablero y das recomendaciones concretas y accionables.
+
+ESTADO ACTUAL DEL TABLERO:
+${coachState.boardSummary}
+
+RECURSOS ACTUALES DEL JUGADOR: ${resourceLine}
+
+Instrucciones para modo Coach en partida:
+- Basa TODAS tus respuestas en el estado real del tablero descrito arriba. No inventes posiciones ni recursos.
+- Cuando el jugador pide la mejor jugada, evalúa qué puede construir con sus recursos actuales.
+- Considera las posiciones de los otros jugadores para recomendar bloqueos, expansión o comercio.
+- Sé directo: da la recomendación principal primero, luego el razonamiento.
+- Usa los números de producción (6, 8 = alta probabilidad; 2, 12 = baja) para justificar tu análisis.
+- Responde siempre en español, sin emojis.
+- Nivel del jugador: ${levelLabel}.`
+  }
 
   return `Eres Catan Coach, un asistente experto en el juego de mesa Catan (juego base, en español).
 Tu misión es ayudar a los jugadores a aprender y mejorar de forma progresiva.
@@ -19,7 +47,7 @@ Instrucciones:
 - Para intermedios: asume conocimiento básico, profundiza en estrategia.
 - Para avanzados: habla de optimización, probabilidades y meta-juego.
 - Si hay contexto RAG disponible, úsalo como base de tu respuesta.
-- Sé conciso pero completo. Responde siempre en español.
+- Sé conciso pero completo. Responde siempre en español. Sin emojis.
 - Si la pregunta no tiene que ver con Catan, redirige amablemente.
 - No menciones el nivel del usuario explícitamente a menos que sea relevante.`
 }
@@ -45,9 +73,10 @@ export class GeneratorAgent {
     context: string,
     history: Message[],
     level: UserLevel,
-    seenConcepts: string[]
+    seenConcepts: string[],
+    coachState?: CoachState
   ): AsyncIterable<string> {
-    const systemPrompt = buildSystemPrompt(level, seenConcepts)
+    const systemPrompt = buildSystemPrompt(level, seenConcepts, coachState)
     const userPrompt = buildUserPrompt(message, context, history)
 
     const ollamaUrl = `${config.ollama.baseUrl}/api/generate`

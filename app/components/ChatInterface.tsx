@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { CoachAnalyzeModal } from './coach/CoachAnalyzeModal'
 import { CameraOverlay } from './coach/CameraOverlay'
-import { BoardOverlay } from './coach/BoardOverlay'
+import { BoardOverlay, type BoardConfirmPayload } from './coach/BoardOverlay'
 import { ResourceStepperBubble } from './coach/ResourceStepperBubble'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
@@ -80,26 +80,140 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [showCamera, setShowCamera]             = useState(false)
   const [showBoard, setShowBoard]               = useState(false)
   const [coachStep, setCoachStep]               = useState<null | 'waiting-resources'>(null)
-  // Persisted board pieces across opens — only reset on "nueva conversación"
+  // Persisted board state across opens — only reset on "nueva conversación"
   const [savedPieces, setSavedPieces]           = useState<Record<string, {type:'settlement'|'city'|'road';color:string}>>({})
+  const [savedMyColor, setSavedMyColor]         = useState<string>('red')
+  const [savedAssignments, setSavedAssignments] = useState<string[]>([])
   const [savedResources, setSavedResources]     = useState<Record<string,number> | null>(null)
   const boardConfigured                         = Object.keys(savedPieces).length > 0
 
-  /** Summarise savedPieces as a readable string for the SuggestionAgent */
-  const buildBoardSummary = useCallback((): string => {
-    const byColor: Record<string, {settlements:number;cities:number;roads:number}> = {}
-    const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
-    for (const piece of Object.values(savedPieces)) {
-      const c = piece.color
-      if (!byColor[c]) byColor[c] = { settlements: 0, cities: 0, roads: 0 }
-      if (piece.type === 'settlement') byColor[c].settlements++
-      else if (piece.type === 'city')  byColor[c].cities++
-      else if (piece.type === 'road')  byColor[c].roads++
+  // Terrain + number data mirrors BoardOverlay constants — needed to enrich board summary
+  const TERRAIN_ORDER_CI = [
+    'mineral','wool','wood',
+    'cereal','clay','wool','clay',
+    'clay','cereal','desert','wood','mineral',
+    'wood','mineral','cereal','wool',
+    'cereal','wood','wool',
+  ] as const
+  const NUMBERS_CI = [10,2,9, 12,6,4,10, 9,11,0,3,8, 8,3,4,5, 5,6,11]
+
+  // Geometry mirrors BoardOverlay for vertex → hex mapping
+  const R_CI = 40
+  const W_CI = Math.sqrt(3) * R_CI
+  const ROW_H_CI = 1.5 * R_CI
+  const ROWS_CI = [
+    { n: 3, colStart: 1 }, { n: 4, colStart: 0.5 }, { n: 5, colStart: 0 },
+    { n: 4, colStart: 0.5 }, { n: 3, colStart: 1 },
+  ]
+  const SVG_W_CI = 390; const PAD_TOP_CI = 50
+  const X0_CI = (SVG_W_CI - 5 * W_CI) / 2 + W_CI / 2
+  const HEX_CENTERS_CI: [number, number][] = []
+  for (let r = 0; r < ROWS_CI.length; r++) {
+    for (let c = 0; c < ROWS_CI[r].n; c++) {
+      const cx = X0_CI + (ROWS_CI[r].colStart + c) * W_CI
+      const cy = PAD_TOP_CI + r * ROW_H_CI
+      HEX_CENTERS_CI.push([cx, cy])
     }
-    return Object.entries(byColor).map(([c, s]) =>
-      `${colorNames[c]||c}: ${s.settlements} poblado${s.settlements!==1?'s':''}, ${s.cities} ciudad${s.cities!==1?'es':''}, ${s.roads} camino${s.roads!==1?'s':''}`
-    ).join('. ') || 'Tablero vacío'
-  }, [savedPieces])
+  }
+  const ANGLES_CI = [30,90,150,210,270,330].map(d => (d * Math.PI) / 180)
+  function hexVerticesCI(cx: number, cy: number): [number, number][] {
+    return ANGLES_CI.map(a => [cx + R_CI * Math.cos(a), cy + R_CI * Math.sin(a)] as [number, number])
+  }
+  function approxKeyCI(x: number, y: number) { return `${Math.round(x)},${Math.round(y)}` }
+
+  /** Build full board context string for the LLM */
+  const buildBoardSummary = useCallback((): string => {
+    if (Object.keys(savedPieces).length === 0) return 'Tablero vacío'
+
+    const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
+    const terrainNames: Record<string,string> = {
+      clay:'arcilla', mineral:'mineral', wood:'madera', cereal:'trigo', wool:'oveja', desert:'desierto'
+    }
+    const myLabel = colorNames[savedMyColor] ?? savedMyColor
+
+    // Build vertex → hex index map
+    const vertToHexes = new Map<string, number[]>()
+    HEX_CENTERS_CI.forEach(([cx, cy], hi) => {
+      for (const [vx, vy] of hexVerticesCI(cx, cy)) {
+        const k = approxKeyCI(vx, vy)
+        if (!vertToHexes.has(k)) vertToHexes.set(k, [])
+        vertToHexes.get(k)!.push(hi)
+      }
+    })
+
+    // Build edge → hex index map (midpoint key)
+    const edgeToHexes = new Map<string, number[]>()
+    HEX_CENTERS_CI.forEach(([cx, cy], hi) => {
+      const verts = hexVerticesCI(cx, cy)
+      for (let i = 0; i < 6; i++) {
+        const [x1, y1] = verts[i]; const [x2, y2] = verts[(i+1)%6]
+        const k = approxKeyCI((x1+x2)/2, (y1+y2)/2)
+        if (!edgeToHexes.has(k)) edgeToHexes.set(k, [])
+        edgeToHexes.get(k)!.push(hi)
+      }
+    })
+
+    // Group pieces by color
+    const byColor: Record<string, { settlements: string[], cities: string[], roads: string[] }> = {}
+    for (const [key, piece] of Object.entries(savedPieces)) {
+      const c = piece.color
+      if (!byColor[c]) byColor[c] = { settlements: [], cities: [], roads: [] }
+
+      // Resolve which hexes this piece touches
+      let hexIndices: number[] = []
+      if (key.startsWith('v')) {
+        const id = parseInt(key.slice(1))
+        // Find vertex by id via rebuild (simplified: use key from DOM — we store approxKey)
+        // Since we can't easily map id→coords without full graph rebuild, use hex centers approximation
+        // Instead, find the vertex key from saved pieces context — we store by approxKey in the overlay
+        hexIndices = [] // will be enriched below via alternative lookup
+      } else if (key.startsWith('e')) {
+        hexIndices = edgeToHexes.get(key) ?? []
+      }
+
+      const terrainDesc = hexIndices
+        .filter(hi => TERRAIN_ORDER_CI[hi] !== 'desert')
+        .map(hi => {
+          const t = terrainNames[TERRAIN_ORDER_CI[hi]] ?? TERRAIN_ORDER_CI[hi]
+          const n = NUMBERS_CI[hi]
+          return n > 0 ? `${t}(${n})` : t
+        }).join('+') || 'posición'
+
+      if (piece.type === 'settlement') byColor[c].settlements.push(terrainDesc)
+      else if (piece.type === 'city')  byColor[c].cities.push(terrainDesc)
+      else if (piece.type === 'road')  byColor[c].roads.push(terrainDesc)
+    }
+
+    const playerLines: string[] = []
+    const playerOrder = savedAssignments.length > 0
+      ? savedAssignments
+      : Object.keys(byColor)
+
+    for (const color of playerOrder) {
+      const s = byColor[color]
+      if (!s) continue
+      const label = colorNames[color] ?? color
+      const isMe = color === savedMyColor
+      const parts: string[] = []
+      if (s.settlements.length > 0) parts.push(`${s.settlements.length} poblado${s.settlements.length>1?'s':''} (${s.settlements.join(', ')})`)
+      if (s.cities.length > 0)      parts.push(`${s.cities.length} ciudad${s.cities.length>1?'es':''} (${s.cities.join(', ')})`)
+      if (s.roads.length > 0)       parts.push(`${s.roads.length} camino${s.roads.length>1?'s':''}`)
+      if (parts.length > 0) playerLines.push(`${isMe ? `TU COLOR (${label})` : label}: ${parts.join(', ')}`)
+    }
+
+    const resourceLine = savedResources
+      ? Object.entries(savedResources)
+          .filter(([,v]) => v > 0)
+          .map(([k,v]) => `${terrainNames[k]||k}×${v}`)
+          .join(', ')
+      : null
+
+    let summary = `TABLERO ACTUAL:\n${playerLines.join('\n') || 'Sin piezas colocadas'}`
+    if (resourceLine) summary += `\n\nRECURSOS DE ${myLabel.toUpperCase()}: ${resourceLine}`
+
+    return summary
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedPieces, savedMyColor, savedAssignments, savedResources])
   const [isLoading, setIsLoading]         = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [lastSuggestions, setLastSuggestions]   = useState<string[]>([])
@@ -202,6 +316,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSidebarOpen(false)
     // Reset coach state completely
     setSavedPieces({})
+    setSavedMyColor('red')
+    setSavedAssignments([])
     setSavedResources(null)
     setCoachMode(false)
     setCoachStep(null)
@@ -221,7 +337,10 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   }, [])
 
   // ── Enviar mensaje ────────────────────────────────────────
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (
+    text: string,
+    coachStateOverride?: { boardSummary: string; resources: Record<string,number> | null }
+  ) => {
     if (!text.trim() || isLoading) return
 
     const convId = activeConvId || `conv-${Date.now()}`
@@ -243,6 +362,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setStreamingContent('')
     setLastSuggestions([])
 
+    // Build coachState: prefer explicit override, then derive from saved state
+    const activeCoachState = coachMode
+      ? (coachStateOverride ?? (boardConfigured ? {
+          boardSummary: buildBoardSummary(),
+          resources: savedResources,
+        } : undefined))
+      : undefined
+
     let fullResponse = ''
     let suggestions: string[] = []
     let agentUsed: string = 'direct'
@@ -257,13 +384,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           userLevel: updatedLevel,
           seenConcepts,
           mode: coachMode ? 'coach' : 'aprende',
-          // coachState ONLY in coach mode — never leaks to aprende
-          ...(coachMode && boardConfigured ? {
-            coachState: {
-              boardSummary: buildBoardSummary(),
-              resources: savedResources,
-            }
-          } : {}),
+          ...(activeCoachState ? { coachState: activeCoachState } : {}),
         }),
       })
 
@@ -470,48 +591,33 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 onConfirm={async (counts) => {
                   setCoachStep(null)
                   setSavedResources(counts)   // persist for future turns
-                  const total = Object.values(counts).reduce((a, b) => a + b, 0)
-                  const lines = [
-                    counts.wood    > 0 ? `Madera: ${counts.wood}`   : '',
-                    counts.clay    > 0 ? `Arcilla: ${counts.clay}`  : '',
-                    counts.cereal  > 0 ? `Trigo: ${counts.cereal}`  : '',
-                    counts.wool    > 0 ? `Oveja: ${counts.wool}`    : '',
-                    counts.mineral > 0 ? `Mineral: ${counts.mineral}` : '',
-                  ].filter(Boolean).join(' · ')
+
+                  const resourceLabels: Record<string,string> = {
+                    wood:'Madera', clay:'Arcilla', cereal:'Trigo', wool:'Oveja', mineral:'Mineral'
+                  }
+                  const lines = (Object.entries(counts) as [string,number][])
+                    .filter(([,v]) => v > 0)
+                    .map(([k,v]) => `${resourceLabels[k]||k}: ${v}`)
+                    .join(' · ')
 
                   const userMsg: import('@/src/domain/entities').Message = {
                     id: `res-${Date.now()}`, role: 'user',
-                    content: `Recursos: ${lines || 'ninguno'}`,
+                    content: `Recursos confirmados: ${lines || 'ninguno'}`,
                     timestamp: Date.now(),
                   }
                   setSession(s => ({ ...s, messages: [...s.messages, userMsg] }))
-                  setIsLoading(true)
-                  await new Promise(r => setTimeout(r, 1000))
 
-                  // Recommendation based on resources
-                  let rec = ''
-                  if (counts.wood >= 1 && counts.clay >= 1) rec = '🛤️ **Construye un camino** hacia la zona de puertos del norte — tienes los recursos para expandirte.'
-                  else if (counts.cereal >= 2 && counts.mineral >= 3) rec = '🏙️ **Mejora tu pueblo a ciudad** en el hex 11 (cereal) — máxima producción con tu stock actual.'
-                  else if (counts.wood >= 1 && counts.clay >= 1 && counts.cereal >= 1 && counts.wool >= 1) rec = '🏠 **Construye un pueblo** en el vértice entre cereal(11) y mineral(8) — intersección óptima según el GeneticAgent.'
-                  else rec = `Con ${total} recurso${total !== 1 ? 's' : ''} conviene esperar al siguiente turno y acumular antes de construir.`
-
-                  const botMsg: import('@/src/domain/entities').Message = {
-                    id: `rec-${Date.now()}`, role: 'assistant',
-                    content: rec,
-                    timestamp: Date.now(),
+                  // Build coachState with fresh resources — savedResources not yet updated in state
+                  const freshCoachState = {
+                    boardSummary: buildBoardSummary(),
+                    resources: counts,
                   }
-                  setSession(s => ({ ...s, messages: [...s.messages, botMsg] }))
-                  setIsLoading(false)
-                  // Proactive board-aware suggestions after resource confirmation
-                  setLastSuggestions([
-                    '¿Cuál es mi mejor jugada en este turno?',
-                    total === 0
-                      ? '¿Qué estrategia de producción me recomiendas?'
-                      : counts.wood >= 1 && counts.clay >= 1
-                        ? '¿Debo construir el camino ahora o esperar?'
-                        : '¿Cuándo conviene hacer intercambio marítimo?',
-                    '¿Cómo afectan mis puertos a la estrategia?',
-                  ])
+
+                  // Ask the LLM for a real recommendation via /api/chat
+                  await sendMessage(
+                    '¿Cuál es la mejor jugada que puedo hacer con mis recursos actuales y el estado del tablero?',
+                    freshCoachState,
+                  )
                 }}
               />
             )}
@@ -568,21 +674,18 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             // Add user message showing photo was sent
             const photoMsg: import('@/src/domain/entities').Message = {
               id: `photo-${Date.now()}`, role: 'user',
-              content: '📷 Foto del tablero enviada',
+              content: 'Foto del tablero enviada',
               timestamp: Date.now(),
             }
             setSession(s => ({ ...s, messages: [...s.messages, photoMsg] }))
-            // Simulate analysis response
-            setIsLoading(true)
-            await new Promise(r => setTimeout(r, 1200))
+            // Placeholder — vision analysis not yet implemented
             const analysisMsg: import('@/src/domain/entities').Message = {
               id: `analysis-${Date.now()}`, role: 'assistant',
-              content: '✅ He detectado el tablero. ¿Cuántos recursos tienes ahora?',
+              content: 'Foto recibida. El análisis automático de tablero está en desarrollo. Por ahora, configura las piezas manualmente con el editor de tablero.',
               timestamp: Date.now(),
             }
             setSession(s => ({ ...s, messages: [...s.messages, analysisMsg] }))
-            setIsLoading(false)
-            setCoachStep('waiting-resources')
+            setCoachStep(null)
           }}
         />
       )}
@@ -590,28 +693,32 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       {showBoard && (
         <BoardOverlay
           initialPieces={savedPieces}
+          initialMyColor={savedMyColor}
+          initialAssignments={savedAssignments}
           onClose={() => {
             setShowBoard(false)
-            // If board was already configured, just close — don't re-trigger the modal
             if (!boardConfigured) setShowAnalyzeModal(true)
           }}
-          onConfirm={(pieces) => {
+          onConfirm={({ pieces, myColor, assignments }) => {
             setShowBoard(false)
-            setSavedPieces(pieces)   // persist for future opens
+            setSavedPieces(pieces)
+            setSavedMyColor(myColor)
+            setSavedAssignments(assignments)
             const count = Object.keys(pieces).length
             const isUpdate = boardConfigured
+            const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
             const boardMsg: import('@/src/domain/entities').Message = {
               id: `board-${Date.now()}`, role: 'user',
               content: isUpdate
-                ? `🗺️ Tablero actualizado (${count} piezas)`
-                : `🗺️ Tablero configurado (${count > 0 ? count + ' piezas' : 'vacío'})`,
+                ? `Tablero actualizado — color ${colorNames[myColor]??myColor}, ${count} piezas`
+                : `Tablero configurado — color ${colorNames[myColor]??myColor}${count > 0 ? `, ${count} piezas` : ', sin piezas aún'}`,
               timestamp: Date.now(),
             }
             const replyMsg: import('@/src/domain/entities').Message = {
               id: `board-reply-${Date.now()}`, role: 'assistant',
               content: isUpdate
-                ? '✅ Tablero actualizado. ¿Cuántos recursos tienes ahora?'
-                : 'Tablero recibido. ¿Cuántos recursos tienes ahora?',
+                ? 'Tablero actualizado. Indica tus recursos para recibir una recomendación ajustada.'
+                : 'Tablero recibido. Indica tus recursos para que pueda darte una recomendación real.',
               timestamp: Date.now(),
             }
             setSession(s => ({ ...s, messages: [...s.messages, boardMsg, replyMsg] }))

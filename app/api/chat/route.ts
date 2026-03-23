@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
             context,
             history,
             userLevel,
-            seenConcepts
+            seenConcepts,
+            activeCoachState
           )) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
           }
