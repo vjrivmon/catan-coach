@@ -30,7 +30,7 @@ test('P3-2: Botón Iniciar Partida aparece tras confirmar tablero+recursos', asy
   // El board overlay debe estar visible — cerrar con botón limpiar/confirmar no disponible sin piezas
   // Solo verificamos que el flujo llega al board
   await expect(page.getByText('Pueblo')).toBeVisible()
-  await expect(page.getByText('Camino')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Camino' })).toBeVisible()
 })
 
 test('P3-3: DevCardStepper tiene las 5 cartas', async ({ page }) => {
