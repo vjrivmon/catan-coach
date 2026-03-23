@@ -452,10 +452,12 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PLAYER_COLORS[color] }} />
                   <span className="text-xs text-stone-400">{COLOR_NAMES[color] ?? color}:</span>
                   <span className={`text-xs font-mono ${sColor}`}>
-                    {settlements}/{MAX_SETTLEMENTS}P
+                    <span className="hidden sm:inline">{settlements}/{MAX_SETTLEMENTS} Poblados</span>
+                    <span className="sm:hidden">{settlements}/{MAX_SETTLEMENTS}P</span>
                   </span>
                   <span className={`text-xs font-mono ${rColor}`}>
-                    {roads}/{MAX_ROADS}C
+                    <span className="hidden sm:inline">{roads}/{MAX_ROADS} Caminos</span>
+                    <span className="sm:hidden">{roads}/{MAX_ROADS}C</span>
                   </span>
                   {done ? (
                     <span className="text-green-500 text-xs">✓</span>
