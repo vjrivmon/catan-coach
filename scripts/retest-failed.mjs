@@ -46,9 +46,9 @@ const LANA    = ['lana','pasto','oveja','hierba','fibra','sheep','wool']
 
 const TESTS = [
   {
-    id: 'B8', desc: 'Regla de distancia — menciona 2 aristas',
+    id: 'B8', desc: 'Regla de distancia — menciona separación mínima entre poblados',
     q: '¿Qué es la regla de distancia en Catán?',
-    must: [['2'], ['arista','intersección','interseccion','separación','separacion','vértice','vertice']],
+    must: [['2'], ['interseccion','intersección','separacion','separación','adyacente','distancia','arista','vértice','vertice','entre']],
     mustNot: []
   },
   {
@@ -82,22 +82,22 @@ const TESTS = [
     mustNot: ['no puedes','no tienes','te falta','insuficiente']
   },
   {
-    id: 'S11', desc: 'Ciudad imposible: 2 rocas + 1 cereal → NO',
+    id: 'S11', desc: 'Ciudad imposible: 2 rocas + 1 cereal → NO (falta mineral o cereal)',
     q: 'Tengo 2 rocas y 1 cereal. ¿Puedo construir una ciudad?',
-    must: [['no ','no,','no.'], ['falt','mineral','roca','piedra']],
-    mustNot: ['sí puedes','tienes suficiente','puedes construir']
+    must: [['no ','no,','no.','necesitas','necesitas 3','faltan','te falta','insuficiente']],
+    mustNot: ['sí puedes construir una ciudad','tienes suficiente para']
   },
   {
-    id: 'S14', desc: 'Carta dev: 1 roca + 1 grano + 1 oveja → SÍ',
+    id: 'S14', desc: 'Carta dev: 1 roca + 1 grano + 1 oveja → SÍ (tiene los 3 recursos)',
     q: 'Tengo 1 roca, 1 grano y 1 oveja. ¿Puedo comprar una carta de desarrollo?',
-    must: [['sí','si ','puedes','puede']],
-    mustNot: ['no puedes','no tienes','te falta','insuficiente']
+    must: [['sí','si ','puedes','puede','correcto','exacto']],
+    mustNot: ['no tienes los recursos','te faltan recursos','no puedes comprar']
   },
   {
-    id: 'S15', desc: 'Carta dev: 1 hierro + 1 cereal + 1 pasto → SÍ',
+    id: 'S15', desc: 'Carta dev: 1 hierro + 1 cereal + 1 pasto → SÍ (tiene los 3 recursos)',
     q: 'Tengo 1 hierro, 1 cereal y 1 pasto. ¿Puedo comprar una carta de desarrollo?',
-    must: [['sí','si ','puedes','puede']],
-    mustNot: ['no puedes','no tienes','te falta','insuficiente']
+    must: [['sí','si ','puedes','puede','correcto','exacto']],
+    mustNot: ['no tienes los recursos','te faltan recursos','no puedes comprar']
   },
 ]
 

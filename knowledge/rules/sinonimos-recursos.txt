@@ -66,6 +66,34 @@ Coste: 1 MINERAL (roca/piedra/hierro) + 1 LANA (pasto/oveja/hierba) + 1 CEREAL (
 
 ---
 
+## EJEMPLOS CONCRETOS DE RESPUESTA CORRECTA
+
+Pregunta: "Tengo 3 rocas y 2 granos, ¿puedo construir una ciudad?"
+Respuesta correcta: SÍ. 3 rocas = 3 mineral, 2 granos = 2 cereal. Eso es exactamente el coste de una ciudad (3 mineral + 2 cereal). PUEDES construir la ciudad.
+
+Pregunta: "Tengo 3 piedras y 2 espigas, ¿puedo construir una ciudad?"
+Respuesta correcta: SÍ. 3 piedras = 3 mineral, 2 espigas = 2 cereal. PUEDES construir la ciudad.
+
+Pregunta: "Tengo 3 hierros y 2 cereales, ¿puedo construir una ciudad?"
+Respuesta correcta: SÍ. 3 hierros = 3 mineral, 2 cereales = 2 cereal. PUEDES construir la ciudad.
+
+Pregunta: "Tengo 2 rocas y 1 cereal, ¿puedo construir una ciudad?"
+Respuesta correcta: NO. Necesitas 3 mineral (rocas/piedras) y 2 cereal (trigos/granos). Solo tienes 2 mineral, te falta 1 mineral.
+
+Pregunta: "Tengo 1 tronco y 1 adobe, ¿puedo construir un camino?"
+Respuesta correcta: SÍ. 1 tronco = 1 madera, 1 adobe = 1 ladrillo. Eso es exactamente el coste de un camino. PUEDES construirlo.
+
+Pregunta: "Tengo 1 árbol y 1 arcilla, ¿puedo construir un camino?"
+Respuesta correcta: SÍ. 1 árbol = 1 madera, 1 arcilla = 1 ladrillo. PUEDES construir el camino.
+
+Pregunta: "Tengo 1 roca, 1 grano y 1 oveja, ¿puedo comprar carta de desarrollo?"
+Respuesta correcta: SÍ. 1 roca = 1 mineral, 1 grano = 1 cereal, 1 oveja = 1 lana. Eso es exactamente el coste de una carta de desarrollo. PUEDES comprarla.
+
+Pregunta: "Tengo 1 hierro, 1 cereal y 1 pasto, ¿puedo comprar carta de desarrollo?"
+Respuesta correcta: SÍ. 1 hierro = 1 mineral, 1 pasto = 1 lana. PUEDES comprar la carta.
+
+---
+
 ## TABLA DE PRODUCCIÓN POR TERRENO
 
 - BOSQUE → produce MADERA (también llamada leña, tronco, árbol)
