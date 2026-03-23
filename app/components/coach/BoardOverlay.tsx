@@ -179,14 +179,13 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
   const PLAYER_LABELS = ['Tú','J2','J3','J4']
 
   const [assignments, setAssignments] = useState<string[]>(() => {
+    // 1. Prefer explicit assignments (restored from confirmed session)
     if (initialAssignments && initialAssignments.length > 0) return initialAssignments
-    if (Object.values(initialPieces).length === 0) return []
-    const myC = initialMyColor ?? Object.values(initialPieces)[0].color
-    const others = ALL_COLORS.filter(c => c !== myC)
-    return [myC, others[0], others[1], others[2]]
+    // 2. No prior context — fresh start
+    return []
   })
   const [colorsConfirmed, setColorsConfirmed] = useState(
-    (initialAssignments && initialAssignments.length > 0) || Object.values(initialPieces).length > 0
+    (initialAssignments && initialAssignments.length > 0)
   )
 
   // Derived color → label map
@@ -194,7 +193,9 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
   assignments.forEach((c, i) => { colorToLabel[c] = PLAYER_LABELS[i] })
 
   const myColor = assignments[0] ?? null
-  const [selColor, setSelColor] = useState(myColor ?? 'red')
+  const [selColor, setSelColor] = useState(
+    (initialAssignments && initialAssignments.length > 0 ? initialAssignments[0] : null) ?? 'red'
+  )
   const [selPiece, setSelPiece] = useState<'settlement' | 'city' | 'road'>('settlement')
   const [pieces, setPieces]     = useState<Record<string, Piece>>(initialPieces)
 
