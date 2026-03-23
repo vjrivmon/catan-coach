@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { OnboardingModal } from './OnboardingModal'
+import { OnboardingTour } from './OnboardingTour'
 import { CoachAnalyzeModal } from './coach/CoachAnalyzeModal'
 import { CameraOverlay } from './coach/CameraOverlay'
 import { BoardOverlay, type BoardConfirmPayload } from './coach/BoardOverlay'
@@ -80,10 +80,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   // Mode state
   // hasSelectedMode: user has chosen one of the 3 options (text-only, scan, board)
   // coachMode: true = has board context; false = text-only (rules/strategy Q&A)
-  const [showOnboarding, setShowOnboarding]     = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('catan-onboarding-done') !== '1'
-  })
+  const [showOnboarding, setShowOnboarding]     = useState(false)
   const [hasSelectedMode, setHasSelectedMode]   = useState(false)
   const [coachMode, setCoachMode]               = useState(false)
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false)
@@ -306,6 +303,13 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   }, [])
 
   // ── Mount: detectar hard refresh vs recarga normal ────────
+  // Init onboarding after hydration (avoids SSR mismatch)
+  useEffect(() => {
+    if (localStorage.getItem('catan-onboarding-done') !== '1') {
+      setShowOnboarding(true)
+    }
+  }, [])
+
   useEffect(() => {
     const loadedHistory = loadHistory()
     setHistory(loadedHistory)
@@ -590,6 +594,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             else setShowAnalyzeModal(true)
           }}
           title={boardConfigured ? 'Ver tablero' : 'Opciones de partida'}
+          data-tour="board-btn"
           className="relative flex items-center justify-center w-9 h-9 rounded-xl shrink-0 bg-stone-900/60 border border-stone-700 hover:border-amber-600 transition-colors text-stone-400 hover:text-amber-400"
         >
           <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none">
@@ -685,7 +690,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           {/* ── Mode selection — shown before user picks an option ── */}
           {!hasSelectedMode && (
             <div className="flex-1 flex flex-col justify-end pb-6 px-4">
-              <div className="max-w-lg mx-auto w-full flex flex-col gap-4">
+              <div data-tour="mode-select" className="max-w-lg mx-auto w-full flex flex-col gap-4">
                 <div className="text-center mb-2">
                   <p className="text-stone-100 font-bold text-lg">¿Cómo quieres empezar?</p>
                   <p className="text-stone-400 text-sm mt-1">Elige según tu situación</p>
@@ -944,6 +949,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
               <div className="flex items-center gap-2 bg-stone-700 rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-amber-600">
                 <textarea
+                  data-tour="chat-input"
                   ref={inputRef}
                   value={input}
                   onChange={e => { setInput(e.target.value); autoResize() }}
@@ -972,12 +978,12 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         </div>
       </div>
 
-      {/* ── Onboarding — first time only ── */}
+      {/* ── Onboarding tour — first time only ── */}
       {showOnboarding && (
-        <OnboardingModal
+        <OnboardingTour
           onDone={() => {
             setShowOnboarding(false)
-            if (typeof window !== 'undefined') localStorage.setItem('catan-onboarding-done', '1')
+            localStorage.setItem('catan-onboarding-done', '1')
           }}
         />
       )}

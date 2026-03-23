@@ -5,3 +5,56 @@ html, body {
   height: 100%;
   overflow: hidden;
 }
+
+/* ── driver.js — Catan Coach tour styles ── */
+.catan-tour-popover {
+  background: #292524 !important; /* stone-800 */
+  border: 1px solid #57534e !important; /* stone-600 */
+  border-radius: 16px !important;
+  padding: 18px 20px !important;
+  max-width: 320px !important;
+}
+.catan-tour-popover .driver-popover-title {
+  color: #fbbf24 !important; /* amber-400 */
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 6px !important;
+}
+.catan-tour-popover .driver-popover-description {
+  color: #d6d3d1 !important; /* stone-300 */
+  font-size: 0.85rem !important;
+  line-height: 1.5 !important;
+}
+.catan-tour-popover .driver-popover-footer {
+  margin-top: 14px !important;
+}
+.catan-tour-popover .driver-popover-progress-text {
+  color: #78716c !important; /* stone-500 */
+  font-size: 0.75rem !important;
+}
+.catan-tour-popover button.driver-popover-next-btn,
+.catan-tour-popover button.driver-popover-done-btn {
+  background: #d97706 !important; /* amber-600 */
+  color: #000 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  padding: 6px 14px !important;
+}
+.catan-tour-popover button.driver-popover-next-btn:hover,
+.catan-tour-popover button.driver-popover-done-btn:hover {
+  background: #f59e0b !important;
+}
+.catan-tour-popover button.driver-popover-prev-btn {
+  color: #a8a29e !important; /* stone-400 */
+  background: transparent !important;
+  border: 1px solid #57534e !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+}
+.catan-tour-popover button.driver-popover-close-btn {
+  color: #78716c !important;
+}
+.driver-overlay {
+  background: rgba(0,0,0,0.72) !important;
+}
