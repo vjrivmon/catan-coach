@@ -1,6 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { debugLog } from '@/src/lib/debugLog'
 
+/**
+ * Standard beginner board — 19 hexes in board order.
+ * Matches TERRAIN_ORDER and NUMBERS arrays in BoardOverlay.tsx.
+ * probability = dots / 36 (standard 2d6 distribution)
+ */
+const DOTS: Record<number,number> = {2:1,3:2,4:3,5:4,6:5,8:5,9:4,10:3,11:2,12:1}
+const TERRAIN_ORDER = [
+  'ore','wool','wood',
+  'wheat','brick','wool','brick',
+  'brick','wheat','desert','wood','ore',
+  'wood','ore','wheat','wool',
+  'wheat','wood','wool',
+]
+const NUMBERS = [10,2,9, 12,6,4,10, 9,11,0,3,8, 8,3,4,5, 5,6,11]
+
+// Axial coordinates for standard Catan board (hex grid)
+const HEX_COORDS = [
+  // row 0 (3 hexes)
+  {q:-2,r:0},{q:-1,r:-1},{q:0,r:-2},
+  // row 1 (4 hexes)
+  {q:-2,r:1},{q:-1,r:0},{q:0,r:-1},{q:1,r:-2},
+  // row 2 (5 hexes — widest)
+  {q:-2,r:2},{q:-1,r:1},{q:0,r:0},{q:1,r:-1},{q:2,r:-2},
+  // row 3 (4 hexes)
+  {q:-1,r:2},{q:0,r:1},{q:1,r:0},{q:2,r:-1},
+  // row 4 (3 hexes)
+  {q:0,r:2},{q:1,r:1},{q:2,r:0},
+]
+
+const STANDARD_HEXES = TERRAIN_ORDER.map((terrain, i) => ({
+  q: HEX_COORDS[i].q,
+  r: HEX_COORDS[i].r,
+  resource: terrain === 'ore' ? 'ore'
+    : terrain === 'wool' ? 'sheep'
+    : terrain === 'wood' ? 'wood'
+    : terrain === 'wheat' ? 'wheat'
+    : terrain === 'brick' ? 'brick'
+    : 'desert',
+  number: NUMBERS[i] > 0 ? NUMBERS[i] : null,
+  probability: NUMBERS[i] > 0 ? (DOTS[NUMBERS[i]] ?? 0) / 36 : 0,
+}))
+
 const COACH_API_URL = process.env.COACH_API_URL ?? 'http://localhost:8001'
 
 export interface CoachRecommendInput {
@@ -39,7 +81,12 @@ export async function POST(req: NextRequest) {
     })
 
     const payload = {
-      board_state: { hexes: [], vertices: [], ports: [], robber_hex: body.robberHex ?? 9 },
+      board_state: {
+        hexes: STANDARD_HEXES,
+        vertices: [],
+        ports: [],
+        robber_hex: body.robberHex ?? 9,
+      },
       player: {
         color: 'red',
         resources,

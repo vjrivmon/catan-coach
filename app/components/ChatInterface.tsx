@@ -180,68 +180,111 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
     // Group pieces by color
     const byColor: Record<string, { settlements: string[], cities: string[], roads: string[] }> = {}
+    // Probability dots per number (same as GeneticAgent NUMBER_DOTS)
+    const DOTS: Record<number,number> = {2:1,3:2,4:3,5:4,6:5,7:6,8:5,9:4,10:3,11:2,12:1}
+
+    // Per-vertex: accumulate production score and hex descriptions
+    const vertexProduction = new Map<number, { hexDescs: string[], dots: number }>()
+
     for (const [key, piece] of Object.entries(savedPieces)) {
       const c = piece.color
       if (!byColor[c]) byColor[c] = { settlements: [], cities: [], roads: [] }
 
-      // Resolve which hexes this piece touches using the full maps
       let hexIndices: number[] = []
       if (key.startsWith('v')) {
         const id = parseInt(key.slice(1))
         hexIndices = vertIdToHexes.get(id) ?? []
       } else if (key.startsWith('e')) {
-        const eid = key.slice(1) // "lo_hi"
-        hexIndices = edgeToHexes.get(eid) ?? []
+        hexIndices = edgeToHexes.get(key.slice(1)) ?? []
       }
 
-      const terrainDesc = hexIndices
-        .filter(hi => TERRAIN_ORDER_CI[hi] !== 'desert')
+      // Rich description: terrain(number=Xdots) per adjacent hex
+      const richHexDescs = hexIndices
+        .filter(hi => TERRAIN_ORDER_CI[hi] !== 'desert' && NUMBERS_CI[hi] > 0)
         .map(hi => {
           const t = terrainNames[TERRAIN_ORDER_CI[hi]] ?? TERRAIN_ORDER_CI[hi]
           const n = NUMBERS_CI[hi]
-          return n > 0 ? `${t}(${n})` : t
-        }).join('+') || 'posición'
+          const dots = DOTS[n] ?? 0
+          const isRobber = savedRobberHex === hi
+          return `${t}(${n}=${dots}pts${isRobber ? ',LADRÓN' : ''})`
+        })
 
-      if (piece.type === 'settlement') byColor[c].settlements.push(terrainDesc)
-      else if (piece.type === 'city')  byColor[c].cities.push(terrainDesc)
-      else if (piece.type === 'road')  byColor[c].roads.push(terrainDesc)
+      const totalDots = hexIndices
+        .filter(hi => TERRAIN_ORDER_CI[hi] !== 'desert' && NUMBERS_CI[hi] > 0 && savedRobberHex !== hi)
+        .reduce((acc, hi) => acc + (DOTS[NUMBERS_CI[hi]] ?? 0), 0)
+
+      const desc = richHexDescs.length > 0
+        ? `[${richHexDescs.join('+')}→${totalDots}pts/turno]`
+        : '[sin producción]'
+
+      if (piece.type === 'settlement') {
+        byColor[c].settlements.push(desc)
+        if (key.startsWith('v')) {
+          const id = parseInt(key.slice(1))
+          vertexProduction.set(id, { hexDescs: richHexDescs, dots: totalDots })
+        }
+      }
+      else if (piece.type === 'city')  byColor[c].cities.push(desc + '×2')
+      else if (piece.type === 'road')  byColor[c].roads.push(desc)
     }
 
+    // Calculate total expected production per turn for each player
     const playerLines: string[] = []
-    const playerOrder = savedAssignments.length > 0
-      ? savedAssignments
-      : Object.keys(byColor)
+    const playerOrder = savedAssignments.length > 0 ? savedAssignments : Object.keys(byColor)
 
     for (const color of playerOrder) {
       const s = byColor[color]
       if (!s) continue
       const label = colorNames[color] ?? color
       const isMe = color === savedMyColor
+
+      // Resource diversity: which resources does this player produce?
+      const myPieces = Object.entries(savedPieces).filter(([,p]) => p.color === color)
+      const producedResources = new Set<string>()
+      let totalProdPts = 0
+      for (const [key] of myPieces) {
+        const hexInds = key.startsWith('v')
+          ? vertIdToHexes.get(parseInt(key.slice(1))) ?? []
+          : edgeToHexes.get(key.slice(1)) ?? []
+        for (const hi of hexInds) {
+          if (TERRAIN_ORDER_CI[hi] !== 'desert' && NUMBERS_CI[hi] > 0 && savedRobberHex !== hi) {
+            producedResources.add(terrainNames[TERRAIN_ORDER_CI[hi]] ?? TERRAIN_ORDER_CI[hi])
+            totalProdPts += DOTS[NUMBERS_CI[hi]] ?? 0
+          }
+        }
+      }
+
       const parts: string[] = []
-      if (s.settlements.length > 0) parts.push(`${s.settlements.length} poblado${s.settlements.length>1?'s':''} (${s.settlements.join(', ')})`)
-      if (s.cities.length > 0)      parts.push(`${s.cities.length} ciudad${s.cities.length>1?'es':''} (${s.cities.join(', ')})`)
+      if (s.settlements.length > 0) parts.push(`${s.settlements.length} poblado${s.settlements.length>1?'s':''}: ${s.settlements.join(' y ')}`)
+      if (s.cities.length > 0)      parts.push(`${s.cities.length} ciudad${s.cities.length>1?'es':''}: ${s.cities.join(' y ')}`)
       if (s.roads.length > 0)       parts.push(`${s.roads.length} camino${s.roads.length>1?'s':''}`)
-      if (parts.length > 0) playerLines.push(`${isMe ? `TU COLOR (${label})` : label}: ${parts.join(', ')}`)
+      if (producedResources.size > 0) parts.push(`produce: ${[...producedResources].join('+')} (~${totalProdPts}pts/turno)`)
+
+      if (parts.length > 0) playerLines.push(`${isMe ? `TU COLOR (${label})` : label}:\n  ${parts.join('\n  ')}`)
     }
 
+    // Resources in hand
+    const RES_ES: Record<string,string> = { wood:'madera', clay:'arcilla', cereal:'trigo', wool:'lana', mineral:'mineral' }
     const resourceLine = savedResources
-      ? Object.entries(savedResources)
-          .filter(([,v]) => v > 0)
-          .map(([k,v]) => `${terrainNames[k]||k}×${v}`)
-          .join(', ')
+      ? Object.entries(savedResources).filter(([,v]) => v > 0)
+          .map(([k,v]) => `${RES_ES[k]||k}×${v}`).join(', ')
       : null
 
-    let summary = `TABLERO ACTUAL:\n${playerLines.join('\n') || 'Sin piezas colocadas'}`
-    if (resourceLine) summary += `\n\nRECURSOS DE ${myLabel.toUpperCase()}: ${resourceLine}`
+    // Robber context
+    let robberLine = ''
     if (savedRobberHex !== 9) {
       const rTerrain = TERRAIN_ORDER_CI[savedRobberHex] ?? 'desconocido'
       const rNum = NUMBERS_CI[savedRobberHex] ?? 0
-      summary += `\n\nLADRON: en hex de ${terrainNames[rTerrain] ?? rTerrain}${rNum > 0 ? `(${rNum})` : ''} — bloquea producción de ese hex`
+      robberLine = `\nLADRÓN: bloqueando ${terrainNames[rTerrain] ?? rTerrain}(${rNum}) — ese hex NO produce aunque salga su número`
     }
+
+    let summary = `POSICIONES EN EL TABLERO:\n${playerLines.join('\n') || 'Sin piezas colocadas'}`
+    if (resourceLine) summary += `\n\nRECURSOS EN MANO (${myLabel.toUpperCase()}): ${resourceLine}`
+    if (robberLine) summary += robberLine
 
     return summary
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedPieces, savedMyColor, savedAssignments, savedResources])
+  }, [savedPieces, savedMyColor, savedAssignments, savedResources, savedRobberHex])
   const [isLoading, setIsLoading]         = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [lastSuggestions, setLastSuggestions]   = useState<string[]>([])
