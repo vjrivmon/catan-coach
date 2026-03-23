@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { OnboardingModal } from './OnboardingModal'
 import { CoachAnalyzeModal } from './coach/CoachAnalyzeModal'
 import { CameraOverlay } from './coach/CameraOverlay'
 import { BoardOverlay, type BoardConfirmPayload } from './coach/BoardOverlay'
@@ -79,6 +80,10 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   // Mode state
   // hasSelectedMode: user has chosen one of the 3 options (text-only, scan, board)
   // coachMode: true = has board context; false = text-only (rules/strategy Q&A)
+  const [showOnboarding, setShowOnboarding]     = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('catan-onboarding-done') !== '1'
+  })
   const [hasSelectedMode, setHasSelectedMode]   = useState(false)
   const [coachMode, setCoachMode]               = useState(false)
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false)
@@ -966,6 +971,16 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
         </div>
       </div>
+
+      {/* ── Onboarding — first time only ── */}
+      {showOnboarding && (
+        <OnboardingModal
+          onDone={() => {
+            setShowOnboarding(false)
+            if (typeof window !== 'undefined') localStorage.setItem('catan-onboarding-done', '1')
+          }}
+        />
+      )}
 
       {/* ── Coach overlays ── */}
       {showAnalyzeModal && (
