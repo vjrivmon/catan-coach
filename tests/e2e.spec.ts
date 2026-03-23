@@ -115,15 +115,18 @@ test('confirm button is disabled when not all pieces placed', async ({ page }) =
   await waitForApp(page)
   await page.getByText('Tablero interactivo').click()
 
-  // Pick Tú color, then skip at J2 step
+  // Pick Tú color only, skip at J2 step (somos 2 — requires 2P+4C per player)
   const colorCircles = page.locator('button.rounded-full.border-2.border-stone-600')
   await colorCircles.first().click()
   await page.getByText('No hay J3 ni J4 (somos 2)').click()
 
-  // Confirm button should be disabled
+  // Zero pieces placed — confirm must be disabled
   const confirmBtn = page.getByRole('button', { name: /Faltan piezas/ })
   await expect(confirmBtn).toBeVisible()
   await expect(confirmBtn).toBeDisabled()
+
+  // Status shows amber dots (not green ticks)
+  await expect(page.getByText('·')).toBeVisible()
 })
 
 // ─── 10. Hex icon re-opens options when in text-only mode ────────────────────

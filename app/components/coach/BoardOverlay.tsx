@@ -165,8 +165,10 @@ function portGeom(def: PortDef) {
 // ─── Initial placement limits ─────────────────────────────────────────────────
 const MAX_SETTLEMENTS = 2
 const MAX_ROADS       = 4
-const MIN_SETTLEMENTS = 2   // per player, required to unlock confirm
-const MIN_ROADS       = 2   // per player, required to unlock confirm
+// In Catan initial placement: 2 settlements + 2 roads each → 4 roads total per player
+// Must place ALL before confirming
+const MIN_SETTLEMENTS = MAX_SETTLEMENTS
+const MIN_ROADS       = MAX_ROADS
 
 function countByPlayer(pieces: Record<string, { type: string; color: string }>, color: string) {
   let s = 0, r = 0
@@ -442,17 +444,24 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
               const sOk = settlements >= MIN_SETTLEMENTS
               const rOk = roads >= MIN_ROADS
               const done = sOk && rOk
+              // Colors: green = complete, amber = partial, stone = zero
+              const sColor = settlements === 0 ? 'text-stone-500' : sOk ? 'text-green-400' : 'text-amber-400'
+              const rColor = roads === 0 ? 'text-stone-500' : rOk ? 'text-green-400' : 'text-amber-400'
               return (
                 <div key={color} className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PLAYER_COLORS[color] }} />
                   <span className="text-xs text-stone-400">{COLOR_NAMES[color] ?? color}:</span>
-                  <span className={`text-xs font-mono ${sOk ? 'text-green-400' : 'text-amber-400'}`}>
+                  <span className={`text-xs font-mono ${sColor}`}>
                     {settlements}/{MAX_SETTLEMENTS}P
                   </span>
-                  <span className={`text-xs font-mono ${rOk ? 'text-green-400' : 'text-amber-400'}`}>
+                  <span className={`text-xs font-mono ${rColor}`}>
                     {roads}/{MAX_ROADS}C
                   </span>
-                  {done && <span className="text-green-500 text-xs">✓</span>}
+                  {done ? (
+                    <span className="text-green-500 text-xs">✓</span>
+                  ) : (
+                    <span className="text-amber-500 text-xs">·</span>
+                  )}
                 </div>
               )
             })}
