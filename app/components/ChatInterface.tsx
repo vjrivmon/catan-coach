@@ -74,7 +74,10 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [history, setHistory]             = useState<Conversation[]>([])
   const [sidebarOpen, setSidebarOpen]     = useState(false)
   const [input, setInput]                 = useState('')
-  // Coach mode state
+  // Mode state
+  // hasSelectedMode: user has chosen one of the 3 options (text-only, scan, board)
+  // coachMode: true = has board context; false = text-only (rules/strategy Q&A)
+  const [hasSelectedMode, setHasSelectedMode]   = useState(false)
   const [coachMode, setCoachMode]               = useState(false)
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false)
   const [showCamera, setShowCamera]             = useState(false)
@@ -314,12 +317,13 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setInput('')
     saveCurrentSession(freshSession)
     setSidebarOpen(false)
-    // Reset coach state completely
+    // Reset all mode + coach state
+    setHasSelectedMode(false)
+    setCoachMode(false)
     setSavedPieces({})
     setSavedMyColor('red')
     setSavedAssignments([])
     setSavedResources(null)
-    setCoachMode(false)
     setCoachStep(null)
     setShowAnalyzeModal(false)
     setShowBoard(false)
@@ -490,56 +494,29 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         <div className="flex flex-col justify-center flex-1 min-w-0">
           <h1 className="text-amber-400 font-semibold text-base leading-tight">Catan Coach</h1>
           <p className="text-stone-400 text-xs leading-tight truncate">
-            {coachMode ? 'Coach en partida' : 'Aprende Catán'}
+            {boardConfigured ? 'Coach en partida' : 'Asistente de Catan'}
           </p>
         </div>
 
-        {/* Mode toggle — 💬 Aprende | ⬡ Coach */}
-        <div className="flex items-center gap-1 shrink-0 bg-stone-900/60 rounded-xl p-1 border border-stone-700">
-
-          {/* Aprende (chat) button */}
-          <button
-            onClick={() => setCoachMode(false)}
-            title="Aprende Catán"
-            className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
-              !coachMode
-                ? 'bg-stone-600 text-stone-100'
-                : 'text-stone-500 hover:text-stone-300'
-            }`}
-          >
-            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-            </svg>
-          </button>
-
-          {/* Coach (hex) button */}
-          <button
-            onClick={() => {
-              setCoachMode(true)
-              if (boardConfigured) setShowBoard(true)
-              else setShowAnalyzeModal(true)
-            }}
-            title="Coach en partida"
-            className={`relative flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
-              coachMode
-                ? 'bg-amber-700/60 text-amber-200'
-                : 'text-stone-500 hover:text-amber-400'
-            }`}
-          >
-            <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z"
-                stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-              <path d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z"
-                fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-            </svg>
-            {/* Status dot */}
-            {boardConfigured && (
-              <div className="absolute top-0 right-0 w-2 h-2 bg-green-400 rounded-full border border-stone-800" />
-            )}
-          </button>
-
-        </div>
+        {/* Hex icon — always visible: opens board if active, shows 3 options otherwise */}
+        <button
+          onClick={() => {
+            if (boardConfigured) setShowBoard(true)
+            else setShowAnalyzeModal(true)
+          }}
+          title={boardConfigured ? 'Ver tablero' : 'Opciones de partida'}
+          className="relative flex items-center justify-center w-9 h-9 rounded-xl shrink-0 bg-stone-900/60 border border-stone-700 hover:border-amber-600 transition-colors text-stone-400 hover:text-amber-400"
+        >
+          <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z"
+              stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+            <path d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z"
+              fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+          </svg>
+          {boardConfigured && (
+            <div className="absolute top-0 right-0 w-2 h-2 bg-green-400 rounded-full border border-stone-800" />
+          )}
+        </button>
       </header>
 
       {/* Body: sidebar + chat */}
@@ -569,8 +546,115 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         {/* Chat area */}
         <div className="flex flex-col flex-1 overflow-hidden">
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+          {/* ── Board overlay — fills chat area, header stays visible ── */}
+          {showBoard && (
+            <BoardOverlay
+              initialPieces={savedPieces}
+              initialMyColor={savedMyColor}
+              initialAssignments={savedAssignments}
+              onClose={() => { setShowBoard(false) }}
+              onConfirm={({ pieces, myColor, assignments }) => {
+                setShowBoard(false)
+                setSavedPieces(pieces)
+                setSavedMyColor(myColor)
+                setSavedAssignments(assignments)
+                const count = Object.keys(pieces).length
+                const isUpdate = boardConfigured
+                const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
+                const boardMsg: import('@/src/domain/entities').Message = {
+                  id: `board-${Date.now()}`, role: 'user',
+                  content: isUpdate
+                    ? `Tablero actualizado — color ${colorNames[myColor]??myColor}, ${count} piezas`
+                    : `Tablero configurado — color ${colorNames[myColor]??myColor}${count > 0 ? `, ${count} piezas` : ', sin piezas aún'}`,
+                  timestamp: Date.now(),
+                }
+                const replyMsg: import('@/src/domain/entities').Message = {
+                  id: `board-reply-${Date.now()}`, role: 'assistant',
+                  content: isUpdate
+                    ? 'Tablero actualizado. Indica tus recursos para recibir una recomendación ajustada.'
+                    : 'Tablero recibido. Indica tus recursos para que pueda darte una recomendación real.',
+                  timestamp: Date.now(),
+                }
+                setSession(s => ({ ...s, messages: [...s.messages, boardMsg, replyMsg] }))
+                setCoachStep('waiting-resources')
+              }}
+            />
+          )}
+
+          {!showBoard && <>
+          {/* ── Mode selection — shown before user picks an option ── */}
+          {!hasSelectedMode && (
+            <div className="flex-1 flex flex-col justify-end pb-6 px-4">
+              <div className="max-w-lg mx-auto w-full flex flex-col gap-4">
+                <div className="text-center mb-2">
+                  <p className="text-stone-100 font-bold text-lg">¿Cómo quieres empezar?</p>
+                  <p className="text-stone-400 text-sm mt-1">Elige según tu situación</p>
+                </div>
+
+                {/* Escanear tablero */}
+                <button
+                  onClick={() => { setHasSelectedMode(true); setCoachMode(true); setShowCamera(true) }}
+                  className="flex items-center gap-4 bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-amber-600 rounded-2xl p-5 text-left transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-amber-900/50 flex items-center justify-center shrink-0 group-hover:bg-amber-800/60 transition-colors">
+                    <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                      <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-stone-100 font-semibold text-base">Escanear tablero</p>
+                    <p className="text-stone-400 text-sm mt-0.5">Apunta la cámara y encuadra tu partida real</p>
+                  </div>
+                  <svg className="w-5 h-5 text-stone-500 group-hover:text-amber-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+
+                {/* Tablero interactivo */}
+                <button
+                  onClick={() => { setHasSelectedMode(true); setCoachMode(true); setShowBoard(true) }}
+                  className="flex items-center gap-4 bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-amber-600 rounded-2xl p-5 text-left transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-amber-900/50 flex items-center justify-center shrink-0 group-hover:bg-amber-800/60 transition-colors">
+                    <svg className="w-7 h-7 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round">
+                      <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z"/>
+                      <path fill="rgba(245,158,11,0.2)" d="M12 7L17 9.8V15.2L12 18L7 15.2V9.8L12 7Z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-stone-100 font-semibold text-base">Tablero interactivo</p>
+                    <p className="text-stone-400 text-sm mt-0.5">Coloca tus piezas y las de los rivales</p>
+                  </div>
+                  <svg className="w-5 h-5 text-stone-500 group-hover:text-amber-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+
+                {/* Solo dudas */}
+                <button
+                  onClick={() => { setHasSelectedMode(true); setCoachMode(false) }}
+                  className="flex items-center gap-4 bg-stone-800 hover:bg-stone-750 border border-stone-700 hover:border-amber-600 rounded-2xl p-5 text-left transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-amber-900/50 flex items-center justify-center shrink-0 group-hover:bg-amber-800/60 transition-colors">
+                    <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-stone-100 font-semibold text-base">Solo dudas</p>
+                    <p className="text-stone-400 text-sm mt-0.5">Pregunta sobre reglas y estrategia sin tablero</p>
+                  </div>
+                  <svg className="w-5 h-5 text-stone-500 group-hover:text-amber-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Messages — only shown after mode is selected */}
+          {hasSelectedMode && <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             {session.messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />
             ))}
@@ -623,7 +707,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             )}
 
             <div ref={messagesEndRef} />
-          </div>
+          </div>}
 
           {/* Input area */}
           <div className="shrink-0 bg-stone-800 border-t border-stone-700 px-4 py-3">
@@ -634,15 +718,15 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   value={input}
                   onChange={e => { setInput(e.target.value); autoResize() }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Pregunta sobre Catan..."
+                  placeholder={hasSelectedMode ? 'Pregunta sobre Catan...' : 'Elige una opción para empezar'}
                   rows={1}
-                  disabled={isLoading}
+                  disabled={isLoading || !hasSelectedMode}
                   className="flex-1 bg-transparent text-stone-100 placeholder-stone-400 resize-none focus:outline-none disabled:opacity-50 text-sm leading-relaxed py-1 overflow-hidden"
                 />
-                <VoiceInput onTranscript={text => { setInput(prev => prev + text); setTimeout(autoResize, 0) }} disabled={isLoading} />
+                <VoiceInput onTranscript={text => { setInput(prev => prev + text); setTimeout(autoResize, 0) }} disabled={isLoading || !hasSelectedMode} />
                 <button
                   type="submit"
-                  disabled={isLoading || !input.trim()}
+                  disabled={isLoading || !input.trim() || !hasSelectedMode}
                   className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg p-2 transition-colors shrink-0"
                   aria-label="Enviar"
                 >
@@ -653,6 +737,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               </div>
             </form>
           </div>
+          </>}
 
         </div>
       </div>
@@ -660,9 +745,10 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       {/* ── Coach overlays ── */}
       {showAnalyzeModal && (
         <CoachAnalyzeModal
-          onClose={() => { setShowAnalyzeModal(false); setCoachMode(false); }}
-          onPhoto={() => { setShowAnalyzeModal(false); setShowCamera(true); }}
-          onBoard={() => { setShowAnalyzeModal(false); setShowBoard(true); }}
+          onClose={() => { setShowAnalyzeModal(false) }}
+          onPhoto={() => { setShowAnalyzeModal(false); setHasSelectedMode(true); setCoachMode(true); setShowCamera(true) }}
+          onBoard={() => { setShowAnalyzeModal(false); setHasSelectedMode(true); setCoachMode(true); setShowBoard(true) }}
+          onTextOnly={() => { setShowAnalyzeModal(false); setHasSelectedMode(true); setCoachMode(false) }}
         />
       )}
 
@@ -690,42 +776,6 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         />
       )}
 
-      {showBoard && (
-        <BoardOverlay
-          initialPieces={savedPieces}
-          initialMyColor={savedMyColor}
-          initialAssignments={savedAssignments}
-          onClose={() => {
-            setShowBoard(false)
-            if (!boardConfigured) setShowAnalyzeModal(true)
-          }}
-          onConfirm={({ pieces, myColor, assignments }) => {
-            setShowBoard(false)
-            setSavedPieces(pieces)
-            setSavedMyColor(myColor)
-            setSavedAssignments(assignments)
-            const count = Object.keys(pieces).length
-            const isUpdate = boardConfigured
-            const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
-            const boardMsg: import('@/src/domain/entities').Message = {
-              id: `board-${Date.now()}`, role: 'user',
-              content: isUpdate
-                ? `Tablero actualizado — color ${colorNames[myColor]??myColor}, ${count} piezas`
-                : `Tablero configurado — color ${colorNames[myColor]??myColor}${count > 0 ? `, ${count} piezas` : ', sin piezas aún'}`,
-              timestamp: Date.now(),
-            }
-            const replyMsg: import('@/src/domain/entities').Message = {
-              id: `board-reply-${Date.now()}`, role: 'assistant',
-              content: isUpdate
-                ? 'Tablero actualizado. Indica tus recursos para recibir una recomendación ajustada.'
-                : 'Tablero recibido. Indica tus recursos para que pueda darte una recomendación real.',
-              timestamp: Date.now(),
-            }
-            setSession(s => ({ ...s, messages: [...s.messages, boardMsg, replyMsg] }))
-            setCoachStep('waiting-resources')
-          }}
-        />
-      )}
 
     </div>
   )

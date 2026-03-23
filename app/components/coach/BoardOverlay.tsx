@@ -236,21 +236,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
   const svgH = PAD_TOP + 4 * ROW_H + R + 40  // ≈ 365
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col bg-stone-900">
-
-      {/* Header */}
-      <div className="bg-stone-800 border-b border-stone-700 px-4 py-3 flex items-center gap-3 shrink-0">
-        <button onClick={onClose}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:bg-stone-700">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-        <div className="flex-1">
-          <p className="text-stone-100 font-semibold text-sm">Tablero interactivo</p>
-          <p className="text-stone-400 text-xs">Vértice → pueblo/ciudad · Arista → camino</p>
-        </div>
-      </div>
+    <div className="flex flex-col h-full bg-stone-900">
 
       {/* Color assignment (sequential) or Player selector */}
       {!colorsConfirmed ? (
