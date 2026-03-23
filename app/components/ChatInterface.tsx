@@ -96,6 +96,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedAssignments, setSavedAssignments] = useState<string[]>([])
   const [savedResources, setSavedResources]     = useState<Record<string,number> | null>(null)
   const [savedRobberHex, setSavedRobberHex]     = useState<number>(9)  // 9 = desert default
+  const [savedGeneticRec, setSavedGeneticRec]   = useState<null | {action:string;actionEs:string;score:number;reason:string;alternatives:unknown[]}>(null)
   const boardConfigured                         = Object.keys(savedPieces).length > 0
 
   // Terrain + number data mirrors BoardOverlay constants — needed to enrich board summary
@@ -393,6 +394,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSavedAssignments([])
     setSavedResources(null)
     setSavedRobberHex(9)
+    setSavedGeneticRec(null)
     setSavedDevCards(null)
     setCoachStep(null)
     setGameStarted(false)
@@ -442,6 +444,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     const baseCoachState = boardConfigured ? {
       boardSummary: buildBoardSummary(),
       resources: savedResources,
+      geneticRecommendation: savedGeneticRec,
       ...(gameStarted ? {
         turn: currentTurn,
         devCards: savedDevCards,
@@ -802,7 +805,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                         robberHex: savedRobberHex,
                       }),
                     })
-                    if (apiRes.ok) geneticRec = await apiRes.json()
+                    if (apiRes.ok) { geneticRec = await apiRes.json(); setSavedGeneticRec(geneticRec) }
                   } catch { /* GeneticAgent optional — LLM works without it */ }
 
                   // 2. Build coachState with fresh resources + genetic recommendation
