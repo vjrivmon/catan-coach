@@ -593,14 +593,28 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 setSavedMyColor(myColor)
                 setSavedAssignments(assignments)
                 setSavedRobberHex(robberHex)
-                const count = Object.keys(pieces).length
                 const isUpdate = boardConfigured
                 const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
+
+                // Build per-player piece count summary for the chat message
+                const pieceSummary = assignments.map(color => {
+                  const label = colorNames[color] ?? color
+                  const isMe = color === myColor
+                  const s = Object.values(pieces).filter(p => p.color === color && p.type === 'settlement').length
+                  const c = Object.values(pieces).filter(p => p.color === color && p.type === 'city').length
+                  const r = Object.values(pieces).filter(p => p.color === color && p.type === 'road').length
+                  const parts = []
+                  if (s > 0) parts.push(`${s} poblado${s>1?'s':''}`)
+                  if (c > 0) parts.push(`${c} ciudad${c>1?'es':''}`)
+                  if (r > 0) parts.push(`${r} camino${r>1?'s':''}`)
+                  return `${isMe ? `Tú (${label})` : label}: ${parts.join(', ') || 'sin piezas'}`
+                }).join(' · ')
+
                 const boardMsg: import('@/src/domain/entities').Message = {
                   id: `board-${Date.now()}`, role: 'user',
                   content: isUpdate
-                    ? `Tablero actualizado — color ${colorNames[myColor]??myColor}, ${count} piezas`
-                    : `Tablero configurado — color ${colorNames[myColor]??myColor}${count > 0 ? `, ${count} piezas` : ', sin piezas aún'}`,
+                    ? `Tablero actualizado — ${pieceSummary}`
+                    : `Tablero configurado — ${pieceSummary}`,
                   timestamp: Date.now(),
                 }
                 const replyMsg: import('@/src/domain/entities').Message = {
