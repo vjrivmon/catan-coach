@@ -638,7 +638,6 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
           {/* ── Board overlay — fills chat area, header stays visible ── */}
           {showBoard && (
-            <div data-tour="board-overlay" className="contents">
             <BoardOverlay
               initialPieces={savedPieces}
               initialMyColor={savedMyColor}
@@ -685,7 +684,6 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 setCoachStep('waiting-resources')
               }}
             />
-            </div>
           )}
 
           {!showBoard && <>

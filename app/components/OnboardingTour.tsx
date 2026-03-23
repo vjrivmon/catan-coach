@@ -60,25 +60,14 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
           },
         },
         {
-          element: '[data-tour="board-overlay"]',
           popover: {
             title: 'El tablero de juego',
-            description: 'Toca un vértice para colocar un poblado o ciudad. Toca una arista para colocar un camino. Puedes colocar piezas de todos los jugadores y asignar colores.',
-            side: 'bottom',
+            description: 'Toca un <b>vértice</b> para colocar un poblado o ciudad. Toca una <b>arista</b> para colocar un camino. Asigna colores a cada jugador. Cuando termines, pulsa <b>Confirmar tablero</b> abajo.',
             align: 'center',
             onPrevClick: () => {
               onCloseBoard()
               setTimeout(() => driverObj.movePrevious(), 400)
             },
-          },
-        },
-        {
-          element: '[data-tour="confirm-board-btn"]',
-          popover: {
-            title: 'Confirmar tablero',
-            description: 'Cuando hayas colocado todas las piezas, confirma el tablero. A partir de ahí recibirás recomendaciones basadas en tu posición real.',
-            side: 'top',
-            align: 'center',
             onNextClick: () => {
               onCloseBoard()
               setTimeout(() => driverObj.moveNext(), 400)
