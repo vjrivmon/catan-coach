@@ -109,9 +109,20 @@ function buildGraph() {
     }
   }
 
+  // adjacency: vertex id → set of adjacent vertex ids (connected by one edge)
+  const adjacency = new Map<number, Set<number>>()
+  for (const [, edge] of edgeMap) {
+    const [a, b] = edge.id.split('_').map(Number)
+    if (!adjacency.has(a)) adjacency.set(a, new Set())
+    if (!adjacency.has(b)) adjacency.set(b, new Set())
+    adjacency.get(a)!.add(b)
+    adjacency.get(b)!.add(a)
+  }
+
   return {
-    vertices: [...vertMap.values()],
-    edges:    [...edgeMap.values()],
+    vertices:  [...vertMap.values()],
+    edges:     [...edgeMap.values()],
+    adjacency,
   }
 }
 
@@ -151,9 +162,28 @@ function portGeom(def: PortDef) {
   return { vx1, vy1, vx2, vy2, px: mx + push * dx / len, py: my + push * dy / len }
 }
 
+// ─── Initial placement limits ─────────────────────────────────────────────────
+const MAX_SETTLEMENTS = 2
+const MAX_ROADS       = 4
+const MIN_SETTLEMENTS = 2   // per player, required to unlock confirm
+const MIN_ROADS       = 2   // per player, required to unlock confirm
+
+function countByPlayer(pieces: Record<string, { type: string; color: string }>, color: string) {
+  let s = 0, r = 0
+  for (const p of Object.values(pieces)) {
+    if (p.color !== color) continue
+    if (p.type === 'settlement') s++
+    else if (p.type === 'road')  r++
+  }
+  return { settlements: s, roads: r }
+}
+
 // ─── Colors ───────────────────────────────────────────────────────────────────
 const PLAYER_COLORS: Record<string, string> = {
   red: '#ef4444', blue: '#3b82f6', orange: '#f97316', white: '#e5e7eb',
+}
+const COLOR_NAMES: Record<string, string> = {
+  red: 'Rojo', blue: 'Azul', orange: 'Naranja', white: 'Blanco',
 }
 
 type Piece = { type: 'settlement' | 'city' | 'road'; color: string }
@@ -196,13 +226,20 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
   const [selColor, setSelColor] = useState(
     (initialAssignments && initialAssignments.length > 0 ? initialAssignments[0] : null) ?? 'red'
   )
-  const [selPiece, setSelPiece] = useState<'settlement' | 'city' | 'road'>('settlement')
+  // Cities disabled in initial placement phase — only settlements & roads
+  const [selPiece, setSelPiece] = useState<'settlement' | 'road'>('settlement')
   const [pieces, setPieces]     = useState<Record<string, Piece>>(initialPieces)
+  const [warning, setWarning]   = useState<string | null>(null)
 
-  const { vertices, edges } = useMemo(buildGraph, [])
+  const { vertices, edges, adjacency } = useMemo(buildGraph, [])
 
   // lastTap prevents double-fire from pointerdown+click on mobile
   const lastTap = useRef(0)
+
+  const showWarning = useCallback((msg: string) => {
+    setWarning(msg)
+    setTimeout(() => setWarning(null), 2500)
+  }, [])
 
   const toggleVertex = useCallback((id: number) => {
     if (selPiece === 'road') return
@@ -210,13 +247,44 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
     if (now - lastTap.current < 300) return
     lastTap.current = now
     const k = `v${id}`
+
     setPieces(p => {
+      // Removing an existing own piece — always allowed
+      if (p[k]?.color === selColor && p[k]?.type === selPiece) {
+        const n = { ...p }
+        delete n[k]
+        return n
+      }
+
+      // Placing a new settlement — run rules
+      const { settlements } = countByPlayer(p, selColor)
+
+      // Rule 1: max 2 settlements per player in initial phase
+      if (!p[k] && settlements >= MAX_SETTLEMENTS) {
+        showWarning(`Máximo ${MAX_SETTLEMENTS} poblados por jugador en la colocación inicial`)
+        return p
+      }
+
+      // Rule 2: distance rule — no adjacent vertex can have ANY settlement
+      const neighbors = adjacency.get(id) ?? new Set<number>()
+      for (const nid of neighbors) {
+        if (p[`v${nid}`]?.type === 'settlement' || p[`v${nid}`]?.type === 'city') {
+          showWarning('Debe haber al menos 2 caminos de distancia entre poblados')
+          return p
+        }
+      }
+
+      // Rule 3: vertex already occupied by another player
+      if (p[k] && p[k].color !== selColor) {
+        showWarning('Este vértice ya está ocupado por otro jugador')
+        return p
+      }
+
       const n = { ...p }
-      if (n[k]?.color === selColor && n[k]?.type === selPiece) delete n[k]
-      else n[k] = { type: selPiece, color: selColor }
+      n[k] = { type: 'settlement', color: selColor }
       return n
     })
-  }, [selPiece, selColor])
+  }, [selPiece, selColor, adjacency, showWarning])
 
   const toggleEdge = useCallback((id: string) => {
     if (selPiece !== 'road') return
@@ -224,13 +292,42 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
     if (now - lastTap.current < 300) return
     lastTap.current = now
     const k = `e${id}`
+
     setPieces(p => {
+      // Removing own road — always allowed
+      if (p[k]?.color === selColor) {
+        const n = { ...p }
+        delete n[k]
+        return n
+      }
+
+      // Rule: max 4 roads per player in initial phase
+      const { roads } = countByPlayer(p, selColor)
+      if (roads >= MAX_ROADS) {
+        showWarning(`Máximo ${MAX_ROADS} caminos por jugador en la colocación inicial`)
+        return p
+      }
+
+      // Rule: edge already occupied
+      if (p[k] && p[k].color !== selColor) {
+        showWarning('Esta arista ya está ocupada por otro jugador')
+        return p
+      }
+
       const n = { ...p }
-      if (n[k]?.color === selColor) delete n[k]
-      else n[k] = { type: 'road', color: selColor }
+      n[k] = { type: 'road', color: selColor }
       return n
     })
-  }, [selPiece, selColor])
+  }, [selPiece, selColor, showWarning])
+
+  // Validation: each player must have at least MIN_SETTLEMENTS + MIN_ROADS
+  const allPlayersReady = useMemo(() => {
+    if (assignments.length === 0) return false
+    return assignments.every(color => {
+      const { settlements, roads } = countByPlayer(pieces, color)
+      return settlements >= MIN_SETTLEMENTS && roads >= MIN_ROADS
+    })
+  }, [pieces, assignments])
 
   const pieceCount = Object.keys(pieces).length
   const svgH = PAD_TOP + 4 * ROW_H + R + 40  // ≈ 365
@@ -320,19 +417,55 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         </div>
       )}
 
-      {/* Piece selector + Board — only shown once colors confirmed */}
-      {colorsConfirmed && <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex gap-2 shrink-0">
-        {(['settlement','city','road'] as const).map(p => (
-          <button key={p} onClick={() => setSelPiece(p)}
-            className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
-              selPiece === p
-                ? 'border-amber-500 text-amber-400 bg-amber-500/10'
-                : 'border-stone-600 text-stone-400 bg-stone-700'
-            }`}>
-            {p === 'settlement' ? 'Pueblo' : p === 'city' ? 'Ciudad' : 'Camino'}
-          </button>
-        ))}
-      </div>}
+      {/* Piece selector + per-player status — only shown once colors confirmed */}
+      {colorsConfirmed && (
+        <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex flex-col gap-2 shrink-0">
+          {/* Piece type buttons — cities hidden in initial phase */}
+          <div className="flex gap-2 items-center">
+            {(['settlement','road'] as const).map(p => (
+              <button key={p} onClick={() => setSelPiece(p)}
+                className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                  selPiece === p
+                    ? 'border-amber-500 text-amber-400 bg-amber-500/10'
+                    : 'border-stone-600 text-stone-400 bg-stone-700'
+                }`}>
+                {p === 'settlement' ? 'Pueblo' : 'Camino'}
+              </button>
+            ))}
+            <span className="text-stone-600 text-xs ml-1">Ciudad: no disponible en colocación inicial</span>
+          </div>
+
+          {/* Per-player status — desktop visible always, mobile compact */}
+          <div className="flex gap-3 flex-wrap">
+            {assignments.map((color) => {
+              const { settlements, roads } = countByPlayer(pieces, color)
+              const sOk = settlements >= MIN_SETTLEMENTS
+              const rOk = roads >= MIN_ROADS
+              const done = sOk && rOk
+              return (
+                <div key={color} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PLAYER_COLORS[color] }} />
+                  <span className="text-xs text-stone-400">{COLOR_NAMES[color] ?? color}:</span>
+                  <span className={`text-xs font-mono ${sOk ? 'text-green-400' : 'text-amber-400'}`}>
+                    {settlements}/{MAX_SETTLEMENTS}P
+                  </span>
+                  <span className={`text-xs font-mono ${rOk ? 'text-green-400' : 'text-amber-400'}`}>
+                    {roads}/{MAX_ROADS}C
+                  </span>
+                  {done && <span className="text-green-500 text-xs">✓</span>}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Warning toast */}
+          {warning && (
+            <div className="bg-red-950/60 border border-red-700 rounded-lg px-3 py-1.5 text-red-300 text-xs">
+              {warning}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* SVG Board — locked until colors confirmed */}
       {colorsConfirmed && <div className="flex-1 flex justify-center items-center overflow-hidden" style={{ background: '#0f1f40' }}>
@@ -546,9 +679,19 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
           className="flex-1 py-2.5 rounded-xl border border-stone-600 bg-stone-700 text-stone-200 text-sm font-semibold">
           Limpiar
         </button>
-        <button onClick={() => onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments })}
-          className="flex-[2] py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors">
-          Confirmar tablero{pieceCount > 0 ? ` (${pieceCount})` : ''} →
+        <button
+          onClick={() => allPlayersReady && onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments })}
+          disabled={!allPlayersReady}
+          title={!allPlayersReady ? `Faltan piezas: cada jugador necesita ${MIN_SETTLEMENTS} poblados y ${MIN_ROADS} caminos` : ''}
+          className={`flex-[2] py-2.5 rounded-xl text-sm font-bold transition-colors ${
+            allPlayersReady
+              ? 'bg-amber-500 hover:bg-amber-400 text-black cursor-pointer'
+              : 'bg-stone-700 text-stone-500 cursor-not-allowed border border-stone-600'
+          }`}>
+          {allPlayersReady
+            ? `Confirmar tablero (${pieceCount}) →`
+            : `Faltan piezas por colocar`
+          }
         </button>
       </div>}
     </div>
