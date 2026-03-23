@@ -3,6 +3,14 @@ import type { Message, UserLevel } from '../domain/entities'
 import type { CoachState } from './SuggestionAgent'
 import { config } from '../config'
 
+export interface GeneticRecommendation {
+  action: string
+  actionEs: string
+  score: number
+  reason: string
+  alternatives: Array<{ action: string; actionEs: string; score: number; reason: string }>
+}
+
 /** Pre-compute what the player can build with their current resources */
 function computeActions(resources: Record<string, number> | null): string {
   if (!resources) return '- Recursos no especificados aún'
@@ -52,32 +60,41 @@ function buildSystemPrompt(level: UserLevel, seenConcepts: string[], coachState?
           .join(', ') || 'ninguno'
       : 'no especificados aún'
 
+    const geneticBlock = coachState.geneticRecommendation
+      ? `\nRECOMENDACIÓN DEL AGENTE GENÉTICO (93 parámetros, 40K partidas entrenadas):
+Acción óptima: ${coachState.geneticRecommendation.actionEs} (score=${coachState.geneticRecommendation.score.toFixed(3)})
+Razonamiento del agente: ${coachState.geneticRecommendation.reason}
+${coachState.geneticRecommendation.alternatives.length > 0
+  ? `Alternativas: ${coachState.geneticRecommendation.alternatives.map(a => `${a.actionEs}(${a.score.toFixed(2)})`).join(', ')}`
+  : ''}
+
+Tu respuesta debe estar ALINEADA con esta recomendación del agente genético. Explícala al jugador de forma comprensible.`
+      : ''
+
     return `Eres Catan Coach, asistente estratégico en partida real de Catan (juego base, en español).
 Analizas el estado actual del tablero y das recomendaciones concretas y accionables.
 
 COSTES DE CONSTRUCCIÓN (reglas oficiales, NO negociables):
 - Camino:           1 Ladrillo (Arcilla) + 1 Madera
-- Poblado:          1 Ladrillo (Arcilla) + 1 Madera + 1 Lana + 1 Trigo (Cereal)
-- Ciudad:           3 Mineral + 2 Trigo (Cereal)   [mejora un poblado existente]
-- Carta desarrollo: 1 Mineral + 1 Lana + 1 Trigo (Cereal)
+- Poblado:          1 Ladrillo (Arcilla) + 1 Madera + 1 Lana (Pasto) + 1 Trigo (Cereal)
+- Ciudad:           3 Mineral (Roca) + 2 Trigo (Cereal)   [mejora un poblado existente]
+- Carta desarrollo: 1 Mineral + 1 Lana + 1 Trigo
 
-NOTA: En el reglamento español "Ladrillo" = "Arcilla" y "Trigo" = "Cereal". Son el mismo recurso.
+SINÓNIMOS VÁLIDOS: Ladrillo=Arcilla=Barro, Trigo=Cereal=Grano, Mineral=Roca=Piedra, Lana=Pasto=Oveja
 
 ESTADO ACTUAL DEL TABLERO:
 ${coachState.boardSummary}
 
 RECURSOS ACTUALES DEL JUGADOR: ${resourceLine}
 
-ACCIONES POSIBLES (calcula con los recursos exactos indicados arriba):
+ACCIONES POSIBLES (verificadas contra recursos exactos):
 ${computeActions(coachState.resources)}
-
-Instrucciones para modo Coach en partida:
+${geneticBlock}
+Instrucciones:
 - Basa TODAS tus respuestas en el estado real del tablero y los recursos exactos indicados arriba.
-- Antes de recomendar una construcción, verifica que el jugador tiene los recursos suficientes según la tabla de costes.
-- Si el jugador pregunta si puede construir algo, responde SÍ o NO claramente y explica por qué.
-- Considera las posiciones de los otros jugadores para recomendar bloqueos, expansión o comercio.
-- Usa los números de producción (6, 8 = alta probabilidad; 2, 12 = baja) para justificar tu análisis.
-- Responde siempre en español, sin emojis.
+- Si el jugador pregunta si puede construir algo, responde SÍ o NO claramente.
+- Acepta cualquier sinónimo de recursos (trigo/cereal, roca/mineral, ladrillo/arcilla, pasto/lana).
+- Responde en español, sin emojis.
 - Nivel del jugador: ${levelLabel}.`
   }
 

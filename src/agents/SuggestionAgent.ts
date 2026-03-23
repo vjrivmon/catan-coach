@@ -2,8 +2,15 @@ import type { Message, UserLevel } from '../domain/entities'
 import { config } from '../config'
 
 export interface CoachState {
-  boardSummary: string          // e.g. "Rojo: 2 poblados, 3 caminos. Verde: 1 poblado."
-  resources: Record<string, number> | null  // e.g. { madera: 2, arcilla: 1 }
+  boardSummary: string
+  resources: Record<string, number> | null
+  geneticRecommendation?: {
+    action: string
+    actionEs: string
+    score: number
+    reason: string
+    alternatives: Array<{ action: string; actionEs: string; score: number; reason: string }>
+  } | null
 }
 
 export class SuggestionAgent {

@@ -691,13 +691,35 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   }
                   setSession(s => ({ ...s, messages: [...s.messages, userMsg] }))
 
-                  // Build coachState with fresh resources — savedResources not yet updated in state
+                  // 1. Ask GeneticAgent first
+                  let geneticRec = null
+                  try {
+                    const pieceKeys = Object.keys(savedPieces)
+                    const settlements = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
+                    const cities = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
+                    const roads = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
+                    const apiRes = await fetch('/api/coach-recommend', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        resources: counts,
+                        settlements, cities, roads,
+                        vp: settlements.length + cities.length * 2,
+                        roadLength: roads.length,
+                        gamePhasePlaying: true,
+                      }),
+                    })
+                    if (apiRes.ok) geneticRec = await apiRes.json()
+                  } catch { /* GeneticAgent optional — LLM works without it */ }
+
+                  // 2. Build coachState with fresh resources + genetic recommendation
                   const freshCoachState = {
                     boardSummary: buildBoardSummary(),
                     resources: counts,
+                    geneticRecommendation: geneticRec,
                   }
 
-                  // Ask the LLM for a real recommendation via /api/chat
+                  // 3. Ask the LLM — it now has genetic recommendation as ground truth
                   await sendMessage(
                     '¿Cuál es la mejor jugada que puedo hacer con mis recursos actuales y el estado del tablero?',
                     freshCoachState,
