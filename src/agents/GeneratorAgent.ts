@@ -3,6 +3,36 @@ import type { Message, UserLevel } from '../domain/entities'
 import type { CoachState } from './SuggestionAgent'
 import { config } from '../config'
 
+/** Pre-compute what the player can build with their current resources */
+function computeActions(resources: Record<string, number> | null): string {
+  if (!resources) return '- Recursos no especificados aún'
+  const w = resources.wood    ?? 0
+  const c = resources.clay    ?? 0
+  const l = resources.wool    ?? 0
+  const t = resources.cereal  ?? 0
+  const m = resources.mineral ?? 0
+
+  const lines: string[] = []
+  // Camino: 1 Madera + 1 Arcilla(Ladrillo)
+  lines.push(w >= 1 && c >= 1
+    ? '✓ PUEDE construir: Camino (tiene madera y arcilla/ladrillo)'
+    : `✗ NO puede Camino (necesita 1 Madera + 1 Arcilla — tiene Madera:${w}, Arcilla:${c})`)
+  // Poblado: 1 Madera + 1 Arcilla + 1 Lana + 1 Cereal
+  lines.push(w >= 1 && c >= 1 && l >= 1 && t >= 1
+    ? '✓ PUEDE construir: Poblado (tiene madera, arcilla, lana y trigo/cereal)'
+    : `✗ NO puede Poblado (necesita 1M+1A+1L+1T — tiene M:${w} A:${c} L:${l} T:${t})`)
+  // Ciudad: 3 Mineral + 2 Cereal
+  lines.push(m >= 3 && t >= 2
+    ? '✓ PUEDE construir: Ciudad (tiene mineral y cereal suficientes)'
+    : `✗ NO puede Ciudad (necesita 3 Mineral + 2 Cereal — tiene Mineral:${m}, Cereal:${t})`)
+  // Carta: 1 Mineral + 1 Lana + 1 Cereal
+  lines.push(m >= 1 && l >= 1 && t >= 1
+    ? '✓ PUEDE comprar: Carta de desarrollo'
+    : `✗ NO puede Carta (necesita 1M+1L+1T — tiene M:${m} L:${l} T:${t})`)
+
+  return lines.join('\n')
+}
+
 function buildSystemPrompt(level: UserLevel, seenConcepts: string[], coachState?: CoachState): string {
   const levelLabel = level === 'beginner' ? 'principiante' : level === 'intermediate' ? 'intermedio' : 'avanzado'
   const conceptsText = seenConcepts.length > 0
@@ -10,27 +40,42 @@ function buildSystemPrompt(level: UserLevel, seenConcepts: string[], coachState?
     : 'Es la primera sesión del usuario.'
 
   if (coachState?.boardSummary && coachState.boardSummary !== 'Tablero vacío') {
-    // Coach mode: full real-time board context
+    // Translate resource keys to Spanish for clarity
+    const RES_ES: Record<string, string> = {
+      wood: 'Madera', clay: 'Arcilla', cereal: 'Trigo/Cereal',
+      wool: 'Lana', mineral: 'Mineral',
+    }
     const resourceLine = coachState.resources
       ? Object.entries(coachState.resources)
           .filter(([, v]) => v > 0)
-          .map(([k, v]) => `${k}×${v}`)
+          .map(([k, v]) => `${RES_ES[k] ?? k}×${v}`)
           .join(', ') || 'ninguno'
       : 'no especificados aún'
 
     return `Eres Catan Coach, asistente estratégico en partida real de Catan (juego base, en español).
 Analizas el estado actual del tablero y das recomendaciones concretas y accionables.
 
+COSTES DE CONSTRUCCIÓN (reglas oficiales, NO negociables):
+- Camino:           1 Ladrillo (Arcilla) + 1 Madera
+- Poblado:          1 Ladrillo (Arcilla) + 1 Madera + 1 Lana + 1 Trigo (Cereal)
+- Ciudad:           3 Mineral + 2 Trigo (Cereal)   [mejora un poblado existente]
+- Carta desarrollo: 1 Mineral + 1 Lana + 1 Trigo (Cereal)
+
+NOTA: En el reglamento español "Ladrillo" = "Arcilla" y "Trigo" = "Cereal". Son el mismo recurso.
+
 ESTADO ACTUAL DEL TABLERO:
 ${coachState.boardSummary}
 
 RECURSOS ACTUALES DEL JUGADOR: ${resourceLine}
 
+ACCIONES POSIBLES (calcula con los recursos exactos indicados arriba):
+${computeActions(coachState.resources)}
+
 Instrucciones para modo Coach en partida:
-- Basa TODAS tus respuestas en el estado real del tablero descrito arriba. No inventes posiciones ni recursos.
-- Cuando el jugador pide la mejor jugada, evalúa qué puede construir con sus recursos actuales.
+- Basa TODAS tus respuestas en el estado real del tablero y los recursos exactos indicados arriba.
+- Antes de recomendar una construcción, verifica que el jugador tiene los recursos suficientes según la tabla de costes.
+- Si el jugador pregunta si puede construir algo, responde SÍ o NO claramente y explica por qué.
 - Considera las posiciones de los otros jugadores para recomendar bloqueos, expansión o comercio.
-- Sé directo: da la recomendación principal primero, luego el razonamiento.
 - Usa los números de producción (6, 8 = alta probabilidad; 2, 12 = baja) para justificar tu análisis.
 - Responde siempre en español, sin emojis.
 - Nivel del jugador: ${levelLabel}.`

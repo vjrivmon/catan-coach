@@ -10,27 +10,31 @@ const BASE = 'http://localhost:3000'
 
 // ─── Preguntas benchmark ──────────────────────────────────────────────────────
 
+// Reglamento en español usa: Ladrillo (no arcilla), Cereal/Lana (no trigo/oveja)
+// mustContain usa OR dentro de arrays anidados → al menos 1 por grupo debe aparecer
 const BEGINNER_QUESTIONS = [
   {
     id: 'B1',
     question: '¿Cuánto cuesta construir un poblado?',
-    mustContain: ['madera', 'arcilla', 'lana', 'cereal', 'ladrillo', 'trigo'],
-    mustNotContain: ['mineral', 'ore'],
-    desc: 'Coste de poblado — debe listar los 4 recursos correctos'
+    // Poblado: 1 Ladrillo + 1 Madera + 1 Lana + 1 Cereal
+    mustContain: ['madera', 'ladrillo', 'lana', 'cereal'],
+    mustNotContain: [],
+    desc: 'Coste de poblado — 1 ladrillo + 1 madera + 1 lana + 1 cereal'
   },
   {
     id: 'B2',
     question: '¿Cuánto cuesta construir una ciudad?',
-    mustContain: ['mineral', 'cereal', 'trigo'],
-    mustNotContain: ['madera', 'arcilla'],
-    desc: 'Coste de ciudad — 3 mineral + 2 cereal, sin madera ni arcilla'
+    // Ciudad: 3 Mineral + 2 Cereal
+    mustContain: ['mineral', 'cereal'],
+    mustNotContain: ['madera', 'ladrillo', 'lana'],
+    desc: 'Coste de ciudad — 3 mineral + 2 cereal, sin madera ni ladrillo'
   },
   {
     id: 'B3',
     question: '¿Qué pasa cuando sale un 7 en los dados?',
-    mustContain: ['ladrón', 'ladron', 'robar', 'descartar'],
+    mustContain: ['ladrón', 'descartar'],
     mustNotContain: [],
-    desc: 'Regla del 7 — ladrón se activa'
+    desc: 'Regla del 7 — ladrón se activa y se descarta si >7 cartas'
   },
   {
     id: 'B4',
@@ -42,9 +46,31 @@ const BEGINNER_QUESTIONS = [
   {
     id: 'B5',
     question: '¿Cuánto cuesta un camino?',
-    mustContain: ['madera', 'arcilla', 'ladrillo'],
+    // Camino: 1 Ladrillo + 1 Madera
+    mustContain: ['madera', 'ladrillo'],
     mustNotContain: ['lana', 'cereal', 'mineral'],
-    desc: 'Coste de camino — 1 madera + 1 arcilla'
+    desc: 'Coste de camino — 1 madera + 1 ladrillo'
+  },
+  {
+    id: 'B6',
+    question: '¿Qué recursos produce un bosque? ¿Y una montaña?',
+    mustContain: ['madera', 'mineral'],
+    mustNotContain: [],
+    desc: 'Producción de terrenos — bosque=madera, montaña=mineral'
+  },
+  {
+    id: 'B7',
+    question: 'Tengo 1 ladrillo, 1 madera, 1 lana y 1 cereal. ¿Puedo construir un poblado?',
+    mustContain: ['sí', 'puedes'],
+    mustNotContain: ['no puedes', 'no tienes', 'faltan', 'insuficiente'],
+    desc: 'Verificación directa — tiene exactamente los recursos para un poblado'
+  },
+  {
+    id: 'B8',
+    question: 'Tengo 2 mineral y 1 cereal. ¿Puedo construir una ciudad?',
+    mustContain: ['no', 'falta'],
+    mustNotContain: ['sí puedes', 'tienes suficiente'],
+    desc: 'Ciudad requiere 3M+2C — con 2M+1C no puede'
   },
 ]
 
