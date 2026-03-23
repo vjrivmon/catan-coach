@@ -6,6 +6,8 @@ import { CoachAnalyzeModal } from './coach/CoachAnalyzeModal'
 import { CameraOverlay } from './coach/CameraOverlay'
 import { BoardOverlay, type BoardConfirmPayload } from './coach/BoardOverlay'
 import { ResourceStepperBubble } from './coach/ResourceStepperBubble'
+import { DiceInputBubble } from './coach/DiceInputBubble'
+import { DevCardStepper } from './coach/DevCardStepper'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
 import { VoiceInput } from './VoiceInput'
@@ -82,7 +84,12 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false)
   const [showCamera, setShowCamera]             = useState(false)
   const [showBoard, setShowBoard]               = useState(false)
-  const [coachStep, setCoachStep]               = useState<null | 'waiting-resources'>(null)
+  const [coachStep, setCoachStep]               = useState<null | 'waiting-resources' | 'waiting-devCards' | 'waiting-dice'>(null)
+  // Punto 3 — game state
+  const [gameStarted, setGameStarted]           = useState(false)
+  const [currentTurn, setCurrentTurn]           = useState(1)
+  const [diceMode, setDiceMode]                 = useState<'manual' | 'auto'>('manual')
+  const [savedDevCards, setSavedDevCards]       = useState<Record<string,number> | null>(null)
   // Persisted board state across opens — only reset on "nueva conversación"
   const [savedPieces, setSavedPieces]           = useState<Record<string, {type:'settlement'|'city'|'road';color:string}>>({})
   const [savedMyColor, setSavedMyColor]         = useState<string>('red')
@@ -317,14 +324,17 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setInput('')
     saveCurrentSession(freshSession)
     setSidebarOpen(false)
-    // Reset all mode + coach state
+    // Reset all mode + coach + game state
     setHasSelectedMode(false)
     setCoachMode(false)
     setSavedPieces({})
     setSavedMyColor('red')
     setSavedAssignments([])
     setSavedResources(null)
+    setSavedDevCards(null)
     setCoachStep(null)
+    setGameStarted(false)
+    setCurrentTurn(1)
     setShowAnalyzeModal(false)
     setShowBoard(false)
     setShowCamera(false)
@@ -367,11 +377,16 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setLastSuggestions([])
 
     // Build coachState: prefer explicit override, then derive from saved state
+    const baseCoachState = boardConfigured ? {
+      boardSummary: buildBoardSummary(),
+      resources: savedResources,
+      ...(gameStarted ? {
+        turn: currentTurn,
+        devCards: savedDevCards,
+      } : {}),
+    } : undefined
     const activeCoachState = coachMode
-      ? (coachStateOverride ?? (boardConfigured ? {
-          boardSummary: buildBoardSummary(),
-          resources: savedResources,
-        } : undefined))
+      ? (coachStateOverride ?? baseCoachState)
       : undefined
 
     let fullResponse = ''
@@ -726,6 +741,113 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   )
                 }}
               />
+            )}
+
+            {/* ── Punto 3: DevCard stepper ── */}
+            {coachStep === 'waiting-devCards' && !isLoading && (
+              <DevCardStepper
+                onConfirm={(cards) => {
+                  setCoachStep(null)
+                  setSavedDevCards(cards)
+                  const total = Object.values(cards).reduce((a,b) => a+b, 0)
+                  const cardMsg: import('@/src/domain/entities').Message = {
+                    id: `dev-${Date.now()}`, role: 'user',
+                    content: total === 0 ? 'Sin cartas de desarrollo' : `Cartas: ${Object.entries(cards).filter(([,v])=>v>0).map(([k,v])=>`${k}×${v}`).join(', ')}`,
+                    timestamp: Date.now(),
+                  }
+                  const replyMsg: import('@/src/domain/entities').Message = {
+                    id: `dev-reply-${Date.now()}`, role: 'assistant',
+                    content: `Partida iniciada. Turno ${currentTurn}. ¿Cuál es el resultado del dado?`,
+                    timestamp: Date.now(),
+                  }
+                  setSession(s => ({ ...s, messages: [...s.messages, cardMsg, replyMsg] }))
+                  setGameStarted(true)
+                  setCoachStep('waiting-dice')
+                }}
+              />
+            )}
+
+            {/* ── Punto 3: Dice input ── */}
+            {coachStep === 'waiting-dice' && !isLoading && (
+              <DiceInputBubble
+                mode={diceMode}
+                onConfirm={async (value) => {
+                  setCoachStep(null)
+                  setCurrentTurn(t => t + 1)
+
+                  // Compute which resources are produced by this number
+                  // (simplified: describe the number and let LLM + RAG handle production)
+                  const diceMsg: import('@/src/domain/entities').Message = {
+                    id: `dice-${Date.now()}`, role: 'user',
+                    content: `Dado: ${value}`,
+                    timestamp: Date.now(),
+                  }
+                  setSession(s => ({ ...s, messages: [...s.messages, diceMsg] }))
+
+                  if (value === 7) {
+                    // Ladrón
+                    const robberMsg: import('@/src/domain/entities').Message = {
+                      id: `robber-${Date.now()}`, role: 'assistant',
+                      content: 'Ha salido un 7. Si tienes más de 7 cartas debes descartar la mitad. Luego mueve el ladrón a un hex y roba una carta a un jugador adyacente.',
+                      timestamp: Date.now(),
+                    }
+                    setSession(s => ({ ...s, messages: [...s.messages, robberMsg] }))
+                    setCoachStep('waiting-dice')
+                  } else {
+                    // Ask LLM with dice context
+                    const freshCoachState = {
+                      boardSummary: buildBoardSummary(),
+                      resources: savedResources,
+                      geneticRecommendation: null,
+                      turn: currentTurn,
+                      devCards: savedDevCards,
+                    }
+                    await sendMessage(
+                      `Ha salido un ${value}. ¿Qué recursos produzco y cuál es la mejor jugada para este turno?`,
+                      freshCoachState,
+                    )
+                    setCoachStep('waiting-dice')
+                  }
+                }}
+              />
+            )}
+
+            {/* ── Punto 3: Botón Iniciar Partida ── */}
+            {boardConfigured && !gameStarted && coachStep === null && !isLoading && coachMode && (
+              <div className="flex justify-start mb-3">
+                <button
+                  onClick={() => {
+                    const startMsg: import('@/src/domain/entities').Message = {
+                      id: `start-${Date.now()}`, role: 'assistant',
+                      content: '¿Cuántas cartas de desarrollo tienes? Indícalas para que pueda tenerte en cuenta en las recomendaciones.',
+                      timestamp: Date.now(),
+                    }
+                    setSession(s => ({ ...s, messages: [...s.messages, startMsg] }))
+                    setCoachStep('waiting-devCards')
+                  }}
+                  className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Iniciar partida
+                </button>
+              </div>
+            )}
+
+            {/* ── Punto 3: indicador de turno activo ── */}
+            {gameStarted && coachStep === null && !isLoading && coachMode && (
+              <div className="flex items-center gap-2 px-1 mb-1">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-stone-400 text-xs">Turno {currentTurn - 1} — Partida en curso</span>
+                <button
+                  onClick={() => setCoachStep('waiting-dice')}
+                  className="ml-auto text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  Siguiente turno →
+                </button>
+              </div>
             )}
 
             <div ref={messagesEndRef} />

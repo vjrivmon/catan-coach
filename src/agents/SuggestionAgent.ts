@@ -11,6 +11,8 @@ export interface CoachState {
     reason: string
     alternatives: Array<{ action: string; actionEs: string; score: number; reason: string }>
   } | null
+  turn?: number | null
+  devCards?: Record<string, number> | null
 }
 
 export class SuggestionAgent {

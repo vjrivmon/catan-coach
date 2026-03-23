@@ -60,6 +60,21 @@ function buildSystemPrompt(level: UserLevel, seenConcepts: string[], coachState?
           .join(', ') || 'ninguno'
       : 'no especificados aún'
 
+    // Turn + dev cards context
+    const turnBlock = coachState.turn
+      ? `\nTURNO ACTUAL: ${coachState.turn}`
+      : ''
+    const devBlock = coachState.devCards && Object.values(coachState.devCards).some(v => v > 0)
+      ? `\nCARTAS DE DESARROLLO EN MANO: ${
+          Object.entries(coachState.devCards)
+            .filter(([,v]) => v > 0)
+            .map(([k,v]) => {
+              const names: Record<string,string> = { knight:'Caballero', monopoly:'Monopolio', year_of_plenty:'Año Abundancia', road_building:'Construcción Caminos', vp:'Punto Victoria' }
+              return `${names[k]??k}×${v}`
+            }).join(', ')
+        }`
+      : ''
+
     const geneticBlock = coachState.geneticRecommendation
       ? `\nRECOMENDACIÓN DEL AGENTE GENÉTICO (93 parámetros, 40K partidas entrenadas):
 Acción óptima: ${coachState.geneticRecommendation.actionEs} (score=${coachState.geneticRecommendation.score.toFixed(3)})
@@ -84,6 +99,7 @@ SINÓNIMOS VÁLIDOS: Ladrillo=Arcilla=Barro, Trigo=Cereal=Grano, Mineral=Roca=Pi
 
 ESTADO ACTUAL DEL TABLERO:
 ${coachState.boardSummary}
+${turnBlock}${devBlock}
 
 RECURSOS ACTUALES DEL JUGADOR: ${resourceLine}
 
