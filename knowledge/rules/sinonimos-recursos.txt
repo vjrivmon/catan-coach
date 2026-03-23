@@ -1,0 +1,90 @@
+## GUÍA DE SINÓNIMOS DE RECURSOS EN CATAN
+
+Esta guía normaliza los nombres populares y alternativos de los recursos de Catan.
+Todos los sinónimos se refieren exactamente al mismo recurso.
+
+---
+
+### MADERA (Lumber / Wood)
+El recurso madera se obtiene de los hexágonos de BOSQUE.
+Sinónimos habituales de MADERA: leña, tronco, tabla, árbol, bosque, lumber, wood, palo, troncos.
+Cuando alguien dice "leña", "tronco", "árbol" o "tabla" en el contexto de Catan, se refiere a la MADERA.
+Ejemplo: "tengo 1 árbol" = "tengo 1 madera".
+
+---
+
+### LADRILLO (Brick / Clay)
+El recurso ladrillo se obtiene de los hexágonos de COLINAS (también llamadas canteras).
+Sinónimos habituales de LADRILLO: arcilla, barro, adobe, tierra, brick, clay, colinas, cantera.
+Cuando alguien dice "arcilla", "barro" o "adobe" en el contexto de Catan, se refiere al LADRILLO.
+Ejemplo: "tengo 1 arcilla" = "tengo 1 ladrillo" = "tengo 1 barro".
+
+---
+
+### MINERAL (Ore)
+El recurso mineral se obtiene de los hexágonos de MONTAÑA.
+Sinónimos habituales de MINERAL: roca, piedra, hierro, metal, mena, ore, montaña, metal.
+Cuando alguien dice "roca", "piedra", "hierro" o "metal" en el contexto de Catan, se refiere al MINERAL.
+Ejemplo: "tengo 3 rocas" = "tengo 3 minerales" = "tengo 3 hierros".
+IMPORTANTE: Para construir una CIUDAD necesitas 3 MINERAL (rocas/piedras/hierros) + 2 CEREAL (trigos/granos).
+
+---
+
+### CEREAL (Grain / Wheat)
+El recurso cereal se obtiene de los hexágonos de CAMPO.
+Sinónimos habituales de CEREAL: trigo, grano, espiga, pan, harina, grain, wheat, campo.
+Cuando alguien dice "trigo", "grano" o "espiga" en el contexto de Catan, se refiere al CEREAL.
+Ejemplo: "tengo 2 granos" = "tengo 2 cereales" = "tengo 2 trigos".
+
+---
+
+### LANA (Wool)
+El recurso lana se obtiene de los hexágonos de PRADO.
+Sinónimos habituales de LANA: pasto, oveja, hierba, fibra, vellón, wool, sheep, prado.
+Cuando alguien dice "pasto", "oveja" o "hierba" en el contexto de Catan, se refiere a la LANA.
+Ejemplo: "tengo 1 pasto" = "tengo 1 lana" = "tengo 1 oveja".
+
+---
+
+## TABLA DE COSTES (con todos los sinónimos)
+
+### Camino
+Coste: 1 MADERA (leña/tronco/árbol/tabla) + 1 LADRILLO (arcilla/barro/adobe)
+Si tienes 1 madera y 1 ladrillo (en cualquier combinación de sinónimos), PUEDES construir un camino.
+
+### Poblado
+Coste: 1 MADERA (leña/tronco/árbol) + 1 LADRILLO (arcilla/barro/adobe) + 1 LANA (pasto/oveja/hierba) + 1 CEREAL (trigo/grano/espiga)
+Si tienes 1 de cada (en cualquier combinación de sinónimos), PUEDES construir un poblado.
+
+### Ciudad
+Coste: 3 MINERAL (rocas/piedras/hierros/metales) + 2 CEREAL (trigos/granos/espigas)
+Si tienes 3 mineral y 2 cereal (en cualquier combinación de sinónimos), PUEDES construir una ciudad.
+ATENCIÓN: Si solo tienes 2 mineral (rocas/piedras), NO puedes construir una ciudad aunque tengas cereal.
+
+### Carta de Desarrollo
+Coste: 1 MINERAL (roca/piedra/hierro) + 1 LANA (pasto/oveja/hierba) + 1 CEREAL (trigo/grano/espiga)
+
+---
+
+## TABLA DE PRODUCCIÓN POR TERRENO
+
+- BOSQUE → produce MADERA (también llamada leña, tronco, árbol)
+- COLINAS / CANTERA → produce LADRILLO (también llamado arcilla, barro, adobe)
+- MONTAÑA → produce MINERAL (también llamado roca, piedra, hierro, metal)
+- CAMPO → produce CEREAL (también llamado trigo, grano, espiga)
+- PRADO → produce LANA (también llamada pasto, oveja, hierba)
+- DESIERTO → no produce ningún recurso; aquí empieza el ladrón
+
+---
+
+## REGLAS IMPORTANTES
+
+### Regla de Distancia
+Ningún poblado puede estar a menos de 2 intersecciones (vértices) de distancia de otro poblado.
+Esto significa que entre dos poblados siempre debe haber al menos 2 aristas (caminos) de separación.
+No puedes colocar un poblado en un vértice que esté directamente conectado (adyacente) a otro vértice con poblado.
+
+### Construcción de Ciudad
+Para construir una ciudad DEBES tener un poblado existente en ese vértice.
+No se puede construir una ciudad directamente en un lugar vacío del tablero.
+La ciudad reemplaza al poblado y produce el doble de recursos.
