@@ -198,6 +198,12 @@ export interface BoardConfirmPayload {
   robberHex:   number     // hex index 0-18, 9=desert default
 }
 
+export interface BoardRecommendationPreview {
+  type:     'road' | 'settlement' | 'city'
+  position: string   // "v54" o "e12_34"
+  label:    string
+}
+
 interface BoardOverlayProps {
   onClose:            () => void
   onConfirm:          (payload: BoardConfirmPayload) => void
@@ -205,9 +211,12 @@ interface BoardOverlayProps {
   initialMyColor?:    string
   initialAssignments?: string[]
   initialRobberHex?:  number
+  // Fase 3 — modo highlight: muestra aura pulsante sobre la posición recomendada
+  previewRecommendation?: BoardRecommendationPreview
+  onConfirmRecommendation?: () => void  // callback cuando el usuario acepta la jugada
 }
 
-export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments, initialRobberHex = 9 }: BoardOverlayProps) {
+export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments, initialRobberHex = 9, previewRecommendation, onConfirmRecommendation }: BoardOverlayProps) {
   // assignments[i] = color for player i: [Tú, J2, J3, J4]
   const ALL_COLORS = ['red','blue','orange','white'] as const
   const PLAYER_LABELS = ['Tú','J2','J3','J4']
@@ -722,11 +731,105 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
               </g>
             )
           })}
+          {/* ── Fase 3: aura pulsante sobre la posición recomendada ── */}
+          {previewRecommendation && (() => {
+            const rec = previewRecommendation
+            const isVertex = rec.position.startsWith('v')
+            const isEdge   = rec.position.startsWith('e') || rec.position.includes('_')
+
+            if (isVertex) {
+              const vid = parseInt(rec.position.replace(/^v/, ''))
+              const vert = vertices.find(v => v.id === vid)
+              if (!vert) return null
+              return (
+                <g key="rec-highlight">
+                  {/* Outer pulse ring */}
+                  <circle cx={vert.x} cy={vert.y} r={22}
+                    fill="none" stroke="#f59e0b" strokeWidth={3} opacity={0.6}
+                    style={{ animation: 'recPulse 1.4s ease-in-out infinite' }}
+                  />
+                  {/* Inner glow */}
+                  <circle cx={vert.x} cy={vert.y} r={14}
+                    fill="#f59e0b" opacity={0.25}
+                    style={{ animation: 'recPulse 1.4s ease-in-out infinite 0.2s' }}
+                  />
+                  {/* Center dot */}
+                  <circle cx={vert.x} cy={vert.y} r={6}
+                    fill="#fbbf24" stroke="white" strokeWidth={1.5}
+                  />
+                </g>
+              )
+            }
+
+            if (isEdge) {
+              const edgeId = rec.position.replace(/^e/, '')
+              const edge = edges.find(e => e.id === edgeId)
+              if (!edge) return null
+              const mx = (edge.x1 + edge.x2) / 2
+              const my = (edge.y1 + edge.y2) / 2
+              const dx = edge.x2 - edge.x1, dy = edge.y2 - edge.y1
+              const len = Math.sqrt(dx*dx + dy*dy) || 1
+              return (
+                <g key="rec-highlight">
+                  {/* Glow line */}
+                  <line x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2}
+                    stroke="#f59e0b" strokeWidth={10} strokeLinecap="round" opacity={0.35}
+                    style={{ animation: 'recPulse 1.4s ease-in-out infinite' }}
+                  />
+                  <line x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2}
+                    stroke="#fbbf24" strokeWidth={5} strokeLinecap="round" opacity={0.85}
+                  />
+                  {/* Center indicator */}
+                  <circle cx={mx} cy={my} r={6}
+                    fill="#fbbf24" stroke="white" strokeWidth={1.5}
+                  />
+                  {/* Direction arrow along the edge */}
+                  <line x1={mx} y1={my}
+                    x2={mx + (dx/len)*10} y2={my + (dy/len)*10}
+                    stroke="white" strokeWidth={2} strokeLinecap="round"
+                  />
+                </g>
+              )
+            }
+            return null
+          })()}
         </svg>
+
+        {/* CSS animation keyframes injected inline */}
+        <style>{`
+          @keyframes recPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.12); }
+          }
+        `}</style>
       </div>}
 
-      {/* Bottom bar — only shown once colors confirmed */}
-      {colorsConfirmed && <div className="bg-stone-800 border-t border-stone-700 px-4 py-3 flex gap-3 shrink-0">
+      {/* Fase 3 — bottom bar en modo preview */}
+      {previewRecommendation && (
+        <div className="bg-stone-800 border-t border-amber-700/50 px-4 py-3 flex gap-3 shrink-0">
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-300 text-sm font-semibold">
+              {previewRecommendation.type === 'road' ? 'Camino recomendado' :
+               previewRecommendation.type === 'settlement' ? 'Poblado recomendado' : 'Ciudad recomendada'}
+            </p>
+            <p className="text-stone-400 text-xs mt-0.5 truncate">{previewRecommendation.label}</p>
+          </div>
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-stone-600 bg-stone-700 text-stone-200 text-sm font-semibold shrink-0">
+            Cerrar
+          </button>
+          {onConfirmRecommendation && (
+            <button
+              onClick={() => { onConfirmRecommendation(); onClose() }}
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold shrink-0 transition-colors">
+              Confirmar jugada →
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Bottom bar normal — only shown once colors confirmed and NOT in preview mode */}
+      {colorsConfirmed && !previewRecommendation && <div className="bg-stone-800 border-t border-stone-700 px-4 py-3 flex gap-3 shrink-0">
         <button onClick={() => setPieces({})}
           className="flex-1 py-2.5 rounded-xl border border-stone-600 bg-stone-700 text-stone-200 text-sm font-semibold">
           Limpiar

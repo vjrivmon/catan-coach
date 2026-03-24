@@ -10,6 +10,8 @@ import { ResourceStepperBubble } from './coach/ResourceStepperBubble'
 import { DiceInputBubble } from './coach/DiceInputBubble'
 import { DevCardStepper } from './coach/DevCardStepper'
 import { ActionMenu, ActionChips, type GameAction } from './coach/ActionMenu'
+import type { BoardRecommendation } from '@/src/domain/entities'
+import type { BoardRecommendationPreview } from './coach/BoardOverlay'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
 import { VoiceInput } from './VoiceInput'
@@ -107,6 +109,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedKnightsPlayed, setSavedKnightsPlayed] = useState<number>(0)
   const [savedLongestRoad, setSavedLongestRoad]     = useState<boolean>(false)
   const [savedLargestArmy, setSavedLargestArmy]     = useState<boolean>(false)
+  // Fases 2-4 — board recommendation preview
+  const [pendingRecommendation, setPendingRecommendation] = useState<BoardRecommendationPreview | null>(null)
   const boardConfigured                         = Object.keys(savedPieces).length > 0
 
   // Terrain + number data mirrors BoardOverlay constants — needed to enrich board summary
@@ -416,6 +420,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSavedKnightsPlayed(0)
     setSavedLongestRoad(false)
     setSavedLargestArmy(false)
+    setPendingRecommendation(null)
     setCoachStep(null)
     setGameStarted(false)
     setCurrentTurn(1)
@@ -477,6 +482,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     let fullResponse = ''
     let suggestions: string[] = []
     let agentUsed: string = 'direct'
+    let boardRecommendation: import('@/src/domain/entities').BoardRecommendation | undefined
 
     try {
       const response = await fetch('/api/chat', {
@@ -506,7 +512,11 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           try {
             const event = JSON.parse(line.slice(6))
             if (event.type === 'token') { fullResponse += event.token; setStreamingContent(fullResponse) }
-            else if (event.type === 'done') { suggestions = event.suggestedQuestions || []; agentUsed = event.agentUsed || 'direct' }
+            else if (event.type === 'done') {
+              suggestions = event.suggestedQuestions || []
+              agentUsed = event.agentUsed || 'direct'
+              if (event.boardRecommendation) boardRecommendation = event.boardRecommendation
+            }
           } catch { /* ignore */ }
         }
       }
@@ -526,6 +536,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       timestamp: Date.now(),
       agentUsed: agentUsed as Message['agentUsed'],
       suggestedQuestions: suggestions,
+      ...(boardRecommendation ? { boardRecommendation } : {}),
     }
 
     const newMessages: Message[] = [assistantMessage]
@@ -688,7 +699,29 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               initialPieces={savedPieces}
               initialMyColor={savedMyColor}
               initialAssignments={savedAssignments}
-              onClose={() => { setShowBoard(false) }}
+              previewRecommendation={pendingRecommendation ?? undefined}
+              onConfirmRecommendation={pendingRecommendation ? () => {
+                // Fase 4 — registrar la jugada en el estado automáticamente
+                const rec = pendingRecommendation
+                const myColor = savedMyColor
+                if (rec.type === 'road' || rec.type === 'settlement' || rec.type === 'city') {
+                  const key = rec.position.startsWith('v') || rec.position.startsWith('e')
+                    ? rec.position
+                    : rec.position.includes('_') ? `e${rec.position}` : `v${rec.position}`
+                  setSavedPieces(prev => ({
+                    ...prev,
+                    [key]: { type: rec.type === 'road' ? 'road' : rec.type === 'settlement' ? 'settlement' : 'city', color: myColor }
+                  }))
+                  const confirmMsg: import('@/src/domain/entities').Message = {
+                    id: `confirm-rec-${Date.now()}`, role: 'user',
+                    content: `Jugada realizada: ${rec.type === 'road' ? 'Camino' : rec.type === 'settlement' ? 'Poblado' : 'Ciudad'} en ${rec.label}`,
+                    timestamp: Date.now(),
+                  }
+                  setSession(s => ({ ...s, messages: [...s.messages, confirmMsg] }))
+                }
+                setPendingRecommendation(null)
+              } : undefined}
+              onClose={() => { setShowBoard(false); setPendingRecommendation(null) }}
               onConfirm={({ pieces, myColor, assignments, robberHex }) => {
                 setShowBoard(false)
                 setSavedPieces(pieces)
@@ -807,7 +840,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           {/* Messages — only shown after mode is selected */}
           {hasSelectedMode && <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             {session.messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onShowRecommendation={coachMode && boardConfigured ? (rec: BoardRecommendation) => {
+                  setPendingRecommendation({ type: rec.type, position: rec.position, label: rec.label })
+                  setShowBoard(true)
+                } : undefined}
+              />
             ))}
 
             {isLoading && (

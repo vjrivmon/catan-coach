@@ -1,5 +1,5 @@
 import type { LLMPort } from '../domain/ports'
-import type { Message, UserLevel } from '../domain/entities'
+import type { Message, UserLevel, BoardRecommendation } from '../domain/entities'
 import type { CoachState } from './SuggestionAgent'
 import { config } from '../config'
 import { debugLog } from '../lib/debugLog'
@@ -164,7 +164,15 @@ ${gr.alternatives && gr.alternatives.length > 0
   ? `Alternativas: ${gr.alternatives.map((a: any) => `${toEs(a.action ?? a.actionEs)}(${(a.score as number).toFixed(2)})`).join(', ')}`
   : ''}
 ${positionBlock}
-REGLA OBLIGATORIA: Si recomiendas construir un camino o poblado, indica exactamente hacia qué terrenos expandirte usando los vértices de expansión listados arriba. No digas "expandirte hacia nuevas áreas" sin especificar cuáles.`
+REGLA OBLIGATORIA: Si recomiendas construir un camino o poblado, indica exactamente hacia qué terrenos expandirte usando los vértices de expansión listados arriba. No digas "expandirte hacia nuevas áreas" sin especificar cuáles.
+
+Cuando recomiendes colocar una pieza física en el tablero (camino, poblado o ciudad), AÑADE al final de tu respuesta este bloque exacto (sin modificar el formato):
+RECOMMENDATION_JSON:{"type":"road|settlement|city","position":"eX_Y o vN","label":"descripción breve del lugar"}
+Ejemplos:
+RECOMMENDATION_JSON:{"type":"road","position":"e30_38","label":"hacia mineral(10)+arcilla(6)"}
+RECOMMENDATION_JSON:{"type":"settlement","position":"v42","label":"cereal(5)+lana(9)+madera(3)"}
+RECOMMENDATION_JSON:{"type":"city","position":"v10","label":"mineral(10)+trigo(12)"}
+Si NO recomiendas una pieza física concreta, NO incluyas el bloque.`
       : ''
 
     const vpSummary         = computeVP(coachState.boardSummary, coachState.devCards)
@@ -240,6 +248,41 @@ function buildUserPrompt(message: string, context: string, history: Message[]): 
   prompt += `Pregunta actual: ${message}`
 
   return prompt
+}
+
+/** Extract RECOMMENDATION_JSON block from full LLM response, return cleaned text + parsed rec */
+export function extractRecommendation(fullText: string): {
+  cleanText: string
+  recommendation: BoardRecommendation | null
+} {
+  const MARKER = 'RECOMMENDATION_JSON:'
+  const idx = fullText.lastIndexOf(MARKER)
+  if (idx === -1) return { cleanText: fullText.trim(), recommendation: null }
+
+  const before  = fullText.slice(0, idx).trimEnd()
+  const jsonPart = fullText.slice(idx + MARKER.length).trim()
+
+  // Find the JSON object boundaries
+  const start = jsonPart.indexOf('{')
+  const end   = jsonPart.lastIndexOf('}')
+  if (start === -1 || end === -1) return { cleanText: before, recommendation: null }
+
+  try {
+    const raw = JSON.parse(jsonPart.slice(start, end + 1)) as Record<string, unknown>
+    const type = raw.type as string
+    const position = raw.position as string
+    const label = (raw.label as string) ?? ''
+
+    if (!type || !position) return { cleanText: before, recommendation: null }
+    if (!['road','settlement','city'].includes(type)) return { cleanText: before, recommendation: null }
+
+    return {
+      cleanText: before,
+      recommendation: { type: type as BoardRecommendation['type'], position, label },
+    }
+  } catch {
+    return { cleanText: before, recommendation: null }
+  }
 }
 
 export class GeneratorAgent {

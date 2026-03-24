@@ -3,7 +3,7 @@ import { debugLog } from '@/src/lib/debugLog'
 import { RouterAgent } from '@/src/agents/RouterAgent'
 import { RulesAgent } from '@/src/agents/RulesAgent'
 import { StrategyAgent } from '@/src/agents/StrategyAgent'
-import { GeneratorAgent } from '@/src/agents/GeneratorAgent'
+import { GeneratorAgent, extractRecommendation } from '@/src/agents/GeneratorAgent'
 import { SuggestionAgent, type CoachState } from '@/src/agents/SuggestionAgent'
 import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
@@ -58,7 +58,9 @@ export async function POST(req: NextRequest) {
         const encoder = new TextEncoder()
 
         try {
-          // Stream LLM tokens
+          let fullResponse = ''
+
+          // Stream LLM tokens — buffer full response for post-processing
           for await (const token of generator.generateStream(
             message,
             context,
@@ -67,15 +69,38 @@ export async function POST(req: NextRequest) {
             seenConcepts,
             activeCoachState
           )) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
+            fullResponse += token
+
+            // Stream token to client only if it's not the RECOMMENDATION_JSON marker yet
+            // (suppress the marker line from being shown in the chat bubble)
+            const markerIdx = fullResponse.lastIndexOf('RECOMMENDATION_JSON:')
+            if (markerIdx === -1) {
+              // No marker yet — stream normally
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
+            } else {
+              // Marker appeared — only stream text before it
+              const visibleSoFar = fullResponse.slice(0, markerIdx)
+              const prevVisible  = fullResponse.slice(0, markerIdx - token.length)
+              const newVisible   = visibleSoFar.slice(prevVisible.length)
+              if (newVisible) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token: newVisible })}\n\n`))
+              }
+            }
           }
 
-          // Send suggestions and metadata at the end
+          // Parse RECOMMENDATION_JSON from full response
+          const { cleanText, recommendation } = extractRecommendation(fullResponse)
+          // If we were mid-suppression, make sure the clean final text was sent
+          // (edge case: marker arrived in last token — already handled above)
+          void cleanText  // used only for recommendation extraction; client built from tokens
+
+          // Send suggestions, metadata, and optional board recommendation
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({
               type: 'done',
               suggestedQuestions,
               agentUsed: route,
+              ...(recommendation ? { boardRecommendation: recommendation } : {}),
             })}\n\n`)
           )
         } catch (err) {

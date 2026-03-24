@@ -2,6 +2,12 @@ export type UserLevel = 'beginner' | 'intermediate' | 'advanced'
 export type AgentUsed = 'rules' | 'strategy' | 'direct'
 export type RouteDecision = 'rules' | 'strategy' | 'direct'
 
+export interface BoardRecommendation {
+  type: 'road' | 'settlement' | 'city'
+  position: string   // "v54" o "e12_34"
+  label: string      // descripción humana: "mineral(10)+trigo(12)"
+}
+
 export interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -9,6 +15,7 @@ export interface Message {
   timestamp: number
   agentUsed?: AgentUsed
   suggestedQuestions?: string[]
+  boardRecommendation?: BoardRecommendation   // Fase 1: posición concreta extraída del LLM
 }
 
 export interface ConceptMap {
