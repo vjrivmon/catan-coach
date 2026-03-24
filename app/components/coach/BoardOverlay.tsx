@@ -84,8 +84,8 @@ const PORT_DEFS: PortDef[] = [
   { hexIdx: 7,  edgeIdx: 2, type: 'wool'    }, // left (sheep 2:1)
 ]
 
-const PORT_EMOJI: Record<PortType, string> = {
-  mineral: '⛏', clay: '🧱', cereal: '🌾', wool: '🐑', wood: '🪵', '3:1': '⚖',
+const PORT_LABEL: Record<PortType, string> = {
+  mineral: 'Min', clay: 'Arc', cereal: 'Tri', wool: 'Lan', wood: 'Mad', '3:1': '3:1',
 }
 
 /** Compute port geometry from hex/edge definition */
@@ -136,6 +136,7 @@ export interface BoardConfirmPayload {
   myColor:     string
   assignments: string[]   // [Tú, J2, J3?, J4?]
   robberHex:   number     // hex index 0-18, 9=desert default
+  ports:       string[]   // PortType[] the player has access to
 }
 
 export interface BoardRecommendationPreview {
@@ -151,13 +152,15 @@ interface BoardOverlayProps {
   initialMyColor?:    string
   initialAssignments?: string[]
   initialRobberHex?:  number
+  initialPorts?:      string[]  // PortType[] restored from session
+  startInRobberMode?: boolean   // auto-activate movingRobber on mount (triggered by dice=7)
   gameStarted?:       boolean   // oculta ladrón y ciudad en colocación inicial
   // Fase 3 — modo highlight: muestra aura pulsante sobre la posición recomendada
   previewRecommendation?: BoardRecommendationPreview
   onConfirmRecommendation?: () => void
 }
 
-export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments, initialRobberHex = 9, gameStarted = false, previewRecommendation, onConfirmRecommendation }: BoardOverlayProps) {
+export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments, initialRobberHex = 9, initialPorts = [], startInRobberMode = false, gameStarted = false, previewRecommendation, onConfirmRecommendation }: BoardOverlayProps) {
   // assignments[i] = color for player i: [Tú, J2, J3, J4]
   const ALL_COLORS = ['red','blue','orange','white'] as const
   const PLAYER_LABELS = ['Tú','J2','J3','J4']
@@ -186,7 +189,9 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
   const [warning, setWarning]       = useState<string | null>(null)
   // Robber — index of hex where ladrón sits (default: 9 = desert center)
   const [robberHex, setRobberHex]   = useState<number>(initialRobberHex)
-  const [movingRobber, setMovingRobber] = useState(false)
+  const [movingRobber, setMovingRobber] = useState(startInRobberMode)
+  // Fase C — puertos del jugador
+  const [myPorts, setMyPorts] = useState<string[]>(initialPorts)
 
   const { vertices, edges, adjacency } = useMemo(buildGraph, [])
 
@@ -616,29 +621,45 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
             )
           })}
 
-          {/* ── Ports ── */}
-          {PORT_DEFS.map((def, i) => {
+          {/* ── Ports — Fase C ── */}
+          {(gameStarted || colorsConfirmed) && PORT_DEFS.map((def, i) => {
             const { vx1, vy1, vx2, vy2, px, py } = portGeom(def)
             const isGeneric = def.type === '3:1'
-            const emoji = PORT_EMOJI[def.type]
             const ratio = isGeneric ? '3:1' : '2:1'
+            const label = PORT_LABEL[def.type]
             const mx = (vx1 + vx2) / 2, my = (vy1 + vy2) / 2
-            const pw = 36, ph = 18
+            const pw = 38, ph = 20
+            const owned = myPorts.includes(def.type)
+            const togglePort = () => {
+              setMyPorts(prev =>
+                prev.includes(def.type)
+                  ? prev.filter(p => p !== def.type)
+                  : [...prev, def.type]
+              )
+            }
             return (
-              <g key={i}>
+              <g key={i} onClick={togglePort} style={{ cursor: 'pointer' }}>
                 {/* Connector line: pill → edge midpoint */}
                 <line x1={px} y1={py} x2={mx} y2={my}
-                  stroke="rgba(251,191,36,0.55)" strokeWidth={1.5} strokeDasharray="3 2"/>
+                  stroke={owned ? 'rgba(251,191,36,0.85)' : 'rgba(251,191,36,0.45)'}
+                  strokeWidth={owned ? 2 : 1.5} strokeDasharray="3 2"/>
                 {/* Vertex access dots */}
-                <circle cx={vx1} cy={vy1} r={4} fill="#fbbf24" opacity={0.8}/>
-                <circle cx={vx2} cy={vy2} r={4} fill="#fbbf24" opacity={0.8}/>
-                {/* Port pill */}
+                <circle cx={vx1} cy={vy1} r={owned ? 5 : 4}
+                  fill={owned ? '#fbbf24' : '#fbbf24'} opacity={owned ? 1 : 0.6}/>
+                <circle cx={vx2} cy={vy2} r={owned ? 5 : 4}
+                  fill={owned ? '#fbbf24' : '#fbbf24'} opacity={owned ? 1 : 0.6}/>
+                {/* Port pill — golden border if owned */}
                 <rect x={px - pw/2} y={py - ph/2} width={pw} height={ph} rx={5}
-                  fill="rgba(15,23,42,0.88)" stroke="rgba(251,191,36,0.6)" strokeWidth={1}/>
-                <text x={px - 7} y={py + 5} textAnchor="middle" fontSize={10}
-                  style={{ userSelect: 'none' }}>{emoji}</text>
-                <text x={px + 9} y={py + 5} textAnchor="middle" fontSize={9}
-                  fill="white" fontWeight="bold" style={{ userSelect: 'none' }}>{ratio}</text>
+                  fill={owned ? 'rgba(120,80,0,0.92)' : 'rgba(15,23,42,0.88)'}
+                  stroke={owned ? '#fbbf24' : 'rgba(251,191,36,0.5)'}
+                  strokeWidth={owned ? 2 : 1}/>
+                {/* Label text (no emoji) */}
+                <text x={px - pw/2 + 8} y={py + 4} textAnchor="middle" fontSize={9}
+                  fill={owned ? '#fde68a' : '#d6d3d1'} fontWeight="bold"
+                  style={{ userSelect: 'none' }}>{label}</text>
+                <text x={px + pw/2 - 10} y={py + 4} textAnchor="middle" fontSize={8}
+                  fill={owned ? '#fbbf24' : '#a8a29e'}
+                  style={{ userSelect: 'none' }}>{ratio}</text>
               </g>
             )
           })}
@@ -851,7 +872,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         </button>
         <button
           data-tour="confirm-board-btn"
-          onClick={() => allPlayersReady && onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments, robberHex })}
+          onClick={() => allPlayersReady && onConfirm({ pieces, myColor: assignments[0] ?? 'red', assignments, robberHex, ports: myPorts })}
           disabled={!allPlayersReady}
           title={!allPlayersReady ? `Faltan piezas: cada jugador necesita ${MIN_SETTLEMENTS} poblados y ${MIN_ROADS} caminos` : ''}
           className={`flex-[2] py-2.5 rounded-xl text-sm font-bold transition-colors ${
