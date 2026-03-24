@@ -506,6 +506,19 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     let agentUsed: string = 'direct'
     let boardRecommendation: import('@/src/domain/entities').BoardRecommendation | undefined
 
+    // DEBUG: log what we send to the API
+    const _mode = (_boardConfigured || !!coachStateOverride) ? 'coach' : 'aprende'
+    console.log('[sendMessage] DEBUG', {
+      msg: text.trim().slice(0, 60),
+      mode: _mode,
+      hasOverride: !!coachStateOverride,
+      boardConfigured: _boardConfigured,
+      coachMode: _coachMode,
+      hasActiveCoachState: !!activeCoachState,
+      boardSummaryPreview: activeCoachState?.boardSummary?.slice(0, 80) ?? 'NONE',
+      resources: activeCoachState?.resources ?? 'NONE',
+    })
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -516,7 +529,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           userLevel: updatedLevel,
           seenConcepts,
           // Si hay tablero configurado o override explícito → siempre mode coach
-          mode: (_boardConfigured || !!coachStateOverride) ? 'coach' : 'aprende',
+          mode: _mode,
           ...(activeCoachState ? { coachState: activeCoachState } : {}),
         }),
       })
