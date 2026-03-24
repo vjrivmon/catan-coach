@@ -82,30 +82,30 @@ test('OB-7: previous button goes back', async ({ page }) => {
 test('OB-8: tour llega al ultimo paso sin romperse', async ({ page }) => {
   await clearOnboarding(page)
   await page.waitForSelector('.driver-popover', { timeout: 5000 })
-  // Navigate to step 3 (board-btn)
+  // Step 1→2→3
   await page.locator('.driver-popover-next-btn').click(); await page.waitForTimeout(400)
   await page.locator('.driver-popover-next-btn').click(); await page.waitForTimeout(400)
   expect(await page.locator('.driver-popover-title').innerText()).toBe('Tablero interactivo')
-  // Click opens board — wait for title to change (setTimeout 600ms inside)
+  // Step 3→4: opens board, shows color picker
   await page.locator('.driver-popover-next-btn').click()
   await page.waitForFunction(
-    () => {
-      const el = document.querySelector('.driver-popover-title')
-      return el && el.innerText !== 'Tablero interactivo'
-    },
+    () => { const el = document.querySelector('.driver-popover-title'); return el && el.innerText !== 'Tablero interactivo' },
     { timeout: 3000 }
   )
   const step4 = await page.locator('.driver-popover-title').innerText()
-  expect(step4).toBe('El tablero de juego')
-  // Click closes board — wait for title to change to chat step
+  expect(step4).toBe('Elige tu color')
+  // Step 4→5: floating board step
   await page.locator('.driver-popover-next-btn').click()
   await page.waitForFunction(
-    () => {
-      const el = document.querySelector('.driver-popover-title')
-      return el && el.innerText === 'Pregunta lo que quieras'
-    },
+    () => { const el = document.querySelector('.driver-popover-title'); return el && el.innerText === 'El tablero de juego' },
     { timeout: 3000 }
   )
-  const step5 = await page.locator('.driver-popover-title').innerText()
-  expect(step5).toBe('Pregunta lo que quieras')
+  expect(await page.locator('.driver-popover-title').innerText()).toBe('El tablero de juego')
+  // Step 5→6: closes board, chat input
+  await page.locator('.driver-popover-next-btn').click()
+  await page.waitForFunction(
+    () => { const el = document.querySelector('.driver-popover-title'); return el && el.innerText === 'Pregunta lo que quieras' },
+    { timeout: 3000 }
+  )
+  expect(await page.locator('.driver-popover-title').innerText()).toBe('Pregunta lo que quieras')
 })

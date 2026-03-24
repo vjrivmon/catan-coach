@@ -38,6 +38,7 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
       onDestroyed: () => onDoneRef.current(),
 
       steps: [
+        // 1 — Header
         {
           element: 'header',
           popover: {
@@ -47,6 +48,7 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
             align: 'center',
           },
         },
+        // 2 — Modos de inicio
         {
           element: '[data-tour="mode-select"]',
           popover: {
@@ -56,11 +58,12 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
             align: 'center',
           },
         },
+        // 3 — Botón tablero → abre board
         {
           element: '[data-tour="board-btn"]',
           popover: {
             title: 'Tablero interactivo',
-            description: 'Toca aquí para abrir el tablero y colocar las piezas de todos los jugadores. Ahora lo abrimos para que veas cómo funciona.',
+            description: 'Toca aquí para abrir el tablero. Lo abrimos ahora para que veas cómo funciona.',
             side: 'bottom',
             align: 'end',
             onNextClick: () => {
@@ -69,21 +72,36 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
             },
           },
         },
+        // 4 — Selector de color (primer paso dentro del tablero)
         {
+          element: '[data-tour="color-picker"]',
           popover: {
-            title: 'El tablero de juego',
-            description: 'Toca un <b>vértice</b> para colocar un poblado o ciudad. Toca una <b>arista</b> para colocar un camino. Asigna colores a cada jugador. Cuando termines, pulsa <b>Confirmar tablero</b>.',
+            title: 'Elige tu color',
+            description: 'Lo primero es asignar colores a cada jugador. <b>Toca el círculo de tu color</b> — el que uses en la partida real. Luego asigna el color de cada rival.',
+            side: 'bottom',
             align: 'center',
             onPrevClick: () => {
               onCloseBoardRef.current()
               setTimeout(() => driverRef.current?.movePrevious(), 600)
             },
+          },
+        },
+        // 5 — Tablero general (flotante, sin element)
+        {
+          popover: {
+            title: 'El tablero de juego',
+            description: 'Una vez asignados los colores, toca un <b>vértice</b> para colocar un poblado o ciudad, y una <b>arista</b> para un camino. Cuando termines, pulsa <b>Confirmar tablero</b>.',
+            align: 'center',
             onNextClick: () => {
               onCloseBoardRef.current()
               setTimeout(() => driverRef.current?.moveNext(), 600)
             },
+            onPrevClick: () => {
+              setTimeout(() => driverRef.current?.movePrevious(), 200)
+            },
           },
         },
+        // 6 — Chat input
         {
           element: '[data-tour="chat-input"]',
           popover: {
@@ -99,7 +117,6 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
     driverRef.current = driverObj
 
     const t = setTimeout(() => driverObj.drive(), 300)
-    // No cleanup destroy — we keep the driver alive across re-renders
     return () => { clearTimeout(t) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Run only once on mount

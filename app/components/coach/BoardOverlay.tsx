@@ -345,7 +345,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
       {/* Color assignment (sequential) or Player selector */}
       {!colorsConfirmed ? (
         /* Step-by-step color assignment */
-        <div className="bg-stone-800 border-b border-stone-700 px-4 py-3 shrink-0">
+        <div data-tour="color-picker" className="bg-stone-800 border-b border-stone-700 px-4 py-3 shrink-0">
           {(() => {
             const step = assignments.length   // 0=Tú, 1=J2, 2=J3
             const remaining = ALL_COLORS.filter(c => !assignments.includes(c))
