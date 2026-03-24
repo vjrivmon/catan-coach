@@ -46,7 +46,7 @@
 
 | Suite | Score | Notas |
 |---|---|---|
-| Básicas + Sinónimos + Contextuales (15 preg) | 13/15 (87%) medido | B2 corregido → esperado 14/15 |
+| Básicas + Sinónimos + Contextuales (15 preg) | 15/15 (100%) |
 | Edge cases Catan (12 casos) | 12/12 (100%) real | 3 fallos eran bugs del keyword matcher |
 
 ---

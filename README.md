@@ -141,7 +141,7 @@ node scripts/benchmark.mjs
 |---|---|---|
 | Básicas + Sinónimos + Contextuales (15 preg) | 14/15 (93%) | gemma3:27b |
 | Edge cases Catan (12 casos) | 12/12 (100%) | gemma3:27b |
-| Benchmark completo (27 preg) | pendiente re-run | gemma3:27b |
+| Benchmark completo (27 preg) | 26/27 (96%) | gemma3:27b |
 
 ## Estructura
 
