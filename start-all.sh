@@ -103,8 +103,27 @@ echo -e "${BOLD}${CYAN}║        CATAN COACH — start-all       ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════╝${NC}"
 echo ""
 
-# ── 0. Matar todo lo que pueda estar corriendo ────────────────────────────────
-log "0/3  Limpiando puertos..."
+# ── 0. Sincronizar repos + matar servicios ────────────────────────────────────
+log "0/3  Sincronizando repos..."
+
+# Frontend (este mismo repo)
+if git -C "$FRONTEND_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
+  git -C "$FRONTEND_DIR" pull --rebase --autostash 2>&1 | tail -1 | sed 's/^/  /'
+  ok "catan-coach sincronizado"
+else
+  warn "catan-coach no es un repo git"
+fi
+
+# GeneticAgent API
+if [ -d "$ADVISOR_DIR" ] && git -C "$ADVISOR_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
+  git -C "$ADVISOR_DIR" pull --rebase --autostash 2>&1 | tail -1 | sed 's/^/  /'
+  ok "catan-advisor-api sincronizado"
+else
+  warn "catan-advisor-api no encontrado — omitido"
+fi
+
+echo ""
+log "Limpiando puertos..."
 kill_port "$CHROMA_PORT"
 kill_port "$ADVISOR_PORT"
 kill_port "$FRONTEND_PORT"
