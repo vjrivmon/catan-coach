@@ -10,6 +10,33 @@ interface OnboardingTourProps {
   onCloseBoard: () => void
 }
 
+/** Polls until `[data-tour="colors-done"]` appears, then calls cb */
+function waitForColorsDone(cb: () => void, maxMs = 120_000) {
+  const start = Date.now()
+  const tick = () => {
+    if (document.querySelector('[data-tour="colors-done"]')) { cb(); return }
+    if (Date.now() - start < maxMs) requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+}
+
+/** Visually disables / enables the driver next button */
+function setNextBtnDisabled(disabled: boolean) {
+  const btn = document.querySelector('.driver-popover-next-btn') as HTMLButtonElement | null
+  if (!btn) return
+  if (disabled) {
+    btn.style.opacity = '0.35'
+    btn.style.cursor = 'not-allowed'
+    btn.style.pointerEvents = 'none'
+    btn.setAttribute('data-blocked', '1')
+  } else {
+    btn.style.opacity = ''
+    btn.style.cursor = ''
+    btn.style.pointerEvents = ''
+    btn.removeAttribute('data-blocked')
+  }
+}
+
 export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: OnboardingTourProps) {
   const driverRef = useRef<Driver | null>(null)
   const onDoneRef = useRef(onDone)
@@ -75,34 +102,40 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
           element: '[data-tour="color-picker"]',
           popover: {
             title: 'Elige los colores',
-            description: '¡Primero hay que asignar colores! Toca tu color, luego el de cada rival. Cuando hayas asignado todos los jugadores, podrás continuar.',
+            description: 'Primero asigna un color a cada jugador — toca el tuyo, luego el de cada rival. El botón <b>Siguiente</b> se activará cuando todos los jugadores tengan color.',
             side: 'bottom',
             align: 'center',
+            onPopoverRender: () => {
+              // Disable next btn immediately; re-enable when colors are done
+              setTimeout(() => {
+                const alreadyDone = !!document.querySelector('[data-tour="colors-done"]')
+                if (!alreadyDone) {
+                  setNextBtnDisabled(true)
+                  waitForColorsDone(() => setNextBtnDisabled(false))
+                }
+              }, 50)
+            },
             onPrevClick: () => {
+              setNextBtnDisabled(false)
               onCloseBoardRef.current()
               setTimeout(() => driverRef.current?.movePrevious(), 600)
             },
             onNextClick: () => {
-              // Block advance until all colors are assigned (colors-done appears in DOM)
-              const colorsDone = document.querySelector('[data-tour="colors-done"]')
-              if (!colorsDone) {
-                // Flash the next button to indicate it's blocked
-                const btn = document.querySelector('.driver-popover-next-btn') as HTMLButtonElement
-                if (btn) {
-                  btn.style.opacity = '0.4'
-                  setTimeout(() => { btn.style.opacity = '' }, 600)
-                }
-                return // Don't advance
+              if (document.querySelector('[data-tour="colors-done"]')) {
+                setNextBtnDisabled(false)
+                driverRef.current?.moveNext()
               }
-              driverRef.current?.moveNext()
+              // If blocked, do nothing (button is visually disabled anyway)
             },
           },
         },
-        // 5 — Tablero general (flotante)
+        // 5 — Tablero — anclado al header para no tapar el tablero
         {
+          element: 'header',
           popover: {
             title: 'El tablero de juego',
-            description: 'Ahora toca un <b>vértice</b> para colocar un poblado o ciudad, y una <b>arista</b> para un camino. Cuando termines, pulsa <b>Confirmar tablero</b>.',
+            description: 'Toca un <b>vértice</b> para colocar un poblado o ciudad, y una <b>arista</b> para un camino. Cuando termines, pulsa <b>Confirmar tablero</b>.',
+            side: 'bottom',
             align: 'center',
             onNextClick: () => {
               onCloseBoardRef.current()

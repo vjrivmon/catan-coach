@@ -126,11 +126,11 @@ test('OB-8: tour llega al ultimo paso sin romperse', async ({ page }) => {
     { timeout: 3000 }
   )
   expect(await page.locator('.driver-popover-title').innerText()).toBe('El tablero de juego')
-  // Step 5→6: closes board, chat input
+  // Step 5 is anchored to header — board still open, click next to close and go to chat
   await page.locator('.driver-popover-next-btn').click()
   await page.waitForFunction(
     () => { const el = document.querySelector('.driver-popover-title'); return el && el.innerText === 'Pregunta lo que quieras' },
-    { timeout: 3000 }
+    { timeout: 4000 }
   )
   expect(await page.locator('.driver-popover-title').innerText()).toBe('Pregunta lo que quieras')
 })
