@@ -187,10 +187,8 @@ else
       "$ADVISOR_DIR/.venv/bin/pip" install -q -r "$ADVISOR_DIR/requirements.txt"
     fi
 
-    nohup "$ADVISOR_DIR/.venv/bin/uvicorn" main:app \
-      --app-dir "$ADVISOR_DIR" \
-      --port "$ADVISOR_PORT" \
-      --host 127.0.0.1 \
+    nohup bash -c "cd '$ADVISOR_DIR' && '$ADVISOR_DIR/.venv/bin/uvicorn' main:app \
+      --port $ADVISOR_PORT --host 127.0.0.1" \
       > "$LOG_DIR/advisor.log" 2>&1 &
     wait_for_port "$ADVISOR_PORT" "GeneticAgent"
   fi
