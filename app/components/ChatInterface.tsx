@@ -10,6 +10,7 @@ import { ResourceStepperBubble } from './coach/ResourceStepperBubble'
 import { DiceInputBubble } from './coach/DiceInputBubble'
 import { DevCardStepper } from './coach/DevCardStepper'
 import { ActionMenu, ActionChips, type GameAction } from './coach/ActionMenu'
+import { computeResourcesFromDice, type ResourceCounts } from '@/src/lib/diceProduction'
 import type { BoardRecommendation } from '@/src/domain/entities'
 import type { BoardRecommendationPreview } from './coach/BoardOverlay'
 import { MessageBubble } from './MessageBubble'
@@ -1154,25 +1155,93 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   setSession(s => ({ ...s, messages: [...s.messages, diceMsg] }))
 
                   if (value === 7) {
-                    // Ladrón
+                    // Ladrón — mostrar instrucciones y pedir que mueva el ladrón
+                    const totalCards = savedResources
+                      ? Object.values(savedResources).reduce((a, b) => a + b, 0)
+                      : 0
+                    const discardNote = totalCards > 7
+                      ? ` Tienes ${totalCards} cartas — debes descartar ${Math.floor(totalCards / 2)}.`
+                      : ''
                     const robberMsg: import('@/src/domain/entities').Message = {
                       id: `robber-${Date.now()}`, role: 'assistant',
-                      content: 'Ha salido un 7. Si tienes más de 7 cartas debes descartar la mitad. Luego mueve el ladrón a un hex y roba una carta a un jugador adyacente.',
+                      content: `Ha salido un 7.${discardNote} Mueve el ladrón: abre el tablero con el icono del hexágono y toca el hex donde quieres colocarlo.`,
                       timestamp: Date.now(),
                     }
                     setSession(s => ({ ...s, messages: [...s.messages, robberMsg] }))
                     setCoachStep('waiting-dice')
                   } else {
-                    // Ask LLM with dice context
+                    // ── Cálculo automático de producción ─────────────────────
+                    const diceResult = computeResourcesFromDice(
+                      value,
+                      savedPieces,
+                      savedMyColor,
+                      savedRobberHex,
+                      savedResources as ResourceCounts | null,
+                    )
+
+                    // Actualizar recursos automáticamente
+                    setSavedResources(diceResult.newTotals)
+                    setSavedGeneticRec(null)  // limpiar rec del turno anterior
+
+                    // Mensaje en el chat con el resumen de producción
+                    const productionMsg: import('@/src/domain/entities').Message = {
+                      id: `prod-${Date.now()}`, role: 'assistant',
+                      content: diceResult.summary,
+                      timestamp: Date.now(),
+                    }
+                    setSession(s => ({ ...s, messages: [...s.messages, productionMsg] }))
+
+                    // Consultar GeneticAgent con los recursos ya actualizados
+                    let geneticRec = null
+                    try {
+                      const pieceKeys = Object.keys(savedPieces)
+                      const mySettlements = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
+                      const myCities      = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
+                      const myRoads       = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
+                      const rivals        = savedAssignments.filter(c => c !== savedMyColor).map(color => ({
+                        color,
+                        vp: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').length
+                          + pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').length * 2,
+                        settlements: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
+                        cities:      pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
+                        roads:       pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === color).map(k => k.slice(1)),
+                        knights_played: 0,
+                      }))
+                      const vpBase  = mySettlements.length + myCities.length * 2
+                      const vpBonus = (savedLongestRoad ? 2 : 0) + (savedLargestArmy ? 2 : 0)
+                      const apiRes = await fetch('/api/coach-recommend', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          resources:     diceResult.newTotals,
+                          settlements:   mySettlements,
+                          cities:        myCities,
+                          roads:         myRoads,
+                          vp:            vpBase + vpBonus,
+                          roadLength:    myRoads.length,
+                          knightsPlayed: savedKnightsPlayed,
+                          longestRoad:   savedLongestRoad,
+                          largestArmy:   savedLargestArmy,
+                          otherPlayers:  rivals,
+                          gamePhasePlaying: true,
+                          robberHex:     savedRobberHex,
+                          turn:          currentTurn,
+                          devCards:      savedDevCards,
+                        }),
+                      })
+                      if (apiRes.ok) { geneticRec = await apiRes.json(); setSavedGeneticRec(geneticRec) }
+                    } catch { /* GeneticAgent optional */ }
+
+                    // Pedir recomendación al LLM con contexto completo
                     const freshCoachState = {
-                      boardSummary: buildBoardSummary(),
-                      resources: savedResources,
-                      geneticRecommendation: null,
-                      turn: currentTurn,
-                      devCards: savedDevCards,
+                      boardSummary:          buildBoardSummary(),
+                      resources:             diceResult.newTotals,
+                      geneticRecommendation: geneticRec,
+                      turn:                  currentTurn,
+                      devCards:              savedDevCards,
                     }
                     await sendMessage(
-                      `Ha salido un ${value}. ¿Qué recursos produzco y cuál es la mejor jugada para este turno?`,
+                      '¿Cuál es la mejor jugada para este turno?',
                       freshCoachState,
                     )
                     setCoachStep('waiting-dice')
