@@ -3,27 +3,36 @@ import { config } from '../../config'
 
 export class OllamaAdapter implements LLMPort {
   async generate(prompt: string, systemPrompt: string): Promise<string> {
-    const response = await fetch(`${config.ollama.baseUrl}/api/generate`, {
+    // Use /api/chat with roles so the model treats systemPrompt as a real system instruction
+    const response = await fetch(`${config.ollama.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: config.ollama.mainModel,
-        prompt: `${systemPrompt}\n\n${prompt}`,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: prompt },
+        ],
         stream: false,
       }),
     })
     if (!response.ok) throw new Error(`Ollama error: ${response.status}`)
     const data = await response.json()
-    return data.response || ''
+    return data.message?.content || ''
   }
 
   async *generateStream(prompt: string, systemPrompt: string): AsyncIterable<string> {
-    const response = await fetch(`${config.ollama.baseUrl}/api/generate`, {
+    // Use /api/chat with roles — critical for models like llama3.3:70b that ignore
+    // system instructions when they arrive as plain text via /api/generate
+    const response = await fetch(`${config.ollama.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: config.ollama.mainModel,
-        prompt: `${systemPrompt}\n\n${prompt}`,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: prompt },
+        ],
         stream: true,
       }),
     })
@@ -39,8 +48,9 @@ export class OllamaAdapter implements LLMPort {
       for (const line of lines) {
         try {
           const parsed = JSON.parse(line)
-          if (parsed.response) yield parsed.response
-        } catch { /* ignore */ }
+          // /api/chat stream: delta is in message.content
+          if (parsed.message?.content) yield parsed.message.content
+        } catch { /* ignore malformed lines */ }
       }
     }
   }
