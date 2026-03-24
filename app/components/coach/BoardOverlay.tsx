@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 
 // ─── Geometry ──────────────────────────────────────────────────────────────────
 const R = 40          // hex radius (center → vertex)
@@ -257,6 +257,15 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
     setTimeout(() => setWarning(null), 2500)
   }, [])
 
+  // Auto-switch a camino cuando el jugador seleccionado llega a MAX_SETTLEMENTS
+  useEffect(() => {
+    if (selPiece !== 'settlement') return
+    const { settlements } = countByPlayer(pieces, selColor)
+    if (settlements >= MAX_SETTLEMENTS) {
+      setSelPiece('road')
+    }
+  }, [pieces, selColor, selPiece])
+
   const toggleVertex = useCallback((id: number) => {
     if (selPiece === 'road') return
     const now = Date.now()
@@ -461,17 +470,28 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex flex-col gap-2 shrink-0">
           {/* Piece type buttons — cities hidden in initial phase */}
           <div className="flex gap-2 items-center flex-wrap">
-            {(['settlement','road'] as const).map(p => (
-              <button key={p}
-                onClick={() => { setSelPiece(p); setMovingRobber(false) }}
-                className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
-                  selPiece === p && !movingRobber
-                    ? 'border-amber-500 text-amber-400 bg-amber-500/10'
-                    : 'border-stone-600 text-stone-400 bg-stone-700'
-                }`}>
-                {p === 'settlement' ? 'Pueblo' : 'Camino'}
-              </button>
-            ))}
+            {(['settlement','road'] as const).map(p => {
+              const { settlements, roads } = countByPlayer(pieces, selColor)
+              const isDisabled = p === 'settlement'
+                ? settlements >= MAX_SETTLEMENTS
+                : roads >= MAX_ROADS
+              return (
+                <button key={p}
+                  onClick={() => { if (!isDisabled) { setSelPiece(p); setMovingRobber(false) } }}
+                  disabled={isDisabled}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                    isDisabled
+                      ? 'border-stone-700 text-stone-600 bg-stone-800 cursor-not-allowed opacity-50'
+                      : selPiece === p && !movingRobber
+                        ? 'border-amber-500 text-amber-400 bg-amber-500/10'
+                        : 'border-stone-600 text-stone-400 bg-stone-700'
+                  }`}>
+                  {p === 'settlement'
+                    ? `Pueblo ${settlements}/${MAX_SETTLEMENTS}`
+                    : `Camino ${roads}/${MAX_ROADS}`}
+                </button>
+              )
+            })}
             {/* Mover ladrón button */}
             <button
               onClick={() => setMovingRobber(r => !r)}
