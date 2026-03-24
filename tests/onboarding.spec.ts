@@ -78,3 +78,22 @@ test('OB-7: previous button goes back', async ({ page }) => {
   await page.waitForTimeout(400)
   expect(await page.locator('.driver-popover-title').innerText()).toBe('Catan Coach')
 })
+
+test('OB-8: tour llega al ultimo paso sin romperse', async ({ page }) => {
+  await clearOnboarding(page)
+  await page.waitForSelector('.driver-popover', { timeout: 5000 })
+  // Navigate to step 3 (board-btn)
+  await page.locator('.driver-popover-next-btn').click(); await page.waitForTimeout(400)
+  await page.locator('.driver-popover-next-btn').click(); await page.waitForTimeout(400)
+  expect(await page.locator('.driver-popover-title').innerText()).toBe('Tablero interactivo')
+  // Click opens board — wait 800ms for setTimeout(600) + React render
+  await page.locator('.driver-popover-next-btn').click()
+  await page.waitForTimeout(800)
+  const step4 = await page.locator('.driver-popover-title').innerText()
+  expect(step4).toBe('El tablero de juego')
+  // Click advances to chat-input — wait 800ms again
+  await page.locator('.driver-popover-next-btn').click()
+  await page.waitForTimeout(800)
+  const step5 = await page.locator('.driver-popover-title').innerText()
+  expect(step5).toBe('Pregunta lo que quieras')
+})

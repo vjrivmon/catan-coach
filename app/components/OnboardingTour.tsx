@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { driver } from 'driver.js'
+import { useEffect, useRef } from 'react'
+import { driver, Driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 
 interface OnboardingTourProps {
@@ -11,6 +11,17 @@ interface OnboardingTourProps {
 }
 
 export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: OnboardingTourProps) {
+  // Keep driver instance stable across re-renders
+  const driverRef = useRef<Driver | null>(null)
+  const onDoneRef = useRef(onDone)
+  const onOpenBoardRef = useRef(onOpenBoard)
+  const onCloseBoardRef = useRef(onCloseBoard)
+
+  // Keep refs updated without recreating the driver
+  useEffect(() => { onDoneRef.current = onDone }, [onDone])
+  useEffect(() => { onOpenBoardRef.current = onOpenBoard }, [onOpenBoard])
+  useEffect(() => { onCloseBoardRef.current = onCloseBoard }, [onCloseBoard])
+
   useEffect(() => {
     const driverObj = driver({
       showProgress: true,
@@ -24,7 +35,7 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
       doneBtnText: 'Empezar a jugar',
       progressText: '{{current}} de {{total}}',
       popoverClass: 'catan-tour-popover',
-      onDestroyed: onDone,
+      onDestroyed: () => onDoneRef.current(),
 
       steps: [
         {
@@ -53,24 +64,23 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
             side: 'bottom',
             align: 'end',
             onNextClick: () => {
-              onOpenBoard()
-              // Wait for board to render, then advance
-              setTimeout(() => driverObj.moveNext(), 400)
+              onOpenBoardRef.current()
+              setTimeout(() => driverRef.current?.moveNext(), 600)
             },
           },
         },
         {
           popover: {
             title: 'El tablero de juego',
-            description: 'Toca un <b>vértice</b> para colocar un poblado o ciudad. Toca una <b>arista</b> para colocar un camino. Asigna colores a cada jugador. Cuando termines, pulsa <b>Confirmar tablero</b> abajo.',
+            description: 'Toca un <b>vértice</b> para colocar un poblado o ciudad. Toca una <b>arista</b> para colocar un camino. Asigna colores a cada jugador. Cuando termines, pulsa <b>Confirmar tablero</b>.',
             align: 'center',
             onPrevClick: () => {
-              onCloseBoard()
-              setTimeout(() => driverObj.movePrevious(), 400)
+              onCloseBoardRef.current()
+              setTimeout(() => driverRef.current?.movePrevious(), 600)
             },
             onNextClick: () => {
-              onCloseBoard()
-              setTimeout(() => driverObj.moveNext(), 400)
+              onCloseBoardRef.current()
+              setTimeout(() => driverRef.current?.moveNext(), 600)
             },
           },
         },
@@ -86,9 +96,13 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
       ],
     })
 
+    driverRef.current = driverObj
+
     const t = setTimeout(() => driverObj.drive(), 300)
-    return () => { clearTimeout(t); driverObj.destroy() }
-  }, [onDone, onOpenBoard, onCloseBoard])
+    // No cleanup destroy — we keep the driver alive across re-renders
+    return () => { clearTimeout(t) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Run only once on mount
 
   return null
 }
