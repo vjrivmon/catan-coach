@@ -1,52 +1,63 @@
-# Pendientes Catan Coach (sesión 24/03/2026)
+# Pendientes Catan Coach — estado 24/03/2026 (fin de sesión)
 
-## 1. Descarte de acción → mostrar recursos actuales
-Cuando el LLM recomienda una acción (aparece el BoardOverlay con la pieza recomendada)
-y el usuario pulsa "Descartar":
-- Mostrar los recursos actuales en mano
-- NO resetear a 0 — mantener los recursos confirmados previamente
+## ✅ COMPLETADOS HOY
 
-**Contexto:** El usuario tenía Madera:1, Trigo:1, Mineral:1. Al descartar se ponía todo a 0.
-
----
-
-## 2. Botón "Actualizar recursos" reseteando a 0
-Cuando el usuario pulsa "Actualizar recursos", los recursos se ponen a cero en lugar
-de mostrar el stepper con los valores actuales pre-rellenados.
-
-**Fix esperado:** El ResourceStepper debe abrirse con los valores actuales como estado inicial.
+1. ~~Descarte de acción → mostrar recursos actuales~~ → **commit 9bb1190**
+2. ~~"Actualizar recursos" reseteando a 0~~ → **commit 9bb1190** (initialValues en ResourceStepperBubble)
+3. ~~Tablero sin botón de salir~~ → **commit 9bb1190** (botón X absoluto)
+4. ~~OllamaAdapter /api/generate → /api/chat~~ → **commit 00ca743**
+5. ~~Modelo llama3.3:70b ignorando system prompt~~ → cambiado a gemma3:27b
+6. ~~coachState no llegaba cuando usuario escribía manualmente~~ → **commit 2cbebf0**
+7. ~~Historial contaminando respuestas~~ → **commit c340254**
+8. ~~Ciudad costaba ladrillo (alucinación gemma)~~ → **commit 9f4a3a5**
+9. ~~RAG sin prioridad sobre knowledge base~~ → **commit 8543379**
+10. ~~numPlayers siempre 4~~ → **commit 5ab887d**
+11. ~~Tests Playwright Fases 1-4~~ → **commit f324bf3**
 
 ---
 
-## 3. Tablero interactivo sin botón de salir
-En el modal del tablero interactivo solo hay "Confirmar tablero" y "Limpiar".
-No hay forma de salir sin confirmar — el usuario tiene que reiniciar la app.
+## ⏳ PENDIENTES
 
-**Fix esperado:** 
-- Añadir botón X (cerrar) en la esquina del modal del tablero
-- Solo visible cuando el tablero ya fue configurado previamente (para no perder datos accidentalmente)
-- Al pulsar X → cerrar sin confirmar, conservando el estado anterior
+### Alta prioridad
+- [ ] **Verificar Fases 1-4 en la app real** — Vicente no ha visto funcionar el botón
+  "Ver en tablero" + aura SVG. Requiere git pull + restart + tablero configurado + recursos.
+- [ ] **Deploy en producción** (ireves.gti-ia.dsic.upv.es)
+  - SSH manual → `cd ~/catan-coach && bash deploy-fresh.sh`
+  - Ingesta obligatoria primera vez (ChromaDB vacío en servidor)
+  - Cambiar `WEBHOOK_SECRET` en docker-compose.yml antes de levantar
+
+### Media prioridad
+- [ ] **GeneticAgent API autostart** — hay que lanzar manualmente:
+  `cd ~/RoadToDevOps/catan-advisor-api && uvicorn main:app --port 8001 --reload`
+  Sin esto el coach funciona pero sin recomendación genética.
+- [ ] **roadLength** — se pasa roads.length (nº segmentos) en lugar de longitud del camino
+  más largo (necesita DFS). Aceptable como aproximación por ahora.
+- [ ] **Tutorial/onboarding** — actualizar con el nuevo flujo (tablero → recursos → recomendación)
+- [ ] **Ladrón movible** desde el tablero (mover hex con tap)
+
+### Baja prioridad
+- [ ] **Fase C: Puertos** en BoardOverlay (impacto bajo-medio en estrategia)
+- [ ] **Modo automático** con agentes PyCatan (GeneticAgent como 3 rivales)
+- [ ] **Benchmark completo** — relanzar en Slimbook con gemma3:27b para confirmar 14+/15
 
 ---
 
-## Análisis compatibilidad llama→gemma (verificado 24/03)
+## Estado del benchmark (24/03)
 
-| Parámetro | Estado | Notas |
+| Suite | Score | Notas |
 |---|---|---|
-| OllamaAdapter /api/chat | ✅ | gemma3:27b emite RECOMMENDATION_JSON correctamente |
-| devCards null | ✅ | route.ts maneja con ?? 0 |
-| robberHex default 9 | ✅ | inicializado correctamente |
-| roads formato "5_6" | ✅ | translateRoads quita prefijo 'e' |
-| settlements/cities vertex IDs | ✅ | correctos |
-| positionContext | ✅ | generado en route.ts, no va al Python GeneticAgent |
-| numPlayers | ✅ CORREGIDO | antes siempre 4, ahora usa assignments.length |
-| roadLength | ⚠️ | se pasa roads.length (nº segmentos), no longitud del camino más largo — aceptable como aproximación |
-| GeneticAgent API autostart | ❌ PENDIENTE | hay que iniciarlo manualmente (uvicorn main:app --port 8001) |
+| Básicas + Sinónimos + Contextuales (15 preg) | 13/15 (87%) medido | B2 corregido → esperado 14/15 |
+| Edge cases Catan (12 casos) | 12/12 (100%) real | 3 fallos eran bugs del keyword matcher |
 
-## Estado tras sesión 24/03
-- ✅ OllamaAdapter migrado a /api/chat con roles system/user
-- ✅ Historial limpiado antes de enviar al LLM
-- ✅ coachState siempre se envía cuando boardConfigured=true
-- ✅ Modelo cambiado a gemma3:27b (llama3.3:70b ignoraba system prompt)
-- ✅ Instrucciones anti-disclaimer y regla absoluta de recursos en system prompt
-- ⏳ Pendiente verificar con gemma3:27b que ya no alucina recursos (último fix: dca1297)
+---
+
+## Arquitectura verificada
+
+| Componente | Estado |
+|---|---|
+| gemma3:27b vía /api/chat | ✅ funciona, sigue instrucciones |
+| ChromaDB + RAG | ✅ 17 reglas + 32 estrategia indexados |
+| GeneticAgent (Python FastAPI) | ⚠️ funciona pero arranque manual |
+| RECOMMENDATION_JSON parser | ✅ gemma lo emite correctamente |
+| Fases 1-4 (LLM → tablero visual) | ✅ código OK, pendiente verificar en app |
+| deploy-fresh.sh | ✅ listo para ireves |
