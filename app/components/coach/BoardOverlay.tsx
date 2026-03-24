@@ -330,11 +330,34 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         return p
       }
 
+      // Rule: connectivity — road must touch own settlement OR own road
+      const [vA, vB] = id.split('_').map(Number)
+      const vertexHasOwnPiece = (vid: number) =>
+        p[`v${vid}`]?.color === selColor &&
+        (p[`v${vid}`]?.type === 'settlement' || p[`v${vid}`]?.type === 'city')
+      const vertexHasOwnRoad = (vid: number) => {
+        const neighbors = adjacency.get(vid) ?? new Set<number>()
+        for (const nid of neighbors) {
+          const lo = Math.min(vid, nid), hi = Math.max(vid, nid)
+          const eid = `e${lo}_${hi}`
+          if (p[eid]?.color === selColor) return true
+        }
+        return false
+      }
+      const connected =
+        vertexHasOwnPiece(vA) || vertexHasOwnPiece(vB) ||
+        vertexHasOwnRoad(vA)  || vertexHasOwnRoad(vB)
+
+      if (!connected) {
+        showWarning('El camino debe conectar con un poblado o camino propio')
+        return p
+      }
+
       const n = { ...p }
       n[k] = { type: 'road', color: selColor }
       return n
     })
-  }, [selPiece, selColor, showWarning])
+  }, [selPiece, selColor, showWarning, adjacency])
 
   // Validation: each player must have at least MIN_SETTLEMENTS + MIN_ROADS
   const allPlayersReady = useMemo(() => {
