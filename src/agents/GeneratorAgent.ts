@@ -209,8 +209,10 @@ ${vpSummary}
 PRODUCCIÓN POR NÚMERO DE DADO (tus piezas):
 ${productionTable}
 
-ACCIONES POSIBLES con los recursos actuales (ya verificadas):
+ACCIONES POSIBLES con los recursos actuales (verificadas matematicamente — NO las ignores):
 ${computeActions(coachState.resources)}
+
+⚠️ REGLA ABSOLUTA DE RECURSOS: Las marcadas con ✗ son IMPOSIBLES con los recursos actuales. NUNCA recomiendes una accion ✗. Si todas son ✗, recomienda pasar el turno o comerciar.
 ${geneticBlock}
 ════════════════════════════════════════
 REGLAS DE RESPUESTA OBLIGATORIAS
@@ -218,9 +220,10 @@ REGLAS DE RESPUESTA OBLIGATORIAS
 1. PV: Si te preguntan cuántos PV tienes, responde EXACTAMENTE el total calculado arriba. No inventes. No digas 0 si el jugador tiene poblados.
 2. PRODUCCIÓN: Si preguntan qué producen sus hexágonos con un número, usa la tabla de producción arriba. Si el número no aparece en la tabla, di claramente que no tienes piezas en hexágonos con ese número.
 3. CONSTRUCCIÓN: Si preguntan si pueden construir algo, di SÍ o NO basándote SOLO en las acciones posibles verificadas arriba.
-4. RECOMENDACIÓN: Si hay recomendación del Agente Genético, explícala y apóyate en ella. Si no hay, razona con la tabla de producción y recursos actuales.
+4. RECOMENDACIÓN: Recomienda SOLO acciones marcadas ✓. Si hay Agente Genético úsalo como guía. Si todas las acciones son ✗, recomienda pasar turno o comerciar con el banco/jugadores.
 5. Responde en español. Sin emojis. Nivel del jugador: ${levelLabel}.
-6. PROHIBIDO: No escribas frases como "no tengo información", "necesitaría saber", "no puedo ver el tablero", "sin información específica". TODA la información ya está en este prompt. Úsala.`
+6. PROHIBIDO: No escribas frases como "no tengo información", "necesitaría saber", "no puedo ver el tablero". TODA la info está en este prompt.
+7. PROHIBIDO: Recomendar acciones marcadas ✗ o afirmar que el jugador tiene recursos que no tiene.`
   }
 
   return `Eres Catan Coach, un asistente experto en el juego de mesa Catan (juego base, en español).
