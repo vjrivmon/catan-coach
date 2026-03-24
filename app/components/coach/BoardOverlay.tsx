@@ -340,6 +340,18 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
   return (
     <div className="flex flex-col h-full bg-stone-900">
 
+      {/* Botón X para cerrar — visible cuando ya hay tablero configurado y NO hay preview */}
+      {colorsConfirmed && !previewRecommendation && (
+        <button
+          onClick={onClose}
+          aria-label="Cerrar tablero"
+          className="absolute top-3 right-3 z-50 w-8 h-8 flex items-center justify-center rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-300 hover:text-white transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+
       {/* Color assignment (sequential) or Player selector */}
       {!colorsConfirmed ? (
         /* Step-by-step color assignment */

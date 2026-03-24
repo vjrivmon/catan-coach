@@ -15,11 +15,16 @@ type Counts = Record<ResourceKey, number>
 
 interface ResourceStepperBubbleProps {
   onConfirm: (counts: Counts) => void
+  initialValues?: Partial<Counts>  // pre-rellena el stepper con valores actuales
 }
 
-export function ResourceStepperBubble({ onConfirm }: ResourceStepperBubbleProps) {
+export function ResourceStepperBubble({ onConfirm, initialValues }: ResourceStepperBubbleProps) {
   const [counts, setCounts] = useState<Counts>({
-    wood: 0, clay: 0, cereal: 0, wool: 0, mineral: 0,
+    wood:    initialValues?.wood    ?? 0,
+    clay:    initialValues?.clay    ?? 0,
+    cereal:  initialValues?.cereal  ?? 0,
+    wool:    initialValues?.wool    ?? 0,
+    mineral: initialValues?.mineral ?? 0,
   })
 
   function adjust(key: ResourceKey, delta: number) {

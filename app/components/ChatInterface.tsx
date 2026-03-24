@@ -729,7 +729,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         )}
 
         {/* Chat area */}
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="relative flex flex-col flex-1 overflow-hidden">
 
           {/* ── Board overlay — fills chat area, header stays visible ── */}
           {showBoard && (
@@ -760,7 +760,24 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 }
                 setPendingRecommendation(null)
               } : undefined}
-              onClose={() => { setShowBoard(false); setPendingRecommendation(null) }}
+              onClose={() => {
+                setShowBoard(false)
+                // Si había recomendación pendiente (usuario descartó), mostrar recursos actuales
+                if (pendingRecommendation) {
+                  const RES_LABELS: Record<string,string> = { wood:'Madera', clay:'Arcilla', cereal:'Trigo', wool:'Oveja', mineral:'Mineral' }
+                  const res = savedResources
+                  const resLine = res
+                    ? Object.entries(res).filter(([,v]) => v > 0).map(([k,v]) => `${RES_LABELS[k] ?? k}: ${v}`).join(' · ') || 'ninguno'
+                    : 'no indicados'
+                  const discardMsg: import('@/src/domain/entities').Message = {
+                    id: `discard-${Date.now()}`, role: 'assistant',
+                    content: `Jugada descartada. Recursos en mano: ${resLine}. Puedes seguir preguntando o actualizar tus recursos.`,
+                    timestamp: Date.now(),
+                  }
+                  setSession(s => ({ ...s, messages: [...s.messages, discardMsg] }))
+                }
+                setPendingRecommendation(null)
+              }}
               onConfirm={({ pieces, myColor, assignments, robberHex }) => {
                 setShowBoard(false)
                 setSavedPieces(pieces)
@@ -943,6 +960,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             {/* ── Coach: resource stepper ── */}
             {coachStep === 'waiting-resources' && !isLoading && (
               <ResourceStepperBubble
+                initialValues={savedResources ?? undefined}
                 onConfirm={async (counts) => {
                   setCoachStep(null)
                   setSavedResources(counts)
