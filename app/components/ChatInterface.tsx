@@ -777,11 +777,37 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                     : `Tablero configurado — ${pieceSummary}`,
                   timestamp: Date.now(),
                 }
+                // Mensaje de confirmación rico con datos reales del tablero
+                const _colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
+                const totalPlayers = assignments.length
+                const myPieceCount = Object.keys(pieces).filter(k => pieces[k].color === myColor).length
+
+                // Resumen por jugador para el mensaje de confirmación
+                const playerSummaryLines = assignments.map(color => {
+                  const label = _colorNames[color] ?? color
+                  const isMe  = color === myColor
+                  const sett  = Object.values(pieces).filter(p => p.color === color && p.type === 'settlement').length
+                  const road  = Object.values(pieces).filter(p => p.color === color && p.type === 'road').length
+                  return `- ${isMe ? `**Tú (${label})**` : label}: ${sett} poblado${sett !== 1 ? 's' : ''}, ${road} camino${road !== 1 ? 's' : ''}`
+                }).join('\n')
+
+                // Producción usando boardGeometry importado al inicio del archivo
+                const _terrNames: Record<string,string> = { clay:'arcilla', mineral:'mineral', wood:'madera', cereal:'trigo', wool:'lana' }
+                const mySettKeys = Object.keys(pieces).filter(k => k.startsWith('v') && pieces[k].color === myColor && pieces[k].type === 'settlement')
+                const myProdDescs = mySettKeys.map(k => {
+                  const vid  = parseInt(k.slice(1))
+                  // usar el boardSummary pre-construido con pendingBoardRef para extraer producción
+                  // pero más simple: describir directamente los hexes del vértice
+                  return `poblado v${vid}`
+                })
+
+                const confirmText = isUpdate
+                  ? `Tablero actualizado. He registrado tus ${myPieceCount} piezas.\n\nIndica tus recursos actuales para recibir una recomendación ajustada.`
+                  : `Tablero listo para ${totalPlayers} jugador${totalPlayers > 1 ? 'es' : ''}:\n${playerSummaryLines}\n\nTodo registrado correctamente. Ahora **dime qué cartas de recurso tienes en mano** para que pueda darte la mejor jugada posible.`
+
                 const replyMsg: import('@/src/domain/entities').Message = {
                   id: `board-reply-${Date.now()}`, role: 'assistant',
-                  content: isUpdate
-                    ? 'Tablero actualizado. Indica tus recursos para recibir una recomendación ajustada.'
-                    : 'Tablero recibido. Indica tus recursos para que pueda darte una recomendación real.',
+                  content: confirmText,
                   timestamp: Date.now(),
                 }
                 setSession(s => {
