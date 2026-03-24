@@ -1,68 +1,12 @@
 'use client'
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-
-// ─── Geometry ──────────────────────────────────────────────────────────────────
-const R = 40          // hex radius (center → vertex)
-const W = Math.sqrt(3) * R   // hex width  ≈ 69.28
-const ROW_H = 1.5 * R        // vertical dist between row centers = 60
-
-// SVG canvas
-const SVG_W = 390
-const PAD_TOP = 50    // space for ports (computed geometrically, minimal margin needed)
-
-// Board rows: [hexCount, xStart column offset]
-// even rows align at 0, 1, 2...  odd rows offset by 0.5
-//   row  count  col-start
-const ROWS = [
-  { n: 3, colStart: 1 },   // row 0 - 3 hexes, starting at column 1
-  { n: 4, colStart: 0.5 }, // row 1
-  { n: 5, colStart: 0 },   // row 2 (widest)
-  { n: 4, colStart: 0.5 }, // row 3
-  { n: 3, colStart: 1 },   // row 4
-]
-
-// Center x of column 0 for widest row (5 hexes)
-// total width of 5 hexes = 5*W, centered in SVG_W
-const X0 = (SVG_W - 5 * W) / 2 + W / 2   // ≈ 56.44
-
-function hexCenter(row: number, col: number): [number, number] {
-  const { colStart } = ROWS[row]
-  const cx = X0 + (colStart + col) * W
-  const cy = PAD_TOP + row * ROW_H
-  return [cx, cy]
-}
-
-// All 19 hex centers in board order
-const HEX_CENTERS: [number, number][] = []
-for (let r = 0; r < ROWS.length; r++) {
-  for (let c = 0; c < ROWS[r].n; c++) {
-    HEX_CENTERS.push(hexCenter(r, c))
-  }
-}
-
-// Pointy-top hex vertices (angles: 30,90,150,210,270,330°)
-const ANGLES = [30, 90, 150, 210, 270, 330].map(d => (d * Math.PI) / 180)
-function hexVertices(cx: number, cy: number): [number, number][] {
-  return ANGLES.map(a => [cx + R * Math.cos(a), cy + R * Math.sin(a)] as [number, number])
-}
-function polyPoints(verts: [number, number][]): string {
-  return verts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
-}
-
-// ─── Board data (tablero estándar de principiantes — desierto en el centro) ───
-const TERRAIN_ORDER = [
-  'mineral','wool','wood',           // fila 0 (3 hexes)
-  'cereal','clay','wool','clay',     // fila 1 (4 hexes)
-  'clay','cereal','desert','wood','mineral', // fila 2 — desert en posición central (idx 9)
-  'wood','mineral','cereal','wool',  // fila 3 (4 hexes)
-  'cereal','wood','wool',            // fila 4 (3 hexes)
-] as const
-
-type TerrainType = typeof TERRAIN_ORDER[number]
-
-// Standard numbers: 2×1, 3×2, 4×2, 5×2, 6×2, 8×2, 9×2, 10×2, 11×2, 12×1
-const NUMBERS = [10,2,9, 12,6,4,10, 9,11,0,3,8, 8,3,4,5, 5,6,11]
+import {
+  R, W, ROW_H, SVG_W, PAD_TOP, ROWS, X0, ANGLES,
+  HEX_CENTERS, TERRAIN_ORDER, NUMBERS,
+  hexVertices, polyPoints, approxKey,
+  type TerrainType,
+} from '@/src/lib/boardGeometry'
 
 const TEXTURE: Record<TerrainType, string> = {
   clay:    '/board-textures/quarry.jpg',
@@ -73,11 +17,7 @@ const TEXTURE: Record<TerrainType, string> = {
   desert:  '/board-textures/desert.jpg',
 }
 
-// ─── Vertex / Edge deduplication ──────────────────────────────────────────────
-function approxKey(x: number, y: number) {
-  return `${Math.round(x)},${Math.round(y)}`
-}
-
+// ─── Vertex / Edge types (local — geometry imported from boardGeometry) ────────
 type Vertex = { id: number; x: number; y: number }
 type Edge   = { id: string; x1: number; y1: number; x2: number; y2: number }
 

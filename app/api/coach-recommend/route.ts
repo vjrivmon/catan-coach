@@ -1,125 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { debugLog } from '@/src/lib/debugLog'
-
-/**
- * Standard beginner board — 19 hexes in board order.
- * Matches TERRAIN_ORDER and NUMBERS arrays in BoardOverlay.tsx.
- * probability = dots / 36 (standard 2d6 distribution)
- */
-const DOTS: Record<number,number> = {2:1,3:2,4:3,5:4,6:5,8:5,9:4,10:3,11:2,12:1}
-const TERRAIN_ORDER = [
-  'ore','wool','wood',
-  'wheat','brick','wool','brick',
-  'brick','wheat','desert','wood','ore',
-  'wood','ore','wheat','wool',
-  'wheat','wood','wool',
-]
-const NUMBERS = [10,2,9, 12,6,4,10, 9,11,0,3,8, 8,3,4,5, 5,6,11]
-
-// Axial coordinates for standard Catan board (hex grid)
-const HEX_COORDS = [
-  // row 0 (3 hexes)
-  {q:-2,r:0},{q:-1,r:-1},{q:0,r:-2},
-  // row 1 (4 hexes)
-  {q:-2,r:1},{q:-1,r:0},{q:0,r:-1},{q:1,r:-2},
-  // row 2 (5 hexes — widest)
-  {q:-2,r:2},{q:-1,r:1},{q:0,r:0},{q:1,r:-1},{q:2,r:-2},
-  // row 3 (4 hexes)
-  {q:-1,r:2},{q:0,r:1},{q:1,r:0},{q:2,r:-1},
-  // row 4 (3 hexes)
-  {q:0,r:2},{q:1,r:1},{q:2,r:0},
-]
-
-const STANDARD_HEXES = TERRAIN_ORDER.map((terrain, i) => ({
-  q: HEX_COORDS[i].q,
-  r: HEX_COORDS[i].r,
-  resource: terrain === 'ore' ? 'ore'
-    : terrain === 'wool' ? 'sheep'
-    : terrain === 'wood' ? 'wood'
-    : terrain === 'wheat' ? 'wheat'
-    : terrain === 'brick' ? 'brick'
-    : 'desert',
-  number: NUMBERS[i] > 0 ? NUMBERS[i] : null,
-  probability: NUMBERS[i] > 0 ? (DOTS[NUMBERS[i]] ?? 0) / 36 : 0,
-}))
-
-// ─── Topology: pre-compute vertex→hex adjacency (matches BoardOverlay geometry) ─
-// This lets Python's _get_adjacent_hexes() work with real data instead of returning []
-const _R   = 40
-const _W   = Math.sqrt(3) * _R
-const _ROW_H = 1.5 * _R
-const _ROWS = [
-  { n: 3, colStart: 1 }, { n: 4, colStart: 0.5 }, { n: 5, colStart: 0 },
-  { n: 4, colStart: 0.5 }, { n: 3, colStart: 1 },
-]
-const _SVG_W = 390; const _PAD_TOP = 50
-const _X0 = (_SVG_W - 5 * _W) / 2 + _W / 2
-const _ANGLES = [30,90,150,210,270,330].map(d => (d * Math.PI) / 180)
-
-function _approxKey(x: number, y: number) { return `${Math.round(x)},${Math.round(y)}` }
-
-/** Returns { vertexToHexIndices, vertexCoords } for the standard 19-hex board */
-function buildTopology() {
-  const vertMap = new Map<string, { id: number; x: number; y: number }>()
-  const vertToHexes = new Map<number, number[]>()  // vertexId → hex indices (board order)
-  let vId = 0
-
-  let hi = 0
-  for (let row = 0; row < _ROWS.length; row++) {
-    for (let col = 0; col < _ROWS[row].n; col++) {
-      const cx = _X0 + (_ROWS[row].colStart + col) * _W
-      const cy = _PAD_TOP + row * _ROW_H
-      for (const a of _ANGLES) {
-        const vx = cx + _R * Math.cos(a)
-        const vy = cy + _R * Math.sin(a)
-        const k  = _approxKey(vx, vy)
-        if (!vertMap.has(k)) { vertMap.set(k, { id: vId, x: vx, y: vy }); vId++ }
-        const vid = vertMap.get(k)!.id
-        if (!vertToHexes.has(vid)) vertToHexes.set(vid, [])
-        const arr = vertToHexes.get(vid)!
-        if (!arr.includes(hi)) arr.push(hi)
-      }
-      hi++
-    }
-  }
-  return { vertToHexes, vertMap }
-}
-
-const { vertToHexes: VERT_TO_HEXES } = buildTopology()
-
-/** Build vertices[] for board_state — each vertex gets adjacent hex (q,r) list */
-function buildVerticesPayload(allVertexIds: number[]) {
-  return allVertexIds.map(vid => {
-    const hexIndices = VERT_TO_HEXES.get(vid) ?? []
-    const adjacentHexes = hexIndices
-      .filter(hi => hi < HEX_COORDS.length)
-      .map(hi => [HEX_COORDS[hi].q, HEX_COORDS[hi].r] as [number, number])
-    return { vertex_id: vid, adjacent_hexes: adjacentHexes }
-  })
-}
-
-/** Describe a vertex in human-readable terms using adjacent hex terrain+number */
-function describeVertex(vid: number): string {
-  const hexIndices = VERT_TO_HEXES.get(vid) ?? []
-  const parts = hexIndices
-    .filter(hi => NUMBERS[hi] > 0 && TERRAIN_ORDER[hi] !== 'desert')
-    .map(hi => {
-      const terrain = TERRAIN_ORDER[hi]
-      const num = NUMBERS[hi]
-      const dots = DOTS[num] ?? 0
-      return `${terrain}(${num},${dots}pts)`
-    })
-  return parts.length > 0 ? parts.join('+') : 'sin producción'
-}
-
-/** Describe an edge (road) in human-readable terms */
-function describeEdge(edgeId: string): string {
-  const [aStr, bStr] = edgeId.replace(/^e/, '').split('_')
-  const a = parseInt(aStr), b = parseInt(bStr)
-  const descA = describeVertex(a)
-  const descB = describeVertex(b)
-  return `entre [${descA}] y [${descB}]`
-}
+import {
+  STANDARD_HEXES_PAYLOAD,
+  buildVerticesPayload,
+  describeVertex,
+  describeEdge,
+  VERT_TO_HEXES,
+} from '@/src/lib/boardGeometry'
 
 const COACH_API_URL = process.env.COACH_API_URL ?? 'http://localhost:8001'
 
@@ -133,10 +20,10 @@ export interface OtherPlayerInput {
 }
 
 export interface CoachRecommendInput {
-  resources: Record<string, number>       // { wood, clay, wool, cereal, mineral }
-  settlements: number[]                    // vertex ids
+  resources: Record<string, number>   // { wood, clay, wool, cereal, mineral }
+  settlements: number[]               // vertex ids
   cities: number[]
-  roads: string[]                         // edge ids like "5_6"
+  roads: string[]                     // edge ids like "5_6"
   vp: number
   roadLength: number
   knightsPlayed?: number
@@ -147,7 +34,14 @@ export interface CoachRecommendInput {
   turn?: number
   numPlayers?: number
   gamePhasePlaying?: boolean
-  robberHex?: number                       // hex index 0-18, 9=desert default
+  robberHex?: number                  // hex index 0-18, 9=desert default
+}
+
+function translateRoads(roads: string[]) {
+  return roads.map(id => {
+    const parts = id.replace(/^e/, '').split('_').map(Number)
+    return parts.length === 2 ? parts : [0, 1]
+  })
 }
 
 export async function POST(req: NextRequest) {
@@ -156,63 +50,49 @@ export async function POST(req: NextRequest) {
 
     debugLog.coachRequest({ resources: body.resources, settlements: body.settlements, roads: body.roads, vp: body.vp ?? 2, turn: body.turn })
 
-    // Translate frontend resource keys → API keys (brick=clay, sheep=wool, wheat=cereal)
+    // Frontend keys → API keys (brick=clay, sheep=wool, wheat=cereal)
     const resources = {
       wood:  body.resources.wood    ?? 0,
-      brick: body.resources.clay    ?? 0,   // frontend uses "clay", API uses "brick"
-      sheep: body.resources.wool    ?? 0,   // frontend uses "wool", API uses "sheep"
-      wheat: body.resources.cereal  ?? 0,   // frontend uses "cereal", API uses "wheat"
-      ore:   body.resources.mineral ?? 0,   // frontend uses "mineral", API uses "ore"
+      brick: body.resources.clay    ?? 0,
+      sheep: body.resources.wool    ?? 0,
+      wheat: body.resources.cereal  ?? 0,
+      ore:   body.resources.mineral ?? 0,
     }
 
-    // Translate edge ids "lo_hi" → [lo, hi] tuples
-    const roads = (body.roads ?? [] as string[]).map(id => {
-      const parts = id.replace(/^e/, '').split('_').map(Number)
-      return parts.length === 2 ? parts : [0, 1]
-    })
+    const roads       = translateRoads(body.roads ?? [])
+    const settlements = Array.isArray(body.settlements) ? body.settlements : []
+    const cities      = Array.isArray(body.cities)      ? body.cities      : []
 
-    // Translate other_players roads the same way
     const otherPlayers = (body.otherPlayers ?? []).map(op => ({
-      color: op.color,
-      vp:    op.vp ?? 0,
-      settlements: Array.isArray(op.settlements) ? op.settlements : [],
-      cities:      Array.isArray(op.cities)      ? op.cities      : [],
-      roads: (op.roads ?? []).map(id => {
-        const parts = id.replace(/^e/, '').split('_').map(Number)
-        return parts.length === 2 ? parts : [0, 1]
-      }),
+      color:         op.color,
+      vp:            op.vp ?? 0,
+      settlements:   Array.isArray(op.settlements) ? op.settlements : [],
+      cities:        Array.isArray(op.cities)      ? op.cities      : [],
+      roads:         translateRoads(op.roads ?? []),
       knights_played: op.knights_played ?? 0,
     }))
 
-    // All vertex ids referenced in this game (player + rivals)
+    // Vertex topology — lets Python's _get_adjacent_hexes() work with real data
     const allVertexIds = [
-      ...Array.isArray(body.settlements) ? body.settlements : [],
-      ...Array.isArray(body.cities)      ? body.cities      : [],
+      ...settlements, ...cities,
       ...(body.otherPlayers ?? []).flatMap(op => [
         ...(Array.isArray(op.settlements) ? op.settlements : []),
         ...(Array.isArray(op.cities)      ? op.cities      : []),
       ]),
     ]
-    const uniqueVertexIds = [...new Set(allVertexIds)]
-
-    // Human-readable position descriptions for the response
-    const mySettlementDescs = (Array.isArray(body.settlements) ? body.settlements : [])
-      .map(vid => `v${vid}: ${describeVertex(vid)}`)
-    const myRoadDescs = (Array.isArray(body.roads) ? body.roads : [])
-      .map(eid => `${eid}: ${describeEdge(eid)}`)
 
     const payload = {
       board_state: {
-        hexes:     STANDARD_HEXES,
-        vertices:  buildVerticesPayload(uniqueVertexIds),
-        ports:     [],
+        hexes:      STANDARD_HEXES_PAYLOAD,
+        vertices:   buildVerticesPayload(allVertexIds),
+        ports:      [],
         robber_hex: body.robberHex ?? 9,
       },
       player: {
-        color: 'red',
+        color:          'red',
         resources,
-        settlements:   Array.isArray(body.settlements) ? body.settlements : [],
-        cities:        Array.isArray(body.cities)      ? body.cities      : [],
+        settlements,
+        cities,
         roads,
         dev_cards: {
           knight:         body.devCards?.knight         ?? 0,
@@ -221,14 +101,14 @@ export async function POST(req: NextRequest) {
           road_building:  body.devCards?.road_building  ?? 0,
           year_of_plenty: body.devCards?.year_of_plenty ?? 0,
         },
-        vp:             body.vp          ?? 2,
-        road_length:    body.roadLength  ?? 0,
+        vp:             body.vp            ?? 2,
+        road_length:    body.roadLength    ?? 0,
         knights_played: body.knightsPlayed ?? 0,
         longest_road:   body.longestRoad   ?? false,
         largest_army:   body.largestArmy   ?? false,
       },
       other_players: otherPlayers,
-      game_phase: 'playing',
+      game_phase:  'playing',
       turn:        body.turn       ?? 1,
       num_players: body.numPlayers ?? 4,
     }
@@ -247,7 +127,6 @@ export async function POST(req: NextRequest) {
 
     const data = await apiRes.json()
 
-    // Translate action names back to Spanish for the LLM context
     const ACTION_ES: Record<string, string> = {
       build_road:       'Construir camino',
       build_settlement: 'Construir poblado',
@@ -256,32 +135,21 @@ export async function POST(req: NextRequest) {
       pass:             'Pasar turno',
     }
 
-    debugLog.coachResponse({ action: data.action, score: data.score, reason: data.reason?.slice(0,100) })
+    debugLog.coachResponse({ action: data.action, score: data.score, reason: data.reason?.slice(0, 100) })
 
-    // Build position context so the LLM can give concrete "where" advice
+    // Posición concreta para que el LLM dé recomendaciones de "hacia dónde"
+    const myRoads = Array.isArray(body.roads) ? body.roads : []
+    const myVerts = new Set([...settlements, ...cities])
+    const roadVerts = new Set<number>()
+    myRoads.forEach(id => id.replace(/^e/, '').split('_').map(Number).forEach(v => roadVerts.add(v)))
+
     const positionContext = {
-      mySettlements: mySettlementDescs,
-      myRoads:       myRoadDescs,
-      // Frontier vertices: adjacent to my roads but without settlement → expansion candidates
-      frontier: (() => {
-        const myVerts = new Set([
-          ...(Array.isArray(body.settlements) ? body.settlements : []),
-          ...(Array.isArray(body.cities)      ? body.cities      : []),
-        ])
-        const roadVerts = new Set<number>()
-        ;(body.roads ?? []).forEach(id => {
-          const parts = id.replace(/^e/, '').split('_').map(Number)
-          parts.forEach(v => roadVerts.add(v))
-        })
-        // Frontier = road-connected verts not yet occupied
-        const frontier: string[] = []
-        for (const vid of roadVerts) {
-          if (!myVerts.has(vid)) {
-            frontier.push(`v${vid}: ${describeVertex(vid)}`)
-          }
-        }
-        return frontier.slice(0, 5)  // top 5 candidates
-      })(),
+      mySettlements: settlements.map(vid => `v${vid}: ${describeVertex(vid)}`),
+      myRoads:       myRoads.map(eid => `${eid}: ${describeEdge(eid)}`),
+      frontier:      [...roadVerts]
+        .filter(v => !myVerts.has(v))
+        .slice(0, 5)
+        .map(vid => `v${vid}: ${describeVertex(vid)}`),
     }
 
     return NextResponse.json({
