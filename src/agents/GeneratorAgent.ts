@@ -22,23 +22,78 @@ function computeActions(resources: Record<string, number> | null): string {
   const m = resources.mineral ?? 0
 
   const lines: string[] = []
-  // Camino: 1 Madera + 1 Arcilla(Ladrillo)
   lines.push(w >= 1 && c >= 1
     ? '✓ PUEDE construir: Camino (tiene madera y arcilla/ladrillo)'
     : `✗ NO puede Camino (necesita 1 Madera + 1 Arcilla — tiene Madera:${w}, Arcilla:${c})`)
-  // Poblado: 1 Madera + 1 Arcilla + 1 Lana + 1 Cereal
   lines.push(w >= 1 && c >= 1 && l >= 1 && t >= 1
     ? '✓ PUEDE construir: Poblado (tiene madera, arcilla, lana y trigo/cereal)'
     : `✗ NO puede Poblado (necesita 1M+1A+1L+1T — tiene M:${w} A:${c} L:${l} T:${t})`)
-  // Ciudad: 3 Mineral + 2 Cereal
   lines.push(m >= 3 && t >= 2
     ? '✓ PUEDE construir: Ciudad (tiene mineral y cereal suficientes)'
     : `✗ NO puede Ciudad (necesita 3 Mineral + 2 Cereal — tiene Mineral:${m}, Cereal:${t})`)
-  // Carta: 1 Mineral + 1 Lana + 1 Cereal
   lines.push(m >= 1 && l >= 1 && t >= 1
     ? '✓ PUEDE comprar: Carta de desarrollo'
     : `✗ NO puede Carta (necesita 1M+1L+1T — tiene M:${m} L:${l} T:${t})`)
 
+  return lines.join('\n')
+}
+
+/** Pre-compute current VP from board summary so LLM never has to count */
+function computeVP(boardSummary: string, devCards: Record<string,number> | null | undefined): string {
+  // Count settlements (1 PV) and cities (2 PV) from TU COLOR section
+  // boardSummary lines like "  N poblados: ..." and "  N ciudades: ..."
+  let settlements = 0
+  let cities = 0
+
+  const settMatch = boardSummary.match(/TU COLOR[^]*?(\d+)\s+poblado/)
+  const cityMatch  = boardSummary.match(/TU COLOR[^]*?(\d+)\s+ciudad/)
+  if (settMatch) settlements = parseInt(settMatch[1])
+  if (cityMatch)  cities      = parseInt(cityMatch[1])
+
+  const structureVP = settlements * 1 + cities * 2
+  const cardVP      = devCards?.vp ?? 0
+  const totalVP     = structureVP + cardVP
+
+  const parts: string[] = []
+  if (settlements > 0) parts.push(`${settlements} poblado${settlements > 1 ? 's' : ''} × 1 PV = ${settlements} PV`)
+  if (cities > 0)      parts.push(`${cities} ciudad${cities > 1 ? 'es' : ''} × 2 PV = ${cities * 2} PV`)
+  if (cardVP > 0)      parts.push(`${cardVP} carta${cardVP > 1 ? 's' : ''} VP oculta = ${cardVP} PV`)
+  if (parts.length === 0) parts.push('Sin piezas en el tablero aún')
+
+  return `${parts.join(' + ')} → TOTAL = ${totalVP} PV (necesitas 10 para ganar)`
+}
+
+/**
+ * Pre-compute which resources the player produces per dice number.
+ * Parses the boardSummary terrain(number=Xpts) tokens from TU COLOR section.
+ */
+function computeProductionTable(boardSummary: string): string {
+  // Extract all terrain(number=Xpts) tokens from TU COLOR section only
+  const mySection = boardSummary.match(/TU COLOR[^]*?(?=\n[A-Z]|$)/)
+  if (!mySection) return 'Sin posiciones propias en el tablero'
+
+  // Match: terreno(número=Nptsˌ...) — e.g. "trigo(11=2pts)" or "madera(8=5pts,LADRÓN)"
+  const tokenRe = /(\w+)\((\d+)=(\d+)pts(,LADRÓN)?\)/g
+  const byNumber: Map<number, { terrains: string[]; blocked: boolean }> = new Map()
+
+  let match
+  while ((match = tokenRe.exec(mySection[0])) !== null) {
+    const [, terrain, numStr, , robber] = match
+    const num = parseInt(numStr)
+    if (num < 2 || num > 12 || num === 7) continue
+    if (!byNumber.has(num)) byNumber.set(num, { terrains: [], blocked: false })
+    const entry = byNumber.get(num)!
+    if (!entry.terrains.includes(terrain)) entry.terrains.push(terrain)
+    if (robber) entry.blocked = true
+  }
+
+  if (byNumber.size === 0) return 'No hay hexágonos con número asociados a tus piezas'
+
+  const lines: string[] = []
+  for (const [num, { terrains, blocked }] of [...byNumber.entries()].sort((a, b) => a[0] - b[0])) {
+    const label = blocked ? ` (BLOQUEADO por ladrón)` : ''
+    lines.push(`  Dado ${num}: produces ${terrains.join(' + ')}${label}`)
+  }
   return lines.join('\n')
 }
 
@@ -100,33 +155,49 @@ ${gr.alternatives && gr.alternatives.length > 0
 Tu respuesta debe estar ALINEADA con esta recomendación del agente genético. Explícala al jugador de forma comprensible.`
       : ''
 
+    const vpSummary         = computeVP(coachState.boardSummary, coachState.devCards)
+    const productionTable   = computeProductionTable(coachState.boardSummary)
+
     return `Eres Catan Coach, asistente estratégico en partida real de Catan (juego base, en español).
 El juego se llama CATAN. Nunca uses el nombre "El Colonizador" ni "Los Colonos de Catán".
-Analizas el estado actual del tablero y das recomendaciones concretas y accionables.
 
-COSTES DE CONSTRUCCIÓN (reglas oficiales, NO negociables):
+════════════════════════════════════════
+COSTES DE CONSTRUCCIÓN (NO negociables)
+════════════════════════════════════════
 - Camino:           1 Ladrillo (Arcilla) + 1 Madera
-- Poblado:          1 Ladrillo (Arcilla) + 1 Madera + 1 Lana (Pasto) + 1 Trigo (Cereal)
-- Ciudad:           3 Mineral (Roca) + 2 Trigo (Cereal)   [mejora un poblado existente]
+- Poblado:          1 Ladrillo + 1 Madera + 1 Lana (Pasto) + 1 Trigo (Cereal)
+- Ciudad:           3 Mineral (Roca) + 2 Trigo  ← mejora un POBLADO EXISTENTE, no se construye desde cero
 - Carta desarrollo: 1 Mineral + 1 Lana + 1 Trigo
 
-SINÓNIMOS VÁLIDOS: Ladrillo=Arcilla=Barro, Trigo=Cereal=Grano, Mineral=Roca=Piedra, Lana=Pasto=Oveja
+SINÓNIMOS: Ladrillo=Arcilla=Barro=Adobe, Trigo=Cereal=Grano, Mineral=Roca=Piedra=Hierro, Lana=Pasto=Oveja=Fibra, Madera=Leña=Tronco=Árbol
 
-ESTADO ACTUAL DEL TABLERO:
+════════════════════════════════════════
+ESTADO DEL TABLERO (fuente de verdad)
+════════════════════════════════════════
 ${coachState.boardSummary}
 ${turnBlock}${devBlock}
 
-RECURSOS ACTUALES DEL JUGADOR: ${resourceLine}
+════════════════════════════════════════
+RECURSOS EN MANO: ${resourceLine}
+════════════════════════════════════════
 
-ACCIONES POSIBLES (verificadas contra recursos exactos):
+PUNTOS DE VICTORIA ACTUALES (ya calculados — úsalos directamente, NO recalcules):
+${vpSummary}
+
+PRODUCCIÓN POR NÚMERO DE DADO (tus piezas):
+${productionTable}
+
+ACCIONES POSIBLES con los recursos actuales (ya verificadas):
 ${computeActions(coachState.resources)}
 ${geneticBlock}
-Instrucciones:
-- Basa TODAS tus respuestas en el estado real del tablero y los recursos exactos indicados arriba.
-- Si el jugador pregunta si puede construir algo, responde SÍ o NO claramente.
-- Acepta cualquier sinónimo de recursos (trigo/cereal, roca/mineral, ladrillo/arcilla, pasto/lana).
-- Responde en español, sin emojis.
-- Nivel del jugador: ${levelLabel}.`
+════════════════════════════════════════
+REGLAS DE RESPUESTA OBLIGATORIAS
+════════════════════════════════════════
+1. PV: Si te preguntan cuántos PV tienes, responde EXACTAMENTE el total calculado arriba. No inventes. No digas 0 si el jugador tiene poblados.
+2. PRODUCCIÓN: Si preguntan qué producen sus hexágonos con un número, usa la tabla de producción arriba. Si el número no aparece en la tabla, di claramente que no tienes piezas en hexágonos con ese número.
+3. CONSTRUCCIÓN: Si preguntan si pueden construir algo, di SÍ o NO basándote SOLO en las acciones posibles verificadas arriba.
+4. RECOMENDACIÓN: Si hay recomendación del Agente Genético, explícala y apóyate en ella. Si no hay, razona con la tabla de producción y recursos actuales.
+5. Responde en español. Sin emojis. Nivel del jugador: ${levelLabel}.`
   }
 
   return `Eres Catan Coach, un asistente experto en el juego de mesa Catan (juego base, en español).
