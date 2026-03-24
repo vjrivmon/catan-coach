@@ -42,10 +42,11 @@ function computeActions(resources: Record<string, number> | null): string {
   return lines.join('\n')
 }
 
-function buildSystemPrompt(level: UserLevel, seenConcepts: string[], coachState?: CoachState): string {
+function buildSystemPrompt(level: UserLevel, seenConcepts: string[] | undefined, coachState?: CoachState): string {
   const levelLabel = level === 'beginner' ? 'principiante' : level === 'intermediate' ? 'intermedio' : 'avanzado'
-  const conceptsText = seenConcepts.length > 0
-    ? `Conceptos ya vistos en esta sesión: ${seenConcepts.join(', ')}.`
+  const concepts = seenConcepts ?? []
+  const conceptsText = concepts.length > 0
+    ? `Conceptos ya vistos en esta sesión: ${concepts.join(', ')}.`
     : 'Es la primera sesión del usuario.'
 
   if (coachState?.boardSummary && coachState.boardSummary !== 'Tablero vacío') {
@@ -164,7 +165,7 @@ export class GeneratorAgent {
     context: string,
     history: Message[],
     level: UserLevel,
-    seenConcepts: string[],
+    seenConcepts: string[] | undefined,
     coachState?: CoachState
   ): AsyncIterable<string> {
     const systemPrompt = buildSystemPrompt(level, seenConcepts, coachState)
