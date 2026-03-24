@@ -51,29 +51,62 @@ const STEPS = [
     ),
   },
   {
-    title: 'Reglas de colocación inicial',
+    title: 'Reglas de colocacion inicial',
     body: null,
     icon: null,
     custom: (
       <div className="flex flex-col gap-2.5 mt-2 text-sm text-stone-300">
         <div className="flex items-start gap-2">
           <span className="text-amber-400 font-bold shrink-0">2</span>
-          <span>poblados por jugador — colócalos en vértices del tablero</span>
+          <span>poblados por jugador - colocalos en vertices del tablero</span>
         </div>
         <div className="flex items-start gap-2">
           <span className="text-amber-400 font-bold shrink-0">4</span>
-          <span>caminos por jugador — conectados a tus poblados</span>
+          <span>caminos por jugador - conectados a tus poblados</span>
         </div>
         <div className="flex items-start gap-2">
-          <span className="text-amber-400 font-bold shrink-0">↔</span>
+          <span className="text-amber-400 font-bold shrink-0">[flecha]</span>
           <span>Regla de distancia: nunca coloques un poblado adyacente a otro</span>
         </div>
         <div className="flex items-start gap-2">
-          <span className="text-red-400 font-bold shrink-0">✕</span>
-          <span>Las ciudades no están disponibles en la fase inicial</span>
+          <span className="text-red-400 font-bold shrink-0">X</span>
+          <span>Las ciudades no estan disponibles en la fase inicial</span>
         </div>
         <div className="bg-stone-700/60 rounded-xl p-3 mt-1">
-          <p className="text-stone-400 text-xs">El botón "Confirmar tablero" se activa cuando todos los jugadores han colocado sus piezas.</p>
+          <p className="text-stone-400 text-xs">El boton "Confirmar tablero" se activa cuando todos los jugadores han colocado sus piezas.</p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: 'Flujo coach: como funciona',
+    body: null,
+    icon: null,
+    custom: (
+      <div className="flex flex-col gap-2.5 mt-2 text-sm text-stone-300">
+        <div className="flex items-start gap-2">
+          <span className="text-green-400 font-bold shrink-0">1</span>
+          <span>Configura el tablero con las piezas de todos los jugadores</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="text-green-400 font-bold shrink-0">2</span>
+          <span>Indica tus recursos en mano (madera, arcilla, trigo, lana, mineral)</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="text-green-400 font-bold shrink-0">3</span>
+          <span>El coach analiza el tablero y te recomienda la mejor jugada</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="text-amber-400 font-bold shrink-0">4</span>
+          <span>Pulsa el boton naranja <strong className="text-amber-300">"Ver en tablero"</strong> para visualizar la posicion</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="text-amber-400 font-bold shrink-0">5</span>
+          <span>Veras un <strong className="text-amber-300">aura pulsante</strong> sobre el vertice o arista recomendado</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="text-green-400 font-bold shrink-0">6</span>
+          <span>Confirma la jugada o descarta para seguir explorando</span>
         </div>
       </div>
     ),
@@ -85,23 +118,27 @@ const STEPS = [
     custom: (
       <div className="flex flex-col gap-2.5 mt-2 text-sm text-stone-300">
         <div className="flex items-start gap-2">
-          <span className="text-green-400 font-bold shrink-0">▶</span>
+          <span className="text-green-400 font-bold shrink-0">[play]</span>
           <span>Pulsa <strong className="text-stone-100">"Iniciar partida"</strong> cuando todos hayan colocado sus piezas</span>
         </div>
         <div className="flex items-start gap-2">
-          <span className="text-amber-400 font-bold shrink-0">🎲</span>
-          <span>Introduce el número del dado cada turno — manual o automático</span>
+          <span className="text-amber-400 font-bold shrink-0">[dado]</span>
+          <span>Introduce el numero del dado cada turno - el coach calcula produccion</span>
         </div>
         <div className="flex items-start gap-2">
-          <span className="text-blue-400 font-bold shrink-0">⬡</span>
-          <span>Usa el icono del hexágono para abrir el tablero en cualquier momento</span>
+          <span className="text-blue-400 font-bold shrink-0">[hex]</span>
+          <span>Usa el icono del hexagono para abrir el tablero en cualquier momento</span>
         </div>
         <div className="flex items-start gap-2">
-          <span className="text-red-400 font-bold shrink-0">🦹</span>
-          <span>Si sale un 7, activa el modo "Mover ladrón" en el tablero</span>
+          <span className="text-red-400 font-bold shrink-0">[7]</span>
+          <span>Si sale un 7, el tablero se abre automaticamente en modo "Mover ladron"</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="text-amber-400 font-bold shrink-0">[puerto]</span>
+          <span>Toca los puertos del borde para marcar cuales tienes (mejoran tu comercio)</span>
         </div>
         <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-3 mt-1">
-          <p className="text-amber-300 text-xs">Cuantas más piezas coloques en el tablero, más precisa será la recomendación del agente.</p>
+          <p className="text-amber-300 text-xs">Cuantas mas piezas y puertos marques, mas precisa sera la recomendacion del agente.</p>
         </div>
       </div>
     ),
