@@ -465,11 +465,66 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setStreamingContent('')
     setLastSuggestions([])
 
+    // ── Detección de preguntas estratégicas sin recursos ─────────────────────
+    // Si el usuario pregunta por jugadas/estrategia en modo coach con tablero
+    // pero sin recursos guardados → interrumpir y pedir recursos primero
+    const STRATEGY_KEYWORDS = ['mejor jugada','qué hago','qué construir','recomend','qué puedo hacer','mejor opción','siguiente paso']
+    const isStrategyQuestion = coachMode && boardConfigured && !savedResources &&
+      STRATEGY_KEYWORDS.some(kw => text.toLowerCase().includes(kw))
+
+    if (isStrategyQuestion) {
+      const nudgeMsg: import('@/src/domain/entities').Message = {
+        id: `nudge-${Date.now()}`, role: 'assistant',
+        content: 'Para darte una recomendación precisa necesito saber tus recursos actuales. Indícalos:',
+        timestamp: Date.now(),
+      }
+      setSession(s => ({ ...s, messages: [...s.messages, nudgeMsg] }))
+      setCoachStep('waiting-resources')
+      setIsLoading(false)
+      setStreamingContent('')
+      return
+    }
+
+    // ── Si hay tablero + modo coach pero sin GeneticRec fresco, consultar API ─
+    // Esto ocurre cuando el usuario pregunta manualmente después de un dado
+    let freshGeneticRec = savedGeneticRec
+    if (coachMode && boardConfigured && savedResources && !savedGeneticRec) {
+      try {
+        const pieceKeys = Object.keys(savedPieces)
+        const mySettlements = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
+        const myCities      = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
+        const myRoads       = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
+        const rivals = savedAssignments.filter(c => c !== savedMyColor).map(color => ({
+          color,
+          vp: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').length
+            + pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').length * 2,
+          settlements: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
+          cities:      pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
+          roads:       pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === color).map(k => k.slice(1)),
+          knights_played: 0,
+        }))
+        const vpBase  = mySettlements.length + myCities.length * 2
+        const vpBonus = (savedLongestRoad ? 2 : 0) + (savedLargestArmy ? 2 : 0)
+        const res = await fetch('/api/coach-recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            resources: savedResources, settlements: mySettlements, cities: myCities, roads: myRoads,
+            vp: vpBase + vpBonus, roadLength: myRoads.length,
+            knightsPlayed: savedKnightsPlayed, longestRoad: savedLongestRoad, largestArmy: savedLargestArmy,
+            otherPlayers: rivals, gamePhasePlaying: true, robberHex: savedRobberHex,
+            turn: currentTurn,
+          }),
+        })
+        if (res.ok) { freshGeneticRec = await res.json(); setSavedGeneticRec(freshGeneticRec) }
+      } catch { /* GeneticAgent opcional */ }
+    }
+
     // Build coachState: prefer explicit override, then derive from saved state
     const baseCoachState = boardConfigured ? {
       boardSummary: buildBoardSummary(),
       resources: savedResources,
-      geneticRecommendation: savedGeneticRec,
+      geneticRecommendation: freshGeneticRec,
       ...(gameStarted ? {
         turn: currentTurn,
         devCards: savedDevCards,
