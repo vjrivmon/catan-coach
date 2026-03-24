@@ -76,12 +76,24 @@ function buildSystemPrompt(level: UserLevel, seenConcepts: string[], coachState?
         }`
       : ''
 
-    const geneticBlock = coachState.geneticRecommendation
+    const ACTION_ES: Record<string, string> = {
+      build_settlement: 'Construir poblado',
+      build_city:       'Construir ciudad',
+      build_road:       'Construir camino',
+      buy_dev_card:     'Comprar carta de desarrollo',
+      trade:            'Comerciar',
+      play_dev_card:    'Jugar carta de desarrollo',
+      pass:             'Pasar turno',
+    }
+    const toEs = (a: string) => ACTION_ES[a] ?? a
+
+    const gr = coachState.geneticRecommendation as any
+    const geneticBlock = gr
       ? `\nRECOMENDACIÓN DEL AGENTE GENÉTICO (93 parámetros, 40K partidas entrenadas):
-Acción óptima: ${coachState.geneticRecommendation.actionEs} (score=${coachState.geneticRecommendation.score.toFixed(3)})
-Razonamiento del agente: ${coachState.geneticRecommendation.reason}
-${coachState.geneticRecommendation.alternatives.length > 0
-  ? `Alternativas: ${coachState.geneticRecommendation.alternatives.map(a => `${a.actionEs}(${a.score.toFixed(2)})`).join(', ')}`
+Acción óptima: ${toEs(gr.action ?? gr.actionEs)} (score=${(gr.score as number).toFixed(3)})
+Razonamiento del agente: ${gr.reason}
+${gr.alternatives && gr.alternatives.length > 0
+  ? `Alternativas: ${gr.alternatives.map((a: any) => `${toEs(a.action ?? a.actionEs)}(${(a.score as number).toFixed(2)})`).join(', ')}`
   : ''}
 
 Tu respuesta debe estar ALINEADA con esta recomendación del agente genético. Explícala al jugador de forma comprensible.`
