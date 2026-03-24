@@ -149,6 +149,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       gamePhasePlaying: true,
       robberHex, turn,
       devCards,
+      numPlayers: assignments.length || 4,  // fix: pasar nº real de jugadores al GeneticAgent
     }
   }, [])
 
