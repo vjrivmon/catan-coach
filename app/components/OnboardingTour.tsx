@@ -11,13 +11,11 @@ interface OnboardingTourProps {
 }
 
 export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: OnboardingTourProps) {
-  // Keep driver instance stable across re-renders
   const driverRef = useRef<Driver | null>(null)
   const onDoneRef = useRef(onDone)
   const onOpenBoardRef = useRef(onOpenBoard)
   const onCloseBoardRef = useRef(onCloseBoard)
 
-  // Keep refs updated without recreating the driver
   useEffect(() => { onDoneRef.current = onDone }, [onDone])
   useEffect(() => { onOpenBoardRef.current = onOpenBoard }, [onOpenBoard])
   useEffect(() => { onCloseBoardRef.current = onCloseBoard }, [onCloseBoard])
@@ -72,25 +70,39 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
             },
           },
         },
-        // 4 — Selector de color (primer paso dentro del tablero)
+        // 4 — Selector de color (bloqueado hasta confirmar todos)
         {
           element: '[data-tour="color-picker"]',
           popover: {
-            title: 'Elige tu color',
-            description: 'Lo primero es asignar colores a cada jugador. <b>Toca el círculo de tu color</b> — el que uses en la partida real. Luego asigna el color de cada rival.',
+            title: 'Elige los colores',
+            description: '¡Primero hay que asignar colores! Toca tu color, luego el de cada rival. Cuando hayas asignado todos los jugadores, podrás continuar.',
             side: 'bottom',
             align: 'center',
             onPrevClick: () => {
               onCloseBoardRef.current()
               setTimeout(() => driverRef.current?.movePrevious(), 600)
             },
+            onNextClick: () => {
+              // Block advance until all colors are assigned (colors-done appears in DOM)
+              const colorsDone = document.querySelector('[data-tour="colors-done"]')
+              if (!colorsDone) {
+                // Flash the next button to indicate it's blocked
+                const btn = document.querySelector('.driver-popover-next-btn') as HTMLButtonElement
+                if (btn) {
+                  btn.style.opacity = '0.4'
+                  setTimeout(() => { btn.style.opacity = '' }, 600)
+                }
+                return // Don't advance
+              }
+              driverRef.current?.moveNext()
+            },
           },
         },
-        // 5 — Tablero general (flotante, sin element)
+        // 5 — Tablero general (flotante)
         {
           popover: {
             title: 'El tablero de juego',
-            description: 'Una vez asignados los colores, toca un <b>vértice</b> para colocar un poblado o ciudad, y una <b>arista</b> para un camino. Cuando termines, pulsa <b>Confirmar tablero</b>.',
+            description: 'Ahora toca un <b>vértice</b> para colocar un poblado o ciudad, y una <b>arista</b> para un camino. Cuando termines, pulsa <b>Confirmar tablero</b>.',
             align: 'center',
             onNextClick: () => {
               onCloseBoardRef.current()
@@ -119,7 +131,7 @@ export function OnboardingTour({ onDone, onOpenBoard, onCloseBoard }: Onboarding
     const t = setTimeout(() => driverObj.drive(), 300)
     return () => { clearTimeout(t) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Run only once on mount
+  }, [])
 
   return null
 }

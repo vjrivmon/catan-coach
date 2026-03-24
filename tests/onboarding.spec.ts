@@ -92,9 +92,34 @@ test('OB-8: tour llega al ultimo paso sin romperse', async ({ page }) => {
     () => { const el = document.querySelector('.driver-popover-title'); return el && el.innerText !== 'Tablero interactivo' },
     { timeout: 3000 }
   )
-  const step4 = await page.locator('.driver-popover-title').innerText()
-  expect(step4).toBe('Elige tu color')
-  // Step 4→5: floating board step
+  expect(await page.locator('.driver-popover-title').innerText()).toBe('Elige los colores')
+  // Try to advance without assigning colors — should be blocked
+  await page.locator('.driver-popover-next-btn').click()
+  await page.waitForTimeout(400)
+  expect(await page.locator('.driver-popover-title').innerText()).toBe('Elige los colores')
+  // Assign colors using dispatchEvent to bypass driver.js overlay
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const clicked = await page.evaluate(() => {
+      const picker = document.querySelector('[data-tour=color-picker]')
+      if (!picker) return false
+      const btn = picker.querySelector('button[style*=background]')
+      if (!btn) return false
+      btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      return true
+    })
+    if (!clicked) break
+    await page.waitForTimeout(350)
+  }
+  // Wait for colors-done to appear (may need to confirm J4 step)
+  await page.evaluate(() => {
+    // Handle 'No (somos 3)' button if J4 step appears
+    const btns = Array.from(document.querySelectorAll('button'))
+    const noBtn = btns.find(b => b.innerText.includes('No (somos 3)') || b.innerText.includes('somos 2'))
+    if (noBtn) noBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  })
+  await page.waitForTimeout(300)
+  await page.waitForSelector('[data-tour=colors-done]', { timeout: 3000 })
+  // Now Siguiente should work
   await page.locator('.driver-popover-next-btn').click()
   await page.waitForFunction(
     () => { const el = document.querySelector('.driver-popover-title'); return el && el.innerText === 'El tablero de juego' },

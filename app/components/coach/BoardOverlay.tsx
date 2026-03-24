@@ -409,7 +409,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         </div>
       ) : (
         /* Player selector once colors assigned */
-        <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
+        <div data-tour="colors-done" className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
           <span className="text-stone-500 text-xs shrink-0">Jugador:</span>
           {assignments.map((c, i) => (
             <button key={c} onClick={() => setSelColor(c)}
