@@ -63,6 +63,7 @@ export interface BoardState {
   longestRoad: boolean
   largestArmy: boolean
   knightsPlayed: number
+  ports?: string[]   // PortType[] — ports the player has access to
 }
 
 export interface Conversation {

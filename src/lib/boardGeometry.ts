@@ -199,6 +199,7 @@ export function buildBoardSummary(
   assignments: string[],
   resources:   Record<string, number> | null,
   robberHex:   number,
+  myPorts?:    string[],   // array of PortType strings the player has access to
 ): string {
   if (Object.keys(pieces).length === 0) return 'Tablero vacío'
 
@@ -285,12 +286,64 @@ export function buildBoardSummary(
     robberLine = `\nLADRÓN: bloqueando ${TERRAIN_NAMES[rTerrain] ?? rTerrain}(${rNum}) — ese hex NO produce`
   }
 
+  const PORT_LABEL: Record<string, string> = {
+    wood: 'madera(2:1)', clay: 'arcilla(2:1)', cereal: 'trigo(2:1)',
+    wool: 'lana(2:1)', mineral: 'mineral(2:1)', '3:1': 'genérico(3:1)',
+  }
+  const portsLine = myPorts && myPorts.length > 0
+    ? `\nPUERTOS (${myLabel.toUpperCase()}): ${myPorts.map(p => PORT_LABEL[p] ?? p).join(', ')}`
+    : ''
+
   let summary = `POSICIONES EN EL TABLERO:\n${playerLines.join('\n') || 'Sin piezas colocadas'}`
   if (resourceLine) summary += `\n\nRECURSOS EN MANO (${myLabel.toUpperCase()}): ${resourceLine}`
   if (robberLine)   summary += robberLine
+  if (portsLine)    summary += portsLine
 
   return summary
 }
+
+// ─── Puertos estándar del tablero fijo Catan ─────────────────────────────────
+export type PortType = 'mineral' | 'clay' | 'cereal' | 'wool' | 'wood' | '3:1'
+
+export interface PortDef {
+  hexIdx:   number
+  edgeIdx:  number   // edge 0..5 of the hex (vertex edgeIdx → vertex (edgeIdx+1)%6)
+  type:     PortType
+}
+
+export const PORT_DEFS: PortDef[] = [
+  { hexIdx: 0,  edgeIdx: 3, type: 'mineral' }, // top-left  (ore 2:1)
+  { hexIdx: 1,  edgeIdx: 3, type: '3:1'     }, // top-center
+  { hexIdx: 2,  edgeIdx: 4, type: 'wood'    }, // top-right (wood 2:1)
+  { hexIdx: 6,  edgeIdx: 5, type: '3:1'     }, // right-top
+  { hexIdx: 11, edgeIdx: 5, type: 'cereal'  }, // right-mid (wheat 2:1)
+  { hexIdx: 15, edgeIdx: 0, type: '3:1'     }, // right-bottom
+  { hexIdx: 18, edgeIdx: 0, type: 'clay'    }, // bottom-right (brick 2:1)
+  { hexIdx: 16, edgeIdx: 1, type: '3:1'     }, // bottom-left
+  { hexIdx: 7,  edgeIdx: 2, type: 'wool'    }, // left (sheep 2:1)
+]
+
+/** Pre-computed vertex IDs for each port (index matches PORT_DEFS) */
+export const PORT_VERTEX_IDS: [number, number][] = (() => {
+  // Build a vertex key→id map identical to buildAllGraphs
+  const vertMap = new Map<string, number>()
+  let vId = 0
+  for (const [cx, cy] of HEX_CENTERS) {
+    for (const [vx, vy] of hexVertices(cx, cy)) {
+      const k = approxKey(vx, vy)
+      if (!vertMap.has(k)) vertMap.set(k, vId++)
+    }
+  }
+  return PORT_DEFS.map(def => {
+    const [cx, cy] = HEX_CENTERS[def.hexIdx]
+    const verts = hexVertices(cx, cy)
+    const [vx1, vy1] = verts[def.edgeIdx]
+    const [vx2, vy2] = verts[(def.edgeIdx + 1) % 6]
+    const id1 = vertMap.get(approxKey(vx1, vy1)) ?? 0
+    const id2 = vertMap.get(approxKey(vx2, vy2)) ?? 0
+    return [id1, id2] as [number, number]
+  })
+})()
 
 // ─── Payload para la API de Python (coach-recommend) ─────────────────────────
 const STANDARD_HEXES_PAYLOAD = TERRAIN_ORDER.map((terrain, i) => ({
