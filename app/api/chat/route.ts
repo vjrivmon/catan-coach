@@ -35,6 +35,20 @@ export async function POST(req: NextRequest) {
     // Strict separation: aprende mode never gets coach state
     const activeCoachState = mode === 'coach' ? coachState : undefined
 
+    // Filtrar historial: eliminar mensajes de sistema (tablero/recursos) que no son
+    // conversación real, y truncar a los últimos 4 para evitar contaminación de
+    // respuestas genéricas previas al fix de /api/chat
+    const SYSTEM_MSG_PATTERNS = [
+      /^Tablero (configurado|actualizado|listo)/,
+      /^Recursos confirmados:/,
+      /^Cartas:/,
+      /^Sin cartas de desarrollo/,
+      /^Tablero recibido/,
+    ]
+    const cleanHistory = history
+      .filter(m => !SYSTEM_MSG_PATTERNS.some(p => p.test(m.content)))
+      .slice(-4)  // solo últimos 4 mensajes reales
+
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: 'Mensaje vacío' }), { status: 400 })
     }
@@ -49,7 +63,7 @@ export async function POST(req: NextRequest) {
         : route === 'strategy'
           ? strategyAgent.retrieve(message)
           : Promise.resolve(''),
-      suggestionAgent.suggest(message, history, userLevel, activeCoachState),
+      suggestionAgent.suggest(message, cleanHistory, userLevel, activeCoachState),
     ])
 
     // 3. Stream the response
@@ -64,7 +78,7 @@ export async function POST(req: NextRequest) {
           for await (const token of generator.generateStream(
             message,
             context,
-            history,
+            cleanHistory,
             userLevel,
             seenConcepts,
             activeCoachState
