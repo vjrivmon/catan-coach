@@ -452,6 +452,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       const saved = loadCurrentSession()
       if (saved && saved.messages.length > 0) {
         setSession(saved)
+        // Si tenía mensajes de usuario, mostrar el chat directamente (no las 3 opciones)
+        const hadUserMsgs = saved.messages.some(m => m.role === 'user')
+        if (hadUserMsgs) setHasSelectedMode(true)
         const seenConcepts = conceptTracker.getSeenConcepts(saved.conceptMap)
         const welcome = buildWelcomeMessage(true, seenConcepts)
         setSession(s => ({ ...s, messages: [...s.messages, welcome] }))
@@ -585,7 +588,10 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSidebarOpen(false)
     // Restaurar estado del tablero de esta conversación
     restoreBoardState(conv.boardState)
-    // Reset estado que no persistimos
+    // Si la conversación tiene mensajes de usuario, mostrar el chat directamente
+    const hasUserMsgs = conv.session.messages.some(m => m.role === 'user')
+    if (hasUserMsgs) setHasSelectedMode(true)
+    // Reset estado transitorio
     setSavedGeneticRec(null)
     setPendingRecommendation(null)
     setCoachStep(null)
@@ -996,8 +1002,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           )}
 
           {!showBoard && <>
-          {/* ── Mode selection — shown before user picks an option ── */}
-          {!hasSelectedMode && (
+          {/* ── Mode selection — solo en conversaciones nuevas sin historial de usuario ── */}
+          {!hasSelectedMode && session.messages.filter(m => m.role === 'user').length === 0 && (
             <div className="flex-1 flex flex-col justify-end pb-6 px-4">
               <div data-tour="mode-select" className="max-w-lg mx-auto w-full flex flex-col gap-4">
                 <div className="text-center mb-2">
