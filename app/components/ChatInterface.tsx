@@ -105,6 +105,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     action: string; actionEs: string; score: number; reason: string; alternatives: unknown[]
     positionContext?: { mySettlements: string[]; myRoads: string[]; frontier: string[] }
   }>(null)
+  // Ref para capturar el estado del tablero recién confirmado (evita problema de closure asíncrono)
+  const pendingBoardRef = useRef<{
+    pieces: Record<string,{type:'settlement'|'city'|'road';color:string}>
+    myColor: string
+    assignments: string[]
+    robberHex: number
+  } | null>(null)
+
   // Fase A — rival state for GeneticAgent
   const [savedKnightsPlayed, setSavedKnightsPlayed] = useState<number>(0)
   const [savedLongestRoad, setSavedLongestRoad]     = useState<boolean>(false)
@@ -146,6 +154,103 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     return ANGLES_CI.map(a => [cx + R_CI * Math.cos(a), cy + R_CI * Math.sin(a)] as [number, number])
   }
   function approxKeyCI(x: number, y: number) { return `${Math.round(x)},${Math.round(y)}` }
+
+  /** Build board summary desde datos directos (sin depender del estado React) */
+  const buildBoardSummaryFromData = useCallback((
+    pieces: Record<string,{type:'settlement'|'city'|'road';color:string}>,
+    myColor: string,
+    assignments: string[],
+    resources: Record<string,number> | null,
+    robberHex: number,
+  ): string => {
+    if (Object.keys(pieces).length === 0) return 'Tablero vacío'
+    // Reusar la lógica existente con los datos pasados directamente
+    const savedPiecesSnapshot = pieces
+    const savedMyColorSnapshot = myColor
+    const savedAssignmentsSnapshot = assignments
+    const savedResourcesSnapshot = resources
+    const savedRobberHexSnapshot = robberHex
+
+    const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
+    const terrainNames: Record<string,string> = {
+      clay:'arcilla', mineral:'mineral', wood:'madera', cereal:'trigo', wool:'oveja', desert:'desierto'
+    }
+    const myLabel = colorNames[savedMyColorSnapshot] ?? savedMyColorSnapshot
+    const ANGLES_rad = [30,90,150,210,270,330].map(d => d * Math.PI / 180)
+    const vertIdToHexes = new Map<number, number[]>()
+    const vertMap2 = new Map<string, number>()
+    let vId2 = 0
+    HEX_CENTERS_CI.forEach(([cx, cy], hi) => {
+      for (const a of ANGLES_rad) {
+        const vx = cx + R_CI * Math.cos(a), vy = cy + R_CI * Math.sin(a)
+        const k = approxKeyCI(vx, vy)
+        if (!vertMap2.has(k)) { vertMap2.set(k, vId2++); }
+        const vid = vertMap2.get(k)!
+        if (!vertIdToHexes.has(vid)) vertIdToHexes.set(vid, [])
+        const arr = vertIdToHexes.get(vid)!
+        if (!arr.includes(hi)) arr.push(hi)
+      }
+    })
+    const edgeToHexes2 = new Map<string, number[]>()
+    HEX_CENTERS_CI.forEach(([cx, cy], hi) => {
+      const vIds: number[] = []
+      for (const a of ANGLES_rad) {
+        const vx = cx + R_CI * Math.cos(a), vy = cy + R_CI * Math.sin(a)
+        vIds.push(vertMap2.get(approxKeyCI(vx, vy)) ?? -1)
+      }
+      for (let i = 0; i < 6; i++) {
+        const a = vIds[i], b = vIds[(i+1)%6]
+        if (a < 0 || b < 0) continue
+        const eid = `${Math.min(a,b)}_${Math.max(a,b)}`
+        if (!edgeToHexes2.has(eid)) edgeToHexes2.set(eid, [])
+        const arr2 = edgeToHexes2.get(eid)!
+        if (!arr2.includes(hi)) arr2.push(hi)
+      }
+    })
+    const DOTS2: Record<number,number> = {2:1,3:2,4:3,5:4,6:5,7:6,8:5,9:4,10:3,11:2,12:1}
+    const byColor: Record<string, { settlements: string[], cities: string[], roads: string[] }> = {}
+    for (const [key, piece] of Object.entries(savedPiecesSnapshot)) {
+      const c = piece.color
+      if (!byColor[c]) byColor[c] = { settlements: [], cities: [], roads: [] }
+      let hexIndices: number[] = []
+      if (key.startsWith('v')) hexIndices = vertIdToHexes.get(parseInt(key.slice(1))) ?? []
+      else if (key.startsWith('e')) hexIndices = edgeToHexes2.get(key.slice(1)) ?? []
+      const richHexDescs = hexIndices
+        .filter(hi => TERRAIN_ORDER_CI[hi] !== 'desert' && NUMBERS_CI[hi] > 0)
+        .map(hi => { const t = terrainNames[TERRAIN_ORDER_CI[hi]] ?? TERRAIN_ORDER_CI[hi]; const n = NUMBERS_CI[hi]; const dots = DOTS2[n] ?? 0; const isRobber = savedRobberHexSnapshot === hi; return `${t}(${n}=${dots}pts${isRobber ? ',LADRÓN' : ''})` })
+      const totalDots = hexIndices.filter(hi => TERRAIN_ORDER_CI[hi] !== 'desert' && NUMBERS_CI[hi] > 0 && savedRobberHexSnapshot !== hi).reduce((acc, hi) => acc + (DOTS2[NUMBERS_CI[hi]] ?? 0), 0)
+      const desc = richHexDescs.length > 0 ? `[${richHexDescs.join('+')}→${totalDots}pts/turno]` : '[sin producción]'
+      if (piece.type === 'settlement') byColor[c].settlements.push(desc)
+      else if (piece.type === 'city')  byColor[c].cities.push(desc + '×2')
+      else if (piece.type === 'road')  byColor[c].roads.push(desc)
+    }
+    const playerLines: string[] = []
+    const playerOrder = savedAssignmentsSnapshot.length > 0 ? savedAssignmentsSnapshot : Object.keys(byColor)
+    for (const color of playerOrder) {
+      const s = byColor[color]; if (!s) continue
+      const label = colorNames[color] ?? color; const isMe = color === savedMyColorSnapshot
+      const myPieces2 = Object.entries(savedPiecesSnapshot).filter(([,p]) => p.color === color)
+      const producedResources2 = new Set<string>(); let totalProdPts2 = 0
+      for (const [key] of myPieces2) {
+        const hexInds2 = key.startsWith('v') ? vertIdToHexes.get(parseInt(key.slice(1))) ?? [] : edgeToHexes2.get(key.slice(1)) ?? []
+        for (const hi of hexInds2) { if (TERRAIN_ORDER_CI[hi] !== 'desert' && NUMBERS_CI[hi] > 0 && savedRobberHexSnapshot !== hi) { producedResources2.add(terrainNames[TERRAIN_ORDER_CI[hi]] ?? TERRAIN_ORDER_CI[hi]); totalProdPts2 += DOTS2[NUMBERS_CI[hi]] ?? 0 } }
+      }
+      const parts: string[] = []
+      if (s.settlements.length > 0) parts.push(`${s.settlements.length} poblado${s.settlements.length>1?'s':''}: ${s.settlements.join(' y ')}`)
+      if (s.cities.length > 0)      parts.push(`${s.cities.length} ciudad${s.cities.length>1?'es':''}: ${s.cities.join(' y ')}`)
+      if (s.roads.length > 0)       parts.push(`${s.roads.length} camino${s.roads.length>1?'s':''}`)
+      if (producedResources2.size > 0) parts.push(`produce: ${[...producedResources2].join('+')} (~${totalProdPts2}pts/turno)`)
+      if (parts.length > 0) playerLines.push(`${isMe ? `TU COLOR (${label})` : label}:\n  ${parts.join('\n  ')}`)
+    }
+    const RES_ES2: Record<string,string> = { wood:'madera', clay:'arcilla', cereal:'trigo', wool:'lana', mineral:'mineral' }
+    const resourceLine2 = savedResourcesSnapshot ? Object.entries(savedResourcesSnapshot).filter(([,v]) => v > 0).map(([k,v]) => `${RES_ES2[k]||k}×${v}`).join(', ') : null
+    let robberLine2 = ''
+    if (savedRobberHexSnapshot !== 9) { const rTerrain = TERRAIN_ORDER_CI[savedRobberHexSnapshot] ?? 'desconocido'; const rNum = NUMBERS_CI[savedRobberHexSnapshot] ?? 0; robberLine2 = `\nLADRÓN: bloqueando ${terrainNames[rTerrain] ?? rTerrain}(${rNum}) — ese hex NO produce` }
+    let summary2 = `POSICIONES EN EL TABLERO:\n${playerLines.join('\n') || 'Sin piezas colocadas'}`
+    if (resourceLine2) summary2 += `\n\nRECURSOS EN MANO (${myLabel.toUpperCase()}): ${resourceLine2}`
+    if (robberLine2) summary2 += robberLine2
+    return summary2
+  }, [HEX_CENTERS_CI, R_CI, approxKeyCI, TERRAIN_ORDER_CI, NUMBERS_CI])
 
   /** Build full board context string for the LLM */
   const buildBoardSummary = useCallback((): string => {
@@ -783,6 +888,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 setSavedMyColor(myColor)
                 setSavedAssignments(assignments)
                 setSavedRobberHex(robberHex)
+                // Guardar en ref para que el ResourceStepper use datos frescos (no el estado asíncrono)
+                pendingBoardRef.current = { pieces, myColor, assignments, robberHex }
                 const isUpdate = boardConfigured
                 const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
 
@@ -982,9 +1089,16 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                     if (apiRes.ok) { geneticRec = await apiRes.json(); setSavedGeneticRec(geneticRec) }
                   } catch { /* GeneticAgent optional — LLM works without it */ }
 
-                  // 2. Build coachState with fresh resources + genetic recommendation
+                  // 2. Build coachState — usar pendingBoardRef si está disponible
+                  // (evita el problema de closure asíncrono con savedPieces)
+                  const boardData = pendingBoardRef.current
+                  const freshBoardSummary = boardData
+                    ? buildBoardSummaryFromData(boardData.pieces, boardData.myColor, boardData.assignments, counts, boardData.robberHex)
+                    : buildBoardSummary()
+                  pendingBoardRef.current = null  // limpiar tras usar
+
                   const freshCoachState = {
-                    boardSummary: buildBoardSummary(),
+                    boardSummary: freshBoardSummary,
                     resources: counts,
                     geneticRecommendation: geneticRec,
                   }
