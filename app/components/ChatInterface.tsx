@@ -495,9 +495,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         devCards: _savedDevCards,
       } : {}),
     } : undefined
-    const activeCoachState = _coachMode
-      ? (coachStateOverride ?? baseCoachState)
-      : undefined
+    // Si hay override explícito, usarlo siempre (independiente del modo)
+    const activeCoachState = coachStateOverride
+      ?? (_coachMode ? baseCoachState : undefined)
 
     let fullResponse = ''
     let suggestions: string[] = []
@@ -513,7 +513,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           history: session.messages.slice(-10),
           userLevel: updatedLevel,
           seenConcepts,
-          mode: _coachMode ? 'coach' : 'aprende',
+          // Si hay coachStateOverride explícito, siempre usar mode coach
+          mode: (_coachMode || !!coachStateOverride) ? 'coach' : 'aprende',
           ...(activeCoachState ? { coachState: activeCoachState } : {}),
         }),
       })
