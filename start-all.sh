@@ -124,7 +124,7 @@ fi
 
 echo ""
 log "Limpiando puertos..."
-kill_port "$CHROMA_PORT"
+# ChromaDB corre en Docker — no matar, solo los procesos nativos
 kill_port "$ADVISOR_PORT"
 kill_port "$FRONTEND_PORT"
 ok "Puertos libres — arrancando desde cero"
@@ -132,19 +132,34 @@ echo ""
 
 # ── 1. ChromaDB ───────────────────────────────────────────────────────────────
 log "1/3  ChromaDB (:$CHROMA_PORT)"
-if port_in_use "$CHROMA_PORT"; then
-  ok "Ya está corriendo en :$CHROMA_PORT — omitido"
+CHROMA_CONTAINER="catan-chroma"
+
+chroma_running() {
+  # Puerto accesible (Docker o nativo)
+  curl -s --max-time 2 "http://localhost:$CHROMA_PORT/api/v1/heartbeat" > /dev/null 2>&1
+}
+
+if chroma_running; then
+  ok "Ya responde en :$CHROMA_PORT — omitido"
 else
-  if ! command -v chroma &>/dev/null; then
-    err "chroma CLI no encontrado. Instala: pip install chromadb"
+  # ¿Existe el contenedor Docker?
+  if docker inspect "$CHROMA_CONTAINER" &>/dev/null 2>&1; then
+    docker start "$CHROMA_CONTAINER" > /dev/null
+    wait_for_port "$CHROMA_PORT" "ChromaDB (Docker)"
+  elif command -v chroma &>/dev/null; then
+    # Fallback: CLI nativa
+    mkdir -p "$CHROMA_PATH"
+    nohup chroma run \
+      --path "$CHROMA_PATH" \
+      --port "$CHROMA_PORT" \
+      > "$LOG_DIR/chroma.log" 2>&1 &
+    wait_for_port "$CHROMA_PORT" "ChromaDB"
+  else
+    err "ChromaDB no encontrado. Levántalo manualmente:"
+    err "  docker start $CHROMA_CONTAINER"
+    err "  o: pip install chromadb && chroma run --path ~/.chroma/catan-chroma"
     exit 1
   fi
-  mkdir -p "$CHROMA_PATH"
-  nohup chroma run \
-    --path "$CHROMA_PATH" \
-    --port "$CHROMA_PORT" \
-    > "$LOG_DIR/chroma.log" 2>&1 &
-  wait_for_port "$CHROMA_PORT" "ChromaDB"
 fi
 
 # ── 2. GeneticAgent (FastAPI) ─────────────────────────────────────────────────
