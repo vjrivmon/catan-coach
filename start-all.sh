@@ -119,10 +119,10 @@ if [ -d "$ADVISOR_DIR" ] && git -C "$ADVISOR_DIR" rev-parse --is-inside-work-tre
   # Abortar cualquier rebase/merge en curso
   git -C "$ADVISOR_DIR" rebase --abort 2>/dev/null || true
   git -C "$ADVISOR_DIR" merge --abort  2>/dev/null || true
-  # Descartar TODO lo local (pyc, pycache, cambios) y forzar estado limpio
-  git -C "$ADVISOR_DIR" clean -fdx --quiet 2>/dev/null || true
+  # Limpiar solo archivos NO ignorados (sin -x para preservar .venv)
+  git -C "$ADVISOR_DIR" clean -fd --quiet 2>/dev/null || true
   git -C "$ADVISOR_DIR" reset --hard HEAD 2>/dev/null || true
-  # Ahora sí, pull seguro
+  # Pull seguro
   git -C "$ADVISOR_DIR" pull origin main 2>&1 | tail -1 | sed 's/^/  /'
   ok "catan-advisor-api sincronizado"
 else
@@ -180,23 +180,19 @@ else
     warn "  cd $(dirname "$SCRIPT_DIR") && git clone git@github.com:vjrivmon/catan-advisor-api.git"
     warn "Continuando sin GeneticAgent (el coach funciona, pero sin recomendaciones genéticas)"
   else
-    # Activar venv
-    if [ ! -f "$ADVISOR_DIR/.venv/bin/activate" ]; then
-      log "Creando venv para GeneticAgent..."
+    # Crear o reparar venv si falta
+    if [ ! -f "$ADVISOR_DIR/.venv/bin/uvicorn" ]; then
+      log "Instalando dependencias GeneticAgent..."
       python3 -m venv "$ADVISOR_DIR/.venv"
-      source "$ADVISOR_DIR/.venv/bin/activate"
-      pip install -q -r "$ADVISOR_DIR/requirements.txt"
-    else
-      source "$ADVISOR_DIR/.venv/bin/activate"
+      "$ADVISOR_DIR/.venv/bin/pip" install -q -r "$ADVISOR_DIR/requirements.txt"
     fi
 
-    nohup uvicorn main:app \
+    nohup "$ADVISOR_DIR/.venv/bin/uvicorn" main:app \
       --app-dir "$ADVISOR_DIR" \
       --port "$ADVISOR_PORT" \
       --host 127.0.0.1 \
       > "$LOG_DIR/advisor.log" 2>&1 &
     wait_for_port "$ADVISOR_PORT" "GeneticAgent"
-    deactivate 2>/dev/null || true
   fi
 fi
 
