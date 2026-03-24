@@ -116,7 +116,10 @@ fi
 
 # GeneticAgent API
 if [ -d "$ADVISOR_DIR" ] && git -C "$ADVISOR_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
-  git -C "$ADVISOR_DIR" pull --rebase --autostash 2>&1 | tail -1 | sed 's/^/  /'
+  # Limpiar archivos generados (pyc, pycache) que pueden causar conflictos
+  git -C "$ADVISOR_DIR" clean -fd --quiet 2>/dev/null || true
+  git -C "$ADVISOR_DIR" checkout -- . 2>/dev/null || true
+  git -C "$ADVISOR_DIR" pull --rebase origin main 2>&1 | tail -1 | sed 's/^/  /'
   ok "catan-advisor-api sincronizado"
 else
   warn "catan-advisor-api no encontrado — omitido"
