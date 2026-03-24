@@ -100,6 +100,10 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedResources, setSavedResources]     = useState<Record<string,number> | null>(null)
   const [savedRobberHex, setSavedRobberHex]     = useState<number>(9)  // 9 = desert default
   const [savedGeneticRec, setSavedGeneticRec]   = useState<null | {action:string;actionEs:string;score:number;reason:string;alternatives:unknown[]}>(null)
+  // Fase A — rival state for GeneticAgent
+  const [savedKnightsPlayed, setSavedKnightsPlayed] = useState<number>(0)
+  const [savedLongestRoad, setSavedLongestRoad]     = useState<boolean>(false)
+  const [savedLargestArmy, setSavedLargestArmy]     = useState<boolean>(false)
   const boardConfigured                         = Object.keys(savedPieces).length > 0
 
   // Terrain + number data mirrors BoardOverlay constants — needed to enrich board summary
@@ -406,6 +410,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSavedRobberHex(9)
     setSavedGeneticRec(null)
     setSavedDevCards(null)
+    setSavedKnightsPlayed(0)
+    setSavedLongestRoad(false)
+    setSavedLargestArmy(false)
     setCoachStep(null)
     setGameStarted(false)
     setCurrentTurn(1)
@@ -837,16 +844,39 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   try {
                     const pieceKeys = Object.keys(savedPieces)
                     const settlements = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
-                    const cities = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
-                    const roads = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
+                    const cities      = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
+                    const roads       = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
+
+                    // Build other_players from saved board state
+                    const rivals = (savedAssignments.length > 0 ? savedAssignments : Object.keys(
+                      Object.fromEntries(Object.values(savedPieces).map(p => [p.color, 1]))
+                    )).filter(c => c !== savedMyColor)
+
+                    const otherPlayers = rivals.map(color => ({
+                      color,
+                      vp: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').length * 1
+                        + pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').length * 2,
+                      settlements: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
+                      cities:      pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
+                      roads:       pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === color).map(k => k.slice(1)),
+                      knights_played: 0,  // unknown rival info — default 0
+                    }))
+
+                    const vpBase = settlements.length * 1 + cities.length * 2
+                    const vpBonus = (savedLongestRoad ? 2 : 0) + (savedLargestArmy ? 2 : 0)
+
                     const apiRes = await fetch('/api/coach-recommend', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         resources: counts,
                         settlements, cities, roads,
-                        vp: settlements.length + cities.length * 2,
+                        vp: vpBase + vpBonus,
                         roadLength: roads.length,
+                        knightsPlayed: savedKnightsPlayed,
+                        longestRoad:   savedLongestRoad,
+                        largestArmy:   savedLargestArmy,
+                        otherPlayers,
                         gamePhasePlaying: true,
                         robberHex: savedRobberHex,
                       }),

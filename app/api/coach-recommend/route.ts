@@ -45,6 +45,15 @@ const STANDARD_HEXES = TERRAIN_ORDER.map((terrain, i) => ({
 
 const COACH_API_URL = process.env.COACH_API_URL ?? 'http://localhost:8001'
 
+export interface OtherPlayerInput {
+  color: string
+  vp: number
+  settlements: number[]
+  cities: number[]
+  roads: string[]
+  knights_played?: number
+}
+
 export interface CoachRecommendInput {
   resources: Record<string, number>       // { wood, clay, wool, cereal, mineral }
   settlements: number[]                    // vertex ids
@@ -52,6 +61,10 @@ export interface CoachRecommendInput {
   roads: string[]                         // edge ids like "5_6"
   vp: number
   roadLength: number
+  knightsPlayed?: number
+  longestRoad?: boolean
+  largestArmy?: boolean
+  otherPlayers?: OtherPlayerInput[]
   devCards?: Record<string, number>
   turn?: number
   numPlayers?: number
@@ -80,6 +93,19 @@ export async function POST(req: NextRequest) {
       return parts.length === 2 ? parts : [0, 1]
     })
 
+    // Translate other_players roads the same way
+    const otherPlayers = (body.otherPlayers ?? []).map(op => ({
+      color: op.color,
+      vp:    op.vp ?? 0,
+      settlements: Array.isArray(op.settlements) ? op.settlements : [],
+      cities:      Array.isArray(op.cities)      ? op.cities      : [],
+      roads: (op.roads ?? []).map(id => {
+        const parts = id.replace(/^e/, '').split('_').map(Number)
+        return parts.length === 2 ? parts : [0, 1]
+      }),
+      knights_played: op.knights_played ?? 0,
+    }))
+
     const payload = {
       board_state: {
         hexes: STANDARD_HEXES,
@@ -90,21 +116,25 @@ export async function POST(req: NextRequest) {
       player: {
         color: 'red',
         resources,
-        settlements: Array.isArray(body.settlements) ? body.settlements : [],
-        cities:      Array.isArray(body.cities)      ? body.cities      : [],
+        settlements:   Array.isArray(body.settlements) ? body.settlements : [],
+        cities:        Array.isArray(body.cities)      ? body.cities      : [],
         roads,
         dev_cards: {
-          knight:         body.devCards?.knight        ?? 0,
-          vp:             body.devCards?.vp            ?? 0,
-          monopoly:       body.devCards?.monopoly      ?? 0,
-          road_building:  body.devCards?.road_building ?? 0,
+          knight:         body.devCards?.knight         ?? 0,
+          vp:             body.devCards?.vp             ?? 0,
+          monopoly:       body.devCards?.monopoly       ?? 0,
+          road_building:  body.devCards?.road_building  ?? 0,
           year_of_plenty: body.devCards?.year_of_plenty ?? 0,
         },
-        vp:          body.vp ?? 2,
-        road_length: body.roadLength ?? 0,
+        vp:             body.vp          ?? 2,
+        road_length:    body.roadLength  ?? 0,
+        knights_played: body.knightsPlayed ?? 0,
+        longest_road:   body.longestRoad   ?? false,
+        largest_army:   body.largestArmy   ?? false,
       },
-      game_phase: body.gamePhasePlaying ? 'playing' : 'playing',
-      turn:        body.turn ?? 1,
+      other_players: otherPlayers,
+      game_phase: 'playing',
+      turn:        body.turn       ?? 1,
       num_players: body.numPlayers ?? 4,
     }
 
