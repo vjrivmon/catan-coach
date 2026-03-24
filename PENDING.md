@@ -29,6 +29,20 @@ No hay forma de salir sin confirmar — el usuario tiene que reiniciar la app.
 
 ---
 
+## Análisis compatibilidad llama→gemma (verificado 24/03)
+
+| Parámetro | Estado | Notas |
+|---|---|---|
+| OllamaAdapter /api/chat | ✅ | gemma3:27b emite RECOMMENDATION_JSON correctamente |
+| devCards null | ✅ | route.ts maneja con ?? 0 |
+| robberHex default 9 | ✅ | inicializado correctamente |
+| roads formato "5_6" | ✅ | translateRoads quita prefijo 'e' |
+| settlements/cities vertex IDs | ✅ | correctos |
+| positionContext | ✅ | generado en route.ts, no va al Python GeneticAgent |
+| numPlayers | ✅ CORREGIDO | antes siempre 4, ahora usa assignments.length |
+| roadLength | ⚠️ | se pasa roads.length (nº segmentos), no longitud del camino más largo — aceptable como aproximación |
+| GeneticAgent API autostart | ❌ PENDIENTE | hay que iniciarlo manualmente (uvicorn main:app --port 8001) |
+
 ## Estado tras sesión 24/03
 - ✅ OllamaAdapter migrado a /api/chat con roles system/user
 - ✅ Historial limpiado antes de enviar al LLM
