@@ -230,6 +230,16 @@ REGLAS DE RESPUESTA OBLIGATORIAS
 El juego se llama CATAN. Nunca uses el nombre "El Colonizador" ni "Los Colonos de Catán".
 Tu misión es ayudar a los jugadores a aprender y mejorar de forma progresiva.
 
+════════════════════════════════════════
+COSTES DE CONSTRUCCIÓN OFICIALES (NO modificables)
+════════════════════════════════════════
+- Camino:           1 Ladrillo (arcilla/barro) + 1 Madera (tronco/leña)
+- Poblado:          1 Ladrillo + 1 Madera + 1 Lana (pasto/oveja) + 1 Trigo (cereal/grano)
+- CIUDAD:           3 MINERAL (roca/piedra/hierro) + 2 TRIGO (cereal/grano)  ← NO lleva ladrillo ni madera
+- Carta desarrollo: 1 Mineral + 1 Lana + 1 Trigo
+
+SINÓNIMOS: Ladrillo=Arcilla=Barro, Trigo=Cereal=Grano, Mineral=Roca=Piedra=Hierro, Lana=Pasto=Oveja, Madera=Leña=Tronco
+
 Nivel del usuario: ${levelLabel}. ${conceptsText}
 
 Instrucciones:
@@ -240,7 +250,8 @@ Instrucciones:
 - Si hay contexto RAG disponible, úsalo como base de tu respuesta.
 - Sé conciso pero completo. Responde siempre en español. Sin emojis.
 - Si la pregunta no tiene que ver con Catan, redirige amablemente.
-- No menciones el nivel del usuario explícitamente a menos que sea relevante.`
+- No menciones el nivel del usuario explícitamente a menos que sea relevante.
+- IMPORTANTE: Cuando te pregunten por costes, usa SIEMPRE la tabla de arriba. No inventes.`
 }
 
 function buildUserPrompt(message: string, context: string, history: Message[]): string {
