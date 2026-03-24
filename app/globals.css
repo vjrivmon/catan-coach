@@ -45,6 +45,7 @@ html, body {
   font-weight: 600 !important;
   line-height: 1 !important;
   white-space: nowrap !important;
+  min-width: 96px !important;
   transition: background 0.15s !important;
 }
 .catan-tour-popover button.driver-popover-next-btn,
