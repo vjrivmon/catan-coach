@@ -914,6 +914,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               initialPieces={savedPieces}
               initialMyColor={savedMyColor}
               initialAssignments={savedAssignments}
+              gameStarted={gameStarted}
               previewRecommendation={pendingRecommendation ?? undefined}
               onConfirmRecommendation={pendingRecommendation ? () => {
                 // Fase 4 — registrar la jugada en el estado automáticamente

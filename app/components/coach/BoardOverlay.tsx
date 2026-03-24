@@ -211,12 +211,13 @@ interface BoardOverlayProps {
   initialMyColor?:    string
   initialAssignments?: string[]
   initialRobberHex?:  number
+  gameStarted?:       boolean   // oculta ladrón y ciudad en colocación inicial
   // Fase 3 — modo highlight: muestra aura pulsante sobre la posición recomendada
   previewRecommendation?: BoardRecommendationPreview
-  onConfirmRecommendation?: () => void  // callback cuando el usuario acepta la jugada
+  onConfirmRecommendation?: () => void
 }
 
-export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments, initialRobberHex = 9, previewRecommendation, onConfirmRecommendation }: BoardOverlayProps) {
+export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMyColor, initialAssignments, initialRobberHex = 9, gameStarted = false, previewRecommendation, onConfirmRecommendation }: BoardOverlayProps) {
   // assignments[i] = color for player i: [Tú, J2, J3, J4]
   const ALL_COLORS = ['red','blue','orange','white'] as const
   const PLAYER_LABELS = ['Tú','J2','J3','J4']
@@ -508,20 +509,23 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                 </button>
               )
             })}
-            {/* Mover ladrón button */}
-            <button
-              onClick={() => setMovingRobber(r => !r)}
-              className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
-                movingRobber
-                  ? 'border-red-500 text-red-400 bg-red-500/10'
-                  : 'border-stone-600 text-stone-500 bg-stone-700'
-              }`}>
-              {movingRobber ? 'Cancelar' : 'Mover ladrón'}
-            </button>
-            {movingRobber && (
-              <span className="text-red-400 text-xs">Toca un hex para mover el ladrón</span>
+            {/* Mover ladrón — solo visible si la partida ya está en curso */}
+            {gameStarted && (
+              <>
+                <button
+                  onClick={() => setMovingRobber(r => !r)}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                    movingRobber
+                      ? 'border-red-500 text-red-400 bg-red-500/10'
+                      : 'border-stone-600 text-stone-500 bg-stone-700'
+                  }`}>
+                  {movingRobber ? 'Cancelar' : 'Mover ladrón'}
+                </button>
+                {movingRobber && (
+                  <span className="text-red-400 text-xs">Toca un hex para mover el ladrón</span>
+                )}
+              </>
             )}
-            {!movingRobber && <span className="text-stone-600 text-xs">Ciudad: no disponible en colocación inicial</span>}
           </div>
 
           {/* Per-player status — desktop visible always, mobile compact */}
