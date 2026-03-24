@@ -49,10 +49,27 @@ export const CATAN_CONCEPTS = [
   'estrategia',
 ]
 
+export interface BoardState {
+  pieces:      Record<string, { type: 'settlement' | 'city' | 'road'; color: string }>
+  myColor:     string
+  assignments: string[]
+  resources:   Record<string, number> | null
+  robberHex:   number
+  devCards:    Record<string, number> | null
+  gameStarted: boolean
+  currentTurn: number
+  coachMode:   boolean
+  hasSelectedMode: boolean
+  longestRoad: boolean
+  largestArmy: boolean
+  knightsPlayed: number
+}
+
 export interface Conversation {
   id: string
   title: string        // primer mensaje del usuario, truncado
   session: Session
+  boardState?: BoardState   // estado del tablero persistido por conversación
   createdAt: number
   lastActiveAt: number
 }

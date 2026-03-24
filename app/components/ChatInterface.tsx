@@ -11,7 +11,7 @@ import { DiceInputBubble } from './coach/DiceInputBubble'
 import { DevCardStepper } from './coach/DevCardStepper'
 import { ActionMenu, ActionChips, type GameAction } from './coach/ActionMenu'
 import { computeResourcesFromDice, type ResourceCounts } from '@/src/lib/diceProduction'
-import type { BoardRecommendation } from '@/src/domain/entities'
+import type { BoardRecommendation, BoardState as ConvBoardState } from '@/src/domain/entities'
 import type { BoardRecommendationPreview } from './coach/BoardOverlay'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
@@ -477,7 +477,44 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   }, [input])
 
   // ── Guardar conversación activa en historial ──────────────
-  const persistToHistory = useCallback((updatedSession: Session, convId: string) => {
+  // Captura el boardState actual para persistirlo con la conversación
+  const captureBoardState = useCallback((): ConvBoardState => ({
+    pieces:      savedPieces,
+    myColor:     savedMyColor,
+    assignments: savedAssignments,
+    resources:   savedResources,
+    robberHex:   savedRobberHex,
+    devCards:    savedDevCards,
+    gameStarted,
+    currentTurn,
+    coachMode,
+    hasSelectedMode,
+    longestRoad: savedLongestRoad,
+    largestArmy: savedLargestArmy,
+    knightsPlayed: savedKnightsPlayed,
+  }), [savedPieces, savedMyColor, savedAssignments, savedResources, savedRobberHex,
+       savedDevCards, gameStarted, currentTurn, coachMode, hasSelectedMode,
+       savedLongestRoad, savedLargestArmy, savedKnightsPlayed])
+
+  // Restaura el boardState de una conversación guardada
+  const restoreBoardState = useCallback((bs: ConvBoardState | undefined) => {
+    if (!bs) return
+    setSavedPieces(bs.pieces ?? {})
+    setSavedMyColor(bs.myColor ?? 'red')
+    setSavedAssignments(bs.assignments ?? [])
+    setSavedResources(bs.resources ?? null)
+    setSavedRobberHex(bs.robberHex ?? 9)
+    setSavedDevCards(bs.devCards ?? null)
+    setGameStarted(bs.gameStarted ?? false)
+    setCurrentTurn(bs.currentTurn ?? 1)
+    setCoachMode(bs.coachMode ?? false)
+    setHasSelectedMode(bs.hasSelectedMode ?? false)
+    setSavedLongestRoad(bs.longestRoad ?? false)
+    setSavedLargestArmy(bs.largestArmy ?? false)
+    setSavedKnightsPlayed(bs.knightsPlayed ?? 0)
+  }, [])
+
+  const persistToHistory = useCallback((updatedSession: Session, convId: string, boardState?: ConvBoardState) => {
     const userMsgs = updatedSession.messages.filter(m => m.role === 'user')
     if (userMsgs.length === 0) return  // no guardamos si no hay mensajes del usuario
 
@@ -489,11 +526,11 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       let next: Conversation[]
       if (existing) {
         next = prev.map(c => c.id === convId
-          ? { ...c, title, session: updatedSession, lastActiveAt: now }
+          ? { ...c, title, session: updatedSession, lastActiveAt: now, ...(boardState ? { boardState } : {}) }
           : c
         )
       } else {
-        const newConv: Conversation = { id: convId, title, session: updatedSession, createdAt: now, lastActiveAt: now }
+        const newConv: Conversation = { id: convId, title, session: updatedSession, createdAt: now, lastActiveAt: now, ...(boardState ? { boardState } : {}) }
         next = [newConv, ...prev]
       }
       saveHistory(next)
@@ -543,7 +580,15 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setInput('')
     saveCurrentSession(conv.session)
     setSidebarOpen(false)
-  }, [])
+    // Restaurar estado del tablero de esta conversación
+    restoreBoardState(conv.boardState)
+    // Reset estado que no persistimos
+    setSavedGeneticRec(null)
+    setPendingRecommendation(null)
+    setCoachStep(null)
+    setShowBoard(false)
+    setShowCamera(false)
+  }, [restoreBoardState])
 
   // ── Enviar mensaje ────────────────────────────────────────
   const sendMessage = useCallback(async (
@@ -703,17 +748,18 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     const newMessages: Message[] = [assistantMessage]
     if (progressionMsg) newMessages.push({ id: `progress-${Date.now()}`, role: 'assistant', content: progressionMsg, timestamp: Date.now() + 1 })
 
+    const currentBoardState = captureBoardState()
     setSession(s => {
       const updated = { ...s, messages: [...s.messages, ...newMessages], conceptMap: updatedConceptMap, userLevel: updatedLevel, lastActiveAt: Date.now() }
       saveCurrentSession(updated)
-      persistToHistory(updated, convId)
+      persistToHistory(updated, convId, currentBoardState)
       return updated
     })
 
     setLastSuggestions(suggestions)
     setStreamingContent('')
     setIsLoading(false)
-  }, [session, isLoading, activeConvId, persistToHistory])
+  }, [session, isLoading, activeConvId, persistToHistory, captureBoardState])
 
   // ── Handler para el menú de acciones contextuales ────────
   const handleGameAction = useCallback((action: GameAction) => {
@@ -922,7 +968,19 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                     : 'Tablero recibido. Indica tus recursos para que pueda darte una recomendación real.',
                   timestamp: Date.now(),
                 }
-                setSession(s => ({ ...s, messages: [...s.messages, boardMsg, replyMsg] }))
+                setSession(s => {
+                  const updated = { ...s, messages: [...s.messages, boardMsg, replyMsg] }
+                  // Persistir tablero en historial aunque no haya mensaje de usuario aún
+                  const convId = activeConvId || `conv-${Date.now()}`
+                  const bs: ConvBoardState = {
+                    pieces, myColor, assignments, resources: null, robberHex,
+                    devCards: null, gameStarted: false, currentTurn: 1,
+                    coachMode: true, hasSelectedMode: true,
+                    longestRoad: false, largestArmy: false, knightsPlayed: 0,
+                  }
+                  persistToHistory(updated, convId, bs)
+                  return updated
+                })
                 setCoachStep('waiting-resources')
               }}
             />
