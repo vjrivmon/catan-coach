@@ -106,6 +106,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     action: string; actionEs: string; score: number; reason: string; alternatives: unknown[]
     positionContext?: { mySettlements: string[]; myRoads: string[]; frontier: string[] }
   }>(null)
+  // Ref para recursos recién confirmados (evita interceptor falso por closure asíncrono)
+  const confirmedResourcesRef = useRef<Record<string,number> | null>(null)
+
   // Ref para capturar el estado del tablero recién confirmado (evita problema de closure asíncrono)
   const pendingBoardRef = useRef<{
     pieces: Record<string,{type:'settlement'|'city'|'road';color:string}>
@@ -620,7 +623,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     // Si el usuario pregunta por jugadas/estrategia en modo coach con tablero
     // pero sin recursos guardados → interrumpir y pedir recursos primero
     const STRATEGY_KEYWORDS = ['mejor jugada','qué hago','qué construir','recomend','qué puedo hacer','mejor opción','siguiente paso']
-    const isStrategyQuestion = coachMode && boardConfigured && !savedResources &&
+    // Usar ref para evitar falso positivo cuando savedResources aún no se propagó
+    const hasResources = savedResources !== null || confirmedResourcesRef.current !== null
+    const isStrategyQuestion = coachMode && boardConfigured && !hasResources &&
       STRATEGY_KEYWORDS.some(kw => text.toLowerCase().includes(kw))
 
     if (isStrategyQuestion) {
@@ -635,6 +640,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       setStreamingContent('')
       return
     }
+
+    // Limpiar ref de recursos tras usarlo
+    confirmedResourcesRef.current = null
 
     // ── Si hay tablero + modo coach pero sin GeneticRec fresco, consultar API ─
     // Esto ocurre cuando el usuario pregunta manualmente después de un dado
@@ -1086,7 +1094,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               <ResourceStepperBubble
                 onConfirm={async (counts) => {
                   setCoachStep(null)
-                  setSavedResources(counts)   // persist for future turns
+                  setSavedResources(counts)
+                  confirmedResourcesRef.current = counts  // evita interceptor falso
 
                   const resourceLabels: Record<string,string> = {
                     wood:'Madera', clay:'Arcilla', cereal:'Trigo', wool:'Oveja', mineral:'Mineral'
