@@ -180,11 +180,22 @@ else
     warn "  cd $(dirname "$SCRIPT_DIR") && git clone git@github.com:vjrivmon/catan-advisor-api.git"
     warn "Continuando sin GeneticAgent (el coach funciona, pero sin recomendaciones genéticas)"
   else
-    # Crear o reparar venv si falta
-    if [ ! -f "$ADVISOR_DIR/.venv/bin/uvicorn" ]; then
-      log "Instalando dependencias GeneticAgent..."
+    # Verificar que el venv usa el Python local (no una ruta de otro sistema)
+    VENV_PYTHON="$ADVISOR_DIR/.venv/bin/python3"
+    VENV_OK=false
+    if [ -f "$VENV_PYTHON" ]; then
+      INTERP=$(head -1 "$ADVISOR_DIR/.venv/bin/uvicorn" 2>/dev/null || echo "")
+      if echo "$INTERP" | grep -q "^#!$ADVISOR_DIR"; then
+        VENV_OK=true
+      fi
+    fi
+
+    if [ "$VENV_OK" = false ]; then
+      log "Recreando venv GeneticAgent (intérprete incorrecto o ausente)..."
+      rm -rf "$ADVISOR_DIR/.venv"
       python3 -m venv "$ADVISOR_DIR/.venv"
       "$ADVISOR_DIR/.venv/bin/pip" install -q -r "$ADVISOR_DIR/requirements.txt"
+      ok "Dependencias instaladas"
     fi
 
     nohup bash -c "cd '$ADVISOR_DIR' && '$ADVISOR_DIR/.venv/bin/uvicorn' main:app \
