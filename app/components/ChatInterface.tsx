@@ -109,6 +109,48 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   // Ref para recursos recién confirmados (evita interceptor falso por closure asíncrono)
   const confirmedResourcesRef = useRef<Record<string,number> | null>(null)
 
+  // ── Helper: construye el payload para /api/coach-recommend desde refs ────
+  // Siempre usa los refs (valores actuales) — nunca el closure de los callbacks
+  const buildGeneticPayload = useCallback((resourcesOverride?: Record<string,number>) => {
+    const pieces      = savedPiecesRef.current
+    const myColor     = savedMyColorRef.current
+    const assignments = savedAssignmentsRef.current
+    const resources   = resourcesOverride ?? savedResourcesRef.current ?? {}
+    const robberHex   = savedRobberHexRef.current
+    const longestRoad = savedLongestRoadRef.current
+    const largestArmy = savedLargestArmyRef.current
+    const knightsPlayed = savedKnightsPlayedRef.current
+    const devCards    = savedDevCardsRef.current
+    const turn        = currentTurnRef.current
+
+    const pieceKeys     = Object.keys(pieces)
+    const settlements   = pieceKeys.filter(k => k.startsWith('v') && pieces[k].color === myColor && pieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
+    const cities        = pieceKeys.filter(k => k.startsWith('v') && pieces[k].color === myColor && pieces[k].type === 'city').map(k => parseInt(k.slice(1)))
+    const roads         = pieceKeys.filter(k => k.startsWith('e') && pieces[k].color === myColor).map(k => k.slice(1))
+    const rivals        = assignments.filter(c => c !== myColor).map(color => ({
+      color,
+      vp: pieceKeys.filter(k => k.startsWith('v') && pieces[k].color === color && pieces[k].type === 'settlement').length
+        + pieceKeys.filter(k => k.startsWith('v') && pieces[k].color === color && pieces[k].type === 'city').length * 2,
+      settlements: pieceKeys.filter(k => k.startsWith('v') && pieces[k].color === color && pieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
+      cities:      pieceKeys.filter(k => k.startsWith('v') && pieces[k].color === color && pieces[k].type === 'city').map(k => parseInt(k.slice(1))),
+      roads:       pieceKeys.filter(k => k.startsWith('e') && pieces[k].color === color).map(k => k.slice(1)),
+      knights_played: 0,
+    }))
+    const vpBase  = settlements.length + cities.length * 2
+    const vpBonus = (longestRoad ? 2 : 0) + (largestArmy ? 2 : 0)
+
+    return {
+      resources, settlements, cities, roads,
+      vp: vpBase + vpBonus,
+      roadLength: roads.length,
+      knightsPlayed, longestRoad, largestArmy,
+      otherPlayers: rivals,
+      gamePhasePlaying: true,
+      robberHex, turn,
+      devCards,
+    }
+  }, [])
+
   // Ref para capturar el estado del tablero recién confirmado (evita problema de closure asíncrono)
   const pendingBoardRef = useRef<{
     pieces: Record<string,{type:'settlement'|'city'|'road';color:string}>
@@ -703,31 +745,11 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     let freshGeneticRec = _savedGeneticRec
     if (_coachMode && _boardConfigured && _savedResources && !_savedGeneticRec) {
       try {
-        const pieceKeys = Object.keys(_savedPieces)
-        const mySettlements = pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === _savedMyColor && _savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
-        const myCities      = pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === _savedMyColor && _savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
-        const myRoads       = pieceKeys.filter(k => k.startsWith('e') && _savedPieces[k].color === _savedMyColor).map(k => k.slice(1))
-        const rivals = _savedAssignments.filter(c => c !== _savedMyColor).map(color => ({
-          color,
-          vp: pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'settlement').length
-            + pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'city').length * 2,
-          settlements: pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
-          cities:      pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
-          roads:       pieceKeys.filter(k => k.startsWith('e') && _savedPieces[k].color === color).map(k => k.slice(1)),
-          knights_played: 0,
-        }))
-        const vpBase  = mySettlements.length + myCities.length * 2
-        const vpBonus = (_longestRoad ? 2 : 0) + (_largestArmy ? 2 : 0)
+        const payload = buildGeneticPayload()
         const res = await fetch('/api/coach-recommend', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            resources: _savedResources, settlements: mySettlements, cities: myCities, roads: myRoads,
-            vp: vpBase + vpBonus, roadLength: myRoads.length,
-            knightsPlayed: _knightsPlayed, longestRoad: _longestRoad, largestArmy: _largestArmy,
-            otherPlayers: rivals, gamePhasePlaying: true, robberHex: _savedRobberHex,
-            turn: _currentTurn,
-          }),
+          body: JSON.stringify(payload),
         })
         if (res.ok) { freshGeneticRec = await res.json(); setSavedGeneticRec(freshGeneticRec) }
       } catch { /* GeneticAgent opcional */ }
@@ -821,7 +843,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setLastSuggestions(suggestions)
     setStreamingContent('')
     setIsLoading(false)
-  }, [session, isLoading, activeConvId, persistToHistory, captureBoardState])
+  }, [session, isLoading, activeConvId, persistToHistory, captureBoardState, buildGeneticPayload])
 
   // ── Handler para el menú de acciones contextuales ────────
   const handleGameAction = useCallback((action: GameAction) => {
@@ -1170,47 +1192,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   // 1. Ask GeneticAgent first
                   let geneticRec = null
                   try {
-                    const pieceKeys = Object.keys(savedPieces)
-                    const settlements = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
-                    const cities      = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
-                    const roads       = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
-
-                    // Build other_players from saved board state
-                    const rivals = (savedAssignments.length > 0 ? savedAssignments : Object.keys(
-                      Object.fromEntries(Object.values(savedPieces).map(p => [p.color, 1]))
-                    )).filter(c => c !== savedMyColor)
-
-                    const otherPlayers = rivals.map(color => ({
-                      color,
-                      vp: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').length * 1
-                        + pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').length * 2,
-                      settlements: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
-                      cities:      pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
-                      roads:       pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === color).map(k => k.slice(1)),
-                      knights_played: 0,  // unknown rival info — default 0
-                    }))
-
-                    const vpBase = settlements.length * 1 + cities.length * 2
-                    const vpBonus = (savedLongestRoad ? 2 : 0) + (savedLargestArmy ? 2 : 0)
-
+                    const payload = buildGeneticPayload(counts)
                     const apiRes = await fetch('/api/coach-recommend', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        resources: counts,
-                        settlements, cities, roads,
-                        vp: vpBase + vpBonus,
-                        roadLength: roads.length,
-                        knightsPlayed: savedKnightsPlayed,
-                        longestRoad:   savedLongestRoad,
-                        largestArmy:   savedLargestArmy,
-                        otherPlayers,
-                        gamePhasePlaying: true,
-                        robberHex: savedRobberHex,
-                      }),
+                      body: JSON.stringify(payload),
                     })
                     if (apiRes.ok) { geneticRec = await apiRes.json(); setSavedGeneticRec(geneticRec) }
-                  } catch { /* GeneticAgent optional — LLM works without it */ }
+                  } catch { /* GeneticAgent optional */ }
 
                   // 2. Build coachState — usar pendingBoardRef si está disponible
                   // (evita el problema de closure asíncrono con savedPieces)
@@ -1316,40 +1305,11 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                     // Consultar GeneticAgent con los recursos ya actualizados
                     let geneticRec = null
                     try {
-                      const pieceKeys = Object.keys(savedPieces)
-                      const mySettlements = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
-                      const myCities      = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
-                      const myRoads       = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
-                      const rivals        = savedAssignments.filter(c => c !== savedMyColor).map(color => ({
-                        color,
-                        vp: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').length
-                          + pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').length * 2,
-                        settlements: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
-                        cities:      pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
-                        roads:       pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === color).map(k => k.slice(1)),
-                        knights_played: 0,
-                      }))
-                      const vpBase  = mySettlements.length + myCities.length * 2
-                      const vpBonus = (savedLongestRoad ? 2 : 0) + (savedLargestArmy ? 2 : 0)
+                      const payload = buildGeneticPayload(diceResult.newTotals)
                       const apiRes = await fetch('/api/coach-recommend', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          resources:     diceResult.newTotals,
-                          settlements:   mySettlements,
-                          cities:        myCities,
-                          roads:         myRoads,
-                          vp:            vpBase + vpBonus,
-                          roadLength:    myRoads.length,
-                          knightsPlayed: savedKnightsPlayed,
-                          longestRoad:   savedLongestRoad,
-                          largestArmy:   savedLargestArmy,
-                          otherPlayers:  rivals,
-                          gamePhasePlaying: true,
-                          robberHex:     savedRobberHex,
-                          turn:          currentTurn,
-                          devCards:      savedDevCards,
-                        }),
+                        body: JSON.stringify(payload),
                       })
                       if (apiRes.ok) { geneticRec = await apiRes.json(); setSavedGeneticRec(geneticRec) }
                     } catch { /* GeneticAgent optional */ }
