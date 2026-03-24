@@ -79,6 +79,21 @@ if [[ "${1:-}" == "--status" ]]; then
   exit 0
 fi
 
+# ── kill_port: mata todo lo que ocupe un puerto ──────────────────────────────
+kill_port() {
+  local port=$1
+  local pids
+  pids=$(lsof -ti :"$port" 2>/dev/null || true)
+  if [ -n "$pids" ]; then
+    echo "$pids" | xargs kill -TERM 2>/dev/null || true
+    sleep 0.8
+    # SIGKILL si sigue vivo
+    pids=$(lsof -ti :"$port" 2>/dev/null || true)
+    [ -n "$pids" ] && echo "$pids" | xargs kill -KILL 2>/dev/null || true
+    ok "Proceso en :$port terminado"
+  fi
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # INICIO
 # ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +101,14 @@ echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════╗${NC}"
 echo -e "${BOLD}${CYAN}║        CATAN COACH — start-all       ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════╝${NC}"
+echo ""
+
+# ── 0. Matar todo lo que pueda estar corriendo ────────────────────────────────
+log "0/3  Limpiando puertos..."
+kill_port "$CHROMA_PORT"
+kill_port "$ADVISOR_PORT"
+kill_port "$FRONTEND_PORT"
+ok "Puertos libres — arrancando desde cero"
 echo ""
 
 # ── 1. ChromaDB ───────────────────────────────────────────────────────────────
