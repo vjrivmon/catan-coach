@@ -10,6 +10,11 @@ export interface CoachState {
     score: number
     reason: string
     alternatives: Array<{ action: string; actionEs: string; score: number; reason: string }>
+    positionContext?: {
+      mySettlements: string[]
+      myRoads: string[]
+      frontier: string[]  // vértices de expansión con descripción de terrenos adyacentes
+    }
   } | null
   turn?: number | null
   devCards?: Record<string, number> | null

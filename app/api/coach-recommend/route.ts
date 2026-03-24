@@ -43,6 +43,84 @@ const STANDARD_HEXES = TERRAIN_ORDER.map((terrain, i) => ({
   probability: NUMBERS[i] > 0 ? (DOTS[NUMBERS[i]] ?? 0) / 36 : 0,
 }))
 
+// ─── Topology: pre-compute vertex→hex adjacency (matches BoardOverlay geometry) ─
+// This lets Python's _get_adjacent_hexes() work with real data instead of returning []
+const _R   = 40
+const _W   = Math.sqrt(3) * _R
+const _ROW_H = 1.5 * _R
+const _ROWS = [
+  { n: 3, colStart: 1 }, { n: 4, colStart: 0.5 }, { n: 5, colStart: 0 },
+  { n: 4, colStart: 0.5 }, { n: 3, colStart: 1 },
+]
+const _SVG_W = 390; const _PAD_TOP = 50
+const _X0 = (_SVG_W - 5 * _W) / 2 + _W / 2
+const _ANGLES = [30,90,150,210,270,330].map(d => (d * Math.PI) / 180)
+
+function _approxKey(x: number, y: number) { return `${Math.round(x)},${Math.round(y)}` }
+
+/** Returns { vertexToHexIndices, vertexCoords } for the standard 19-hex board */
+function buildTopology() {
+  const vertMap = new Map<string, { id: number; x: number; y: number }>()
+  const vertToHexes = new Map<number, number[]>()  // vertexId → hex indices (board order)
+  let vId = 0
+
+  let hi = 0
+  for (let row = 0; row < _ROWS.length; row++) {
+    for (let col = 0; col < _ROWS[row].n; col++) {
+      const cx = _X0 + (_ROWS[row].colStart + col) * _W
+      const cy = _PAD_TOP + row * _ROW_H
+      for (const a of _ANGLES) {
+        const vx = cx + _R * Math.cos(a)
+        const vy = cy + _R * Math.sin(a)
+        const k  = _approxKey(vx, vy)
+        if (!vertMap.has(k)) { vertMap.set(k, { id: vId, x: vx, y: vy }); vId++ }
+        const vid = vertMap.get(k)!.id
+        if (!vertToHexes.has(vid)) vertToHexes.set(vid, [])
+        const arr = vertToHexes.get(vid)!
+        if (!arr.includes(hi)) arr.push(hi)
+      }
+      hi++
+    }
+  }
+  return { vertToHexes, vertMap }
+}
+
+const { vertToHexes: VERT_TO_HEXES } = buildTopology()
+
+/** Build vertices[] for board_state — each vertex gets adjacent hex (q,r) list */
+function buildVerticesPayload(allVertexIds: number[]) {
+  return allVertexIds.map(vid => {
+    const hexIndices = VERT_TO_HEXES.get(vid) ?? []
+    const adjacentHexes = hexIndices
+      .filter(hi => hi < HEX_COORDS.length)
+      .map(hi => [HEX_COORDS[hi].q, HEX_COORDS[hi].r] as [number, number])
+    return { vertex_id: vid, adjacent_hexes: adjacentHexes }
+  })
+}
+
+/** Describe a vertex in human-readable terms using adjacent hex terrain+number */
+function describeVertex(vid: number): string {
+  const hexIndices = VERT_TO_HEXES.get(vid) ?? []
+  const parts = hexIndices
+    .filter(hi => NUMBERS[hi] > 0 && TERRAIN_ORDER[hi] !== 'desert')
+    .map(hi => {
+      const terrain = TERRAIN_ORDER[hi]
+      const num = NUMBERS[hi]
+      const dots = DOTS[num] ?? 0
+      return `${terrain}(${num},${dots}pts)`
+    })
+  return parts.length > 0 ? parts.join('+') : 'sin producción'
+}
+
+/** Describe an edge (road) in human-readable terms */
+function describeEdge(edgeId: string): string {
+  const [aStr, bStr] = edgeId.replace(/^e/, '').split('_')
+  const a = parseInt(aStr), b = parseInt(bStr)
+  const descA = describeVertex(a)
+  const descB = describeVertex(b)
+  return `entre [${descA}] y [${descB}]`
+}
+
 const COACH_API_URL = process.env.COACH_API_URL ?? 'http://localhost:8001'
 
 export interface OtherPlayerInput {
@@ -106,11 +184,28 @@ export async function POST(req: NextRequest) {
       knights_played: op.knights_played ?? 0,
     }))
 
+    // All vertex ids referenced in this game (player + rivals)
+    const allVertexIds = [
+      ...Array.isArray(body.settlements) ? body.settlements : [],
+      ...Array.isArray(body.cities)      ? body.cities      : [],
+      ...(body.otherPlayers ?? []).flatMap(op => [
+        ...(Array.isArray(op.settlements) ? op.settlements : []),
+        ...(Array.isArray(op.cities)      ? op.cities      : []),
+      ]),
+    ]
+    const uniqueVertexIds = [...new Set(allVertexIds)]
+
+    // Human-readable position descriptions for the response
+    const mySettlementDescs = (Array.isArray(body.settlements) ? body.settlements : [])
+      .map(vid => `v${vid}: ${describeVertex(vid)}`)
+    const myRoadDescs = (Array.isArray(body.roads) ? body.roads : [])
+      .map(eid => `${eid}: ${describeEdge(eid)}`)
+
     const payload = {
       board_state: {
-        hexes: STANDARD_HEXES,
-        vertices: [],
-        ports: [],
+        hexes:     STANDARD_HEXES,
+        vertices:  buildVerticesPayload(uniqueVertexIds),
+        ports:     [],
         robber_hex: body.robberHex ?? 9,
       },
       player: {
@@ -163,11 +258,38 @@ export async function POST(req: NextRequest) {
 
     debugLog.coachResponse({ action: data.action, score: data.score, reason: data.reason?.slice(0,100) })
 
+    // Build position context so the LLM can give concrete "where" advice
+    const positionContext = {
+      mySettlements: mySettlementDescs,
+      myRoads:       myRoadDescs,
+      // Frontier vertices: adjacent to my roads but without settlement → expansion candidates
+      frontier: (() => {
+        const myVerts = new Set([
+          ...(Array.isArray(body.settlements) ? body.settlements : []),
+          ...(Array.isArray(body.cities)      ? body.cities      : []),
+        ])
+        const roadVerts = new Set<number>()
+        ;(body.roads ?? []).forEach(id => {
+          const parts = id.replace(/^e/, '').split('_').map(Number)
+          parts.forEach(v => roadVerts.add(v))
+        })
+        // Frontier = road-connected verts not yet occupied
+        const frontier: string[] = []
+        for (const vid of roadVerts) {
+          if (!myVerts.has(vid)) {
+            frontier.push(`v${vid}: ${describeVertex(vid)}`)
+          }
+        }
+        return frontier.slice(0, 5)  // top 5 candidates
+      })(),
+    }
+
     return NextResponse.json({
-      action:      data.action,
-      actionEs:    ACTION_ES[data.action] ?? data.action,
-      score:       data.score,
-      reason:      data.reason,
+      action:          data.action,
+      actionEs:        ACTION_ES[data.action] ?? data.action,
+      score:           data.score,
+      reason:          data.reason,
+      positionContext,
       alternatives: (data.alternatives ?? []).map((a: any) => ({
         action:   a.action,
         actionEs: ACTION_ES[a.action] ?? a.action,

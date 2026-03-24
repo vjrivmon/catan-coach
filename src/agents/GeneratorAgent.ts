@@ -144,6 +144,18 @@ function buildSystemPrompt(level: UserLevel, seenConcepts: string[] | undefined,
     const toEs = (a: string) => ACTION_ES[a] ?? a
 
     const gr = coachState.geneticRecommendation as any
+    // Position context from route topology pre-computation
+    const pc = gr?.positionContext as { mySettlements?: string[]; myRoads?: string[]; frontier?: string[] } | undefined
+
+    const positionBlock = pc ? `
+POSICIONES CONCRETAS DEL JUGADOR:
+Poblados/Ciudades: ${pc.mySettlements?.join(' | ') || 'ninguno'}
+Caminos actuales: ${pc.myRoads?.join(' | ') || 'ninguno'}
+VÉRTICES DE EXPANSIÓN (extremos de tus caminos sin poblado):
+${pc.frontier?.length ? pc.frontier.map(f => `  → ${f}`).join('\n') : '  (ninguno disponible)'}
+
+Cuando recomiendes construir un camino o poblado, indica SIEMPRE el vértice concreto de destino usando la descripción de terrenos adyacentes de la lista anterior.` : ''
+
     const geneticBlock = gr
       ? `\nRECOMENDACIÓN DEL AGENTE GENÉTICO (93 parámetros, 40K partidas entrenadas):
 Acción óptima: ${toEs(gr.action ?? gr.actionEs)} (score=${(gr.score as number).toFixed(3)})
@@ -151,8 +163,8 @@ Razonamiento del agente: ${gr.reason}
 ${gr.alternatives && gr.alternatives.length > 0
   ? `Alternativas: ${gr.alternatives.map((a: any) => `${toEs(a.action ?? a.actionEs)}(${(a.score as number).toFixed(2)})`).join(', ')}`
   : ''}
-
-Tu respuesta debe estar ALINEADA con esta recomendación del agente genético. Explícala al jugador de forma comprensible.`
+${positionBlock}
+REGLA OBLIGATORIA: Si recomiendas construir un camino o poblado, indica exactamente hacia qué terrenos expandirte usando los vértices de expansión listados arriba. No digas "expandirte hacia nuevas áreas" sin especificar cuáles.`
       : ''
 
     const vpSummary         = computeVP(coachState.boardSummary, coachState.devCards)

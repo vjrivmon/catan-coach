@@ -99,7 +99,10 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedAssignments, setSavedAssignments] = useState<string[]>([])
   const [savedResources, setSavedResources]     = useState<Record<string,number> | null>(null)
   const [savedRobberHex, setSavedRobberHex]     = useState<number>(9)  // 9 = desert default
-  const [savedGeneticRec, setSavedGeneticRec]   = useState<null | {action:string;actionEs:string;score:number;reason:string;alternatives:unknown[]}>(null)
+  const [savedGeneticRec, setSavedGeneticRec]   = useState<null | {
+    action: string; actionEs: string; score: number; reason: string; alternatives: unknown[]
+    positionContext?: { mySettlements: string[]; myRoads: string[]; frontier: string[] }
+  }>(null)
   // Fase A — rival state for GeneticAgent
   const [savedKnightsPlayed, setSavedKnightsPlayed] = useState<number>(0)
   const [savedLongestRoad, setSavedLongestRoad]     = useState<boolean>(false)
