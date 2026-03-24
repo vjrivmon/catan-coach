@@ -20,20 +20,12 @@ function waitForColorsDone(cb: () => void, maxMs = 120_000) {
   requestAnimationFrame(tick)
 }
 
-/** Visually disables / enables the driver next button */
+/** Visually disables / enables the driver next button via body class */
 function setNextBtnDisabled(disabled: boolean) {
-  const btn = document.querySelector('.driver-popover-next-btn') as HTMLButtonElement | null
-  if (!btn) return
   if (disabled) {
-    btn.style.opacity = '0.35'
-    btn.style.cursor = 'not-allowed'
-    btn.style.pointerEvents = 'none'
-    btn.setAttribute('data-blocked', '1')
+    document.body.classList.add('tour-colors-pending')
   } else {
-    btn.style.opacity = ''
-    btn.style.cursor = ''
-    btn.style.pointerEvents = ''
-    btn.removeAttribute('data-blocked')
+    document.body.classList.remove('tour-colors-pending')
   }
 }
 

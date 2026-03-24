@@ -83,3 +83,13 @@ html, body {
 .driver-overlay {
   background: rgba(0,0,0,0.72) !important;
 }
+
+/* Tour paso 4 — next btn bloqueado hasta asignar colores */
+body.tour-colors-pending .catan-tour-popover button.driver-popover-next-btn,
+body.tour-colors-pending .catan-tour-popover button.driver-popover-done-btn {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background: #57534e !important;
+  color: #79716c !important;
+}
