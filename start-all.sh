@@ -223,7 +223,7 @@ else
 
   nohup bash -c "cd '$FRONTEND_DIR' && npm run dev" \
     > "$LOG_DIR/nextjs.log" 2>&1 &
-  wait_for_port "$FRONTEND_PORT" "Next.js" 60
+  wait_for_port "$FRONTEND_PORT" "Next.js" 120
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
