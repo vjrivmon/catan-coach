@@ -475,7 +475,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     if (isStrategyQuestion) {
       const nudgeMsg: import('@/src/domain/entities').Message = {
         id: `nudge-${Date.now()}`, role: 'assistant',
-        content: 'Para darte una recomendación precisa necesito saber tus recursos actuales. Indícalos:',
+        content: 'Antes de recomendarte la mejor jugada, dime qué cartas de recurso tienes en mano:',
         timestamp: Date.now(),
       }
       setSession(s => ({ ...s, messages: [...s.messages, nudgeMsg] }))
