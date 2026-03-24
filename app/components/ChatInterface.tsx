@@ -121,9 +121,42 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedKnightsPlayed, setSavedKnightsPlayed] = useState<number>(0)
   const [savedLongestRoad, setSavedLongestRoad]     = useState<boolean>(false)
   const [savedLargestArmy, setSavedLargestArmy]     = useState<boolean>(false)
+
+  // ── Live refs para sendMessage (evita stale closures) ─────────────────────
+  const coachModeRef          = useRef(false)
+  const boardConfiguredRef    = useRef(false)
+  const savedResourcesRef     = useRef<Record<string,number> | null>(null)
+  const savedGeneticRecRef    = useRef<typeof savedGeneticRec>(null)
+  const savedPiecesRef        = useRef<typeof savedPieces>({})
+  const savedMyColorRef       = useRef('red')
+  const savedAssignmentsRef   = useRef<string[]>([])
+  const savedRobberHexRef     = useRef(9)
+  const savedDevCardsRef      = useRef<Record<string,number> | null>(null)
+  const gameStartedRef        = useRef(false)
+  const currentTurnRef        = useRef(1)
+  const savedLongestRoadRef   = useRef(false)
+  const savedLargestArmyRef   = useRef(false)
+  const savedKnightsPlayedRef = useRef(0)
+
   // Fases 2-4 — board recommendation preview
   const [pendingRecommendation, setPendingRecommendation] = useState<BoardRecommendationPreview | null>(null)
-  const boardConfigured                         = Object.keys(savedPieces).length > 0
+  const boardConfigured = Object.keys(savedPieces).length > 0
+
+  // Sync live refs on every render (evita stale closures en sendMessage)
+  coachModeRef.current          = coachMode
+  boardConfiguredRef.current    = boardConfigured
+  savedResourcesRef.current     = savedResources
+  savedGeneticRecRef.current    = savedGeneticRec
+  savedPiecesRef.current        = savedPieces
+  savedMyColorRef.current       = savedMyColor
+  savedAssignmentsRef.current   = savedAssignments
+  savedRobberHexRef.current     = savedRobberHex
+  savedDevCardsRef.current      = savedDevCards
+  gameStartedRef.current        = gameStarted
+  currentTurnRef.current        = currentTurn
+  savedLongestRoadRef.current   = savedLongestRoad
+  savedLargestArmyRef.current   = savedLargestArmy
+  savedKnightsPlayedRef.current = savedKnightsPlayed
 
   // Terrain + number data mirrors BoardOverlay constants — needed to enrich board summary
   const TERRAIN_ORDER_CI = [
@@ -629,9 +662,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     // Si el usuario pregunta por jugadas/estrategia en modo coach con tablero
     // pero sin recursos guardados → interrumpir y pedir recursos primero
     const STRATEGY_KEYWORDS = ['mejor jugada','qué hago','qué construir','recomend','qué puedo hacer','mejor opción','siguiente paso']
-    // Usar ref para evitar falso positivo cuando savedResources aún no se propagó
-    const hasResources = savedResources !== null || confirmedResourcesRef.current !== null
-    const isStrategyQuestion = coachMode && boardConfigured && !hasResources &&
+    // Usar refs para leer valores actuales (no el closure stale)
+    const hasResources = savedResourcesRef.current !== null || confirmedResourcesRef.current !== null
+    const isStrategyQuestion = coachModeRef.current && boardConfiguredRef.current && !hasResources &&
       STRATEGY_KEYWORDS.some(kw => text.toLowerCase().includes(kw))
 
     if (isStrategyQuestion) {
@@ -650,52 +683,67 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     // Limpiar ref de recursos tras usarlo
     confirmedResourcesRef.current = null
 
+    // ── Leer valores actuales desde refs (no closures stale) ─────────────────
+    const _coachMode        = coachModeRef.current
+    const _boardConfigured  = boardConfiguredRef.current
+    const _savedResources   = savedResourcesRef.current
+    const _savedGeneticRec  = savedGeneticRecRef.current
+    const _savedPieces      = savedPiecesRef.current
+    const _savedMyColor     = savedMyColorRef.current
+    const _savedAssignments = savedAssignmentsRef.current
+    const _savedRobberHex   = savedRobberHexRef.current
+    const _savedDevCards    = savedDevCardsRef.current
+    const _gameStarted      = gameStartedRef.current
+    const _currentTurn      = currentTurnRef.current
+    const _longestRoad      = savedLongestRoadRef.current
+    const _largestArmy      = savedLargestArmyRef.current
+    const _knightsPlayed    = savedKnightsPlayedRef.current
+
     // ── Si hay tablero + modo coach pero sin GeneticRec fresco, consultar API ─
-    // Esto ocurre cuando el usuario pregunta manualmente después de un dado
-    let freshGeneticRec = savedGeneticRec
-    if (coachMode && boardConfigured && savedResources && !savedGeneticRec) {
+    let freshGeneticRec = _savedGeneticRec
+    if (_coachMode && _boardConfigured && _savedResources && !_savedGeneticRec) {
       try {
-        const pieceKeys = Object.keys(savedPieces)
-        const mySettlements = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
-        const myCities      = pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === savedMyColor && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
-        const myRoads       = pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === savedMyColor).map(k => k.slice(1))
-        const rivals = savedAssignments.filter(c => c !== savedMyColor).map(color => ({
+        const pieceKeys = Object.keys(_savedPieces)
+        const mySettlements = pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === _savedMyColor && _savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1)))
+        const myCities      = pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === _savedMyColor && _savedPieces[k].type === 'city').map(k => parseInt(k.slice(1)))
+        const myRoads       = pieceKeys.filter(k => k.startsWith('e') && _savedPieces[k].color === _savedMyColor).map(k => k.slice(1))
+        const rivals = _savedAssignments.filter(c => c !== _savedMyColor).map(color => ({
           color,
-          vp: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').length
-            + pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').length * 2,
-          settlements: pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
-          cities:      pieceKeys.filter(k => k.startsWith('v') && savedPieces[k].color === color && savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
-          roads:       pieceKeys.filter(k => k.startsWith('e') && savedPieces[k].color === color).map(k => k.slice(1)),
+          vp: pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'settlement').length
+            + pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'city').length * 2,
+          settlements: pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'settlement').map(k => parseInt(k.slice(1))),
+          cities:      pieceKeys.filter(k => k.startsWith('v') && _savedPieces[k].color === color && _savedPieces[k].type === 'city').map(k => parseInt(k.slice(1))),
+          roads:       pieceKeys.filter(k => k.startsWith('e') && _savedPieces[k].color === color).map(k => k.slice(1)),
           knights_played: 0,
         }))
         const vpBase  = mySettlements.length + myCities.length * 2
-        const vpBonus = (savedLongestRoad ? 2 : 0) + (savedLargestArmy ? 2 : 0)
+        const vpBonus = (_longestRoad ? 2 : 0) + (_largestArmy ? 2 : 0)
         const res = await fetch('/api/coach-recommend', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            resources: savedResources, settlements: mySettlements, cities: myCities, roads: myRoads,
+            resources: _savedResources, settlements: mySettlements, cities: myCities, roads: myRoads,
             vp: vpBase + vpBonus, roadLength: myRoads.length,
-            knightsPlayed: savedKnightsPlayed, longestRoad: savedLongestRoad, largestArmy: savedLargestArmy,
-            otherPlayers: rivals, gamePhasePlaying: true, robberHex: savedRobberHex,
-            turn: currentTurn,
+            knightsPlayed: _knightsPlayed, longestRoad: _longestRoad, largestArmy: _largestArmy,
+            otherPlayers: rivals, gamePhasePlaying: true, robberHex: _savedRobberHex,
+            turn: _currentTurn,
           }),
         })
         if (res.ok) { freshGeneticRec = await res.json(); setSavedGeneticRec(freshGeneticRec) }
       } catch { /* GeneticAgent opcional */ }
     }
 
-    // Build coachState: prefer explicit override, then derive from saved state
-    const baseCoachState = boardConfigured ? {
+    // Build coachState con valores frescos de los refs
+    const baseCoachState = _boardConfigured ? {
       boardSummary: buildBoardSummary(),
-      resources: savedResources,
+      resources: _savedResources,
       geneticRecommendation: freshGeneticRec,
-      ...(gameStarted ? {
-        turn: currentTurn,
-        devCards: savedDevCards,
+      ...(_gameStarted ? {
+        turn: _currentTurn,
+        devCards: _savedDevCards,
       } : {}),
     } : undefined
-    const activeCoachState = coachMode
+    const activeCoachState = _coachMode
       ? (coachStateOverride ?? baseCoachState)
       : undefined
 
@@ -713,7 +761,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           history: session.messages.slice(-10),
           userLevel: updatedLevel,
           seenConcepts,
-          mode: coachMode ? 'coach' : 'aprende',
+          mode: _coachMode ? 'coach' : 'aprende',
           ...(activeCoachState ? { coachState: activeCoachState } : {}),
         }),
       })
