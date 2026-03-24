@@ -35,6 +35,7 @@ export interface CoachRecommendInput {
   numPlayers?: number
   gamePhasePlaying?: boolean
   robberHex?: number                  // hex index 0-18, 9=desert default
+  ports?: string[]                    // PortType[] the player has access to
 }
 
 function translateRoads(roads: string[]) {
@@ -81,11 +82,31 @@ export async function POST(req: NextRequest) {
       ]),
     ]
 
+    // Build ports payload from player's owned ports
+    const PORT_VERTEX_IDS_MAP: Record<string, [number, number][]> = {
+      mineral: [], clay: [], cereal: [], wool: [], wood: [], '3:1': [],
+    }
+    // Import PORT_DEFS + PORT_VERTEX_IDS from boardGeometry
+    const { PORT_DEFS: portDefs, PORT_VERTEX_IDS: portVids } = await import('@/src/lib/boardGeometry')
+    const portsPayload = (body.ports ?? []).flatMap(portType => {
+      return portDefs
+        .map((def, i) => ({ def, vid: portVids[i] }))
+        .filter(({ def }) => def.type === portType)
+        .map(({ def, vid }) => ({
+          port_type: def.type === '3:1' ? '3:1'
+            : def.type === 'mineral' ? 'ore'
+            : def.type === 'wool' ? 'sheep'
+            : def.type === 'cereal' ? 'wheat'
+            : def.type,   // wood, clay keep as-is
+          vertices: vid,
+        }))
+    })
+
     const payload = {
       board_state: {
         hexes:      STANDARD_HEXES_PAYLOAD,
         vertices:   buildVerticesPayload(allVertexIds),
-        ports:      [],
+        ports:      portsPayload,
         robber_hex: body.robberHex ?? 9,
       },
       player: {
