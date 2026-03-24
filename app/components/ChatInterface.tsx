@@ -495,9 +495,11 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         devCards: _savedDevCards,
       } : {}),
     } : undefined
-    // Si hay override explícito, usarlo siempre (independiente del modo)
+    // Si hay override explícito, usarlo siempre.
+    // Si no hay override pero el tablero está configurado, SIEMPRE enviar coachState
+    // (independientemente de _coachMode, que puede estar stale/false por closures)
     const activeCoachState = coachStateOverride
-      ?? (_coachMode ? baseCoachState : undefined)
+      ?? (_boardConfigured ? baseCoachState : undefined)
 
     let fullResponse = ''
     let suggestions: string[] = []
@@ -513,8 +515,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           history: session.messages.slice(-10),
           userLevel: updatedLevel,
           seenConcepts,
-          // Si hay coachStateOverride explícito, siempre usar mode coach
-          mode: (_coachMode || !!coachStateOverride) ? 'coach' : 'aprende',
+          // Si hay tablero configurado o override explícito → siempre mode coach
+          mode: (_boardConfigured || !!coachStateOverride) ? 'coach' : 'aprende',
           ...(activeCoachState ? { coachState: activeCoachState } : {}),
         }),
       })
@@ -751,6 +753,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 setSavedMyColor(myColor)
                 setSavedAssignments(assignments)
                 setSavedRobberHex(robberHex)
+                setCoachMode(true)  // asegurar que coachMode refleje realidad
                 // Guardar en ref para que el ResourceStepper use datos frescos (no el estado asíncrono)
                 pendingBoardRef.current = { pieces, myColor, assignments, robberHex }
                 const isUpdate = boardConfigured
