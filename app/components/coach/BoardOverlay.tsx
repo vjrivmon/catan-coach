@@ -257,14 +257,30 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
     setTimeout(() => setWarning(null), 2500)
   }, [])
 
-  // Auto-switch a camino cuando el jugador seleccionado llega a MAX_SETTLEMENTS
+  // Auto-switch lógico al colocar piezas:
+  // 1. Si el jugador tiene 2 poblados pero le faltan caminos → cambiar a camino
+  // 2. Si el jugador está completo (2 poblados + 4 caminos) → pasar al siguiente incompleto
   useEffect(() => {
-    if (selPiece !== 'settlement') return
-    const { settlements } = countByPlayer(pieces, selColor)
-    if (settlements >= MAX_SETTLEMENTS) {
+    if (!colorsConfirmed) return
+    const { settlements, roads } = countByPlayer(pieces, selColor)
+    const isComplete = settlements >= MAX_SETTLEMENTS && roads >= MAX_ROADS
+
+    if (isComplete) {
+      // Buscar el siguiente jugador que aún no esté completo
+      const nextIncomplete = assignments.find(color => {
+        const { settlements: s, roads: r } = countByPlayer(pieces, color)
+        return s < MAX_SETTLEMENTS || r < MAX_ROADS
+      })
+      if (nextIncomplete) {
+        setSelColor(nextIncomplete)
+        const { settlements: ns } = countByPlayer(pieces, nextIncomplete)
+        setSelPiece(ns >= MAX_SETTLEMENTS ? 'road' : 'settlement')
+      }
+    } else if (selPiece === 'settlement' && settlements >= MAX_SETTLEMENTS) {
+      // Tiene los 2 poblados pero le faltan caminos → cambiar a camino
       setSelPiece('road')
     }
-  }, [pieces, selColor, selPiece])
+  }, [pieces, selColor, selPiece, assignments, colorsConfirmed])
 
   const toggleVertex = useCallback((id: number) => {
     if (selPiece === 'road') return
