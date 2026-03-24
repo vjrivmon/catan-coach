@@ -103,12 +103,50 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedAssignments, setSavedAssignments] = useState<string[]>([])
   const [savedResources, setSavedResources]     = useState<Record<string,number> | null>(null)
   const [savedRobberHex, setSavedRobberHex]     = useState<number>(9)  // 9 = desert default
+  const [savedPorts, setSavedPorts]             = useState<string[]>([])  // Fase C — puertos del jugador
+  const [openBoardInRobberMode, setOpenBoardInRobberMode] = useState(false)  // auto-robber tras dado 7
   const [savedGeneticRec, setSavedGeneticRec]   = useState<null | {
     action: string; actionEs: string; score: number; reason: string; alternatives: unknown[]
     positionContext?: { mySettlements: string[]; myRoads: string[]; frontier: string[] }
   }>(null)
   // Ref para recursos recién confirmados (evita interceptor falso por closure asíncrono)
   const confirmedResourcesRef = useRef<Record<string,number> | null>(null)
+
+  // ── longestRoadLength — DFS para calcular el camino más largo ────────────
+  // roads: strings "A_B" donde A y B son vertex IDs
+  function longestRoadLength(roads: string[]): number {
+    if (roads.length === 0) return 0
+    // Build adjacency map: vertexId → list of {neighbor, edgeId}
+    const adj = new Map<number, { neighbor: number; edge: string }[]>()
+    for (const road of roads) {
+      const clean = road.replace(/^e/, '')
+      const parts = clean.split('_').map(Number)
+      if (parts.length !== 2) continue
+      const [a, b] = parts
+      if (!adj.has(a)) adj.set(a, [])
+      if (!adj.has(b)) adj.set(b, [])
+      adj.get(a)!.push({ neighbor: b, edge: clean })
+      adj.get(b)!.push({ neighbor: a, edge: clean })
+    }
+    let maxLen = 0
+    // DFS from each vertex, tracking visited edges (not vertices) to allow revisiting vertices
+    function dfs(current: number, visitedEdges: Set<string>, length: number) {
+      if (length > maxLen) maxLen = length
+      const neighbors = adj.get(current) ?? []
+      for (const { neighbor, edge } of neighbors) {
+        const edgeKey = edge
+        if (!visitedEdges.has(edgeKey)) {
+          visitedEdges.add(edgeKey)
+          dfs(neighbor, visitedEdges, length + 1)
+          visitedEdges.delete(edgeKey)
+        }
+      }
+    }
+    for (const v of adj.keys()) {
+      dfs(v, new Set<string>(), 0)
+    }
+    return maxLen
+  }
 
   // ── Helper: construye el payload para /api/coach-recommend desde refs ────
   // Siempre usa los refs (valores actuales) — nunca el closure de los callbacks
@@ -140,14 +178,17 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     const vpBase  = settlements.length + cities.length * 2
     const vpBonus = (longestRoad ? 2 : 0) + (largestArmy ? 2 : 0)
 
+    const ports = savedPortsRef.current
+
     return {
       resources, settlements, cities, roads,
       vp: vpBase + vpBonus,
-      roadLength: roads.length,
+      roadLength: longestRoadLength(roads),
       knightsPlayed, longestRoad, largestArmy,
       otherPlayers: rivals,
       gamePhasePlaying: true,
       robberHex, turn,
+      ports,
       devCards,
       numPlayers: assignments.length || 4,  // fix: pasar nº real de jugadores al GeneticAgent
     }
@@ -159,6 +200,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     myColor: string
     assignments: string[]
     robberHex: number
+    ports: string[]
   } | null>(null)
 
   // Fase A — rival state for GeneticAgent
@@ -175,6 +217,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const savedMyColorRef       = useRef('red')
   const savedAssignmentsRef   = useRef<string[]>([])
   const savedRobberHexRef     = useRef(9)
+  const savedPortsRef         = useRef<string[]>([])
   const savedDevCardsRef      = useRef<Record<string,number> | null>(null)
   const gameStartedRef        = useRef(false)
   const currentTurnRef        = useRef(1)
@@ -195,6 +238,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   savedMyColorRef.current       = savedMyColor
   savedAssignmentsRef.current   = savedAssignments
   savedRobberHexRef.current     = savedRobberHex
+  savedPortsRef.current         = savedPorts
   savedDevCardsRef.current      = savedDevCards
   gameStartedRef.current        = gameStarted
   currentTurnRef.current        = currentTurn
@@ -213,6 +257,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       savedAssignmentsRef.current,
       savedResourcesRef.current,
       savedRobberHexRef.current,
+      savedPortsRef.current,
     )
   , [])
   const [isLoading, setIsLoading]         = useState(false)
@@ -297,6 +342,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     resources:   savedResources,
     robberHex:   savedRobberHex,
     devCards:    savedDevCards,
+    ports:       savedPorts,
     gameStarted,
     currentTurn,
     coachMode,
@@ -317,6 +363,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSavedResources(bs.resources ?? null)
     setSavedRobberHex(bs.robberHex ?? 9)
     setSavedDevCards(bs.devCards ?? null)
+    setSavedPorts(bs.ports ?? [])
     setGameStarted(bs.gameStarted ?? false)
     setCurrentTurn(bs.currentTurn ?? 1)
     setCoachMode(bs.coachMode ?? false)
@@ -370,6 +417,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setSavedAssignments([])
     setSavedResources(null)
     setSavedRobberHex(9)
+    setSavedPorts([])
     setSavedGeneticRec(null)
     setSavedDevCards(null)
     setSavedKnightsPlayed(0)
@@ -737,6 +785,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               initialPieces={savedPieces}
               initialMyColor={savedMyColor}
               initialAssignments={savedAssignments}
+              initialPorts={savedPorts}
+              startInRobberMode={openBoardInRobberMode}
               gameStarted={gameStarted}
               previewRecommendation={pendingRecommendation ?? undefined}
               onConfirmRecommendation={pendingRecommendation ? () => {
@@ -762,6 +812,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               } : undefined}
               onClose={() => {
                 setShowBoard(false)
+                setOpenBoardInRobberMode(false)
                 // Si había recomendación pendiente (usuario descartó), mostrar recursos actuales
                 if (pendingRecommendation) {
                   const RES_LABELS: Record<string,string> = { wood:'Madera', clay:'Arcilla', cereal:'Trigo', wool:'Oveja', mineral:'Mineral' }
@@ -778,15 +829,17 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 }
                 setPendingRecommendation(null)
               }}
-              onConfirm={({ pieces, myColor, assignments, robberHex }) => {
+              onConfirm={({ pieces, myColor, assignments, robberHex, ports }) => {
                 setShowBoard(false)
+                setOpenBoardInRobberMode(false)
                 setSavedPieces(pieces)
                 setSavedMyColor(myColor)
                 setSavedAssignments(assignments)
                 setSavedRobberHex(robberHex)
+                setSavedPorts(ports ?? [])
                 setCoachMode(true)  // asegurar que coachMode refleje realidad
                 // Guardar en ref para que el ResourceStepper use datos frescos (no el estado asíncrono)
-                pendingBoardRef.current = { pieces, myColor, assignments, robberHex }
+                pendingBoardRef.current = { pieces, myColor, assignments, robberHex, ports: ports ?? [] }
                 const isUpdate = boardConfigured
                 const colorNames: Record<string,string> = { red:'Rojo', blue:'Azul', orange:'Naranja', white:'Blanco' }
 
@@ -850,7 +903,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   const convId = activeConvId || `conv-${Date.now()}`
                   const bs: ConvBoardState = {
                     pieces, myColor, assignments, resources: null, robberHex,
-                    devCards: null, gameStarted: false, currentTurn: 1,
+                    devCards: null, ports: ports ?? [], gameStarted: false, currentTurn: 1,
                     coachMode: true, hasSelectedMode: true,
                     longestRoad: false, largestArmy: false, knightsPlayed: 0,
                   }
@@ -997,7 +1050,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   // (evita el problema de closure asíncrono con savedPieces)
                   const boardData = pendingBoardRef.current
                   const freshBoardSummary = boardData
-                    ? geoBuildBoardSummary(boardData.pieces, boardData.myColor, boardData.assignments, counts, boardData.robberHex)
+                    ? geoBuildBoardSummary(boardData.pieces, boardData.myColor, boardData.assignments, counts, boardData.robberHex, boardData.ports)
                     : buildBoardSummary()
                   pendingBoardRef.current = null  // limpiar tras usar
 
@@ -1058,7 +1111,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   setSession(s => ({ ...s, messages: [...s.messages, diceMsg] }))
 
                   if (value === 7) {
-                    // Ladrón — mostrar instrucciones y pedir que mueva el ladrón
+                    // Ladrón — mostrar instrucciones, abrir tablero automáticamente en modo mover ladrón
                     const totalCards = savedResources
                       ? Object.values(savedResources).reduce((a, b) => a + b, 0)
                       : 0
@@ -1067,10 +1120,12 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                       : ''
                     const robberMsg: import('@/src/domain/entities').Message = {
                       id: `robber-${Date.now()}`, role: 'assistant',
-                      content: `Ha salido un 7.${discardNote} Mueve el ladrón: abre el tablero con el icono del hexágono y toca el hex donde quieres colocarlo.`,
+                      content: `Ha salido un 7.${discardNote} El tablero se ha abierto en modo "Mover ladrón" — toca el hex donde quieres colocarlo.`,
                       timestamp: Date.now(),
                     }
                     setSession(s => ({ ...s, messages: [...s.messages, robberMsg] }))
+                    setOpenBoardInRobberMode(true)
+                    setShowBoard(true)   // abrir tablero automáticamente
                     setCoachStep('waiting-dice')
                   } else {
                     // ── Cálculo automático de producción ─────────────────────
