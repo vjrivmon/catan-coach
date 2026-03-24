@@ -390,13 +390,13 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-stone-300 font-bold shrink-0">¿Hay J4?</span>
                   <button
-                    onClick={() => { setAssignments([...assignments, j4Color]); setColorsConfirmed(true) }}
+                    onClick={() => { setAssignments([...assignments, j4Color]); setColorsConfirmed(true); setSelPiece('settlement') }}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-stone-600 text-xs font-bold text-stone-300 hover:border-stone-400 transition-colors">
                     <div className="w-4 h-4 rounded-full" style={{ background: PLAYER_COLORS[j4Color] }} />
                     Sí (somos 4)
                   </button>
                   <button
-                    onClick={() => setColorsConfirmed(true)}
+                    onClick={() => { setColorsConfirmed(true); setSelPiece('settlement') }}
                     className="px-3 py-1.5 rounded-full border border-stone-600 text-xs text-stone-500 hover:text-stone-300 transition-colors">
                     No (somos 3)
                   </button>
@@ -430,7 +430,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                 </div>
                 {/* Escape only at J2 step — at J3 step, must pick color first */}
                 {step === 1 && (
-                  <button onClick={() => setColorsConfirmed(true)}
+                  <button onClick={() => { setColorsConfirmed(true); setSelPiece('settlement') }}
                     className="self-start text-xs text-stone-500 hover:text-stone-300 transition-colors underline underline-offset-2">
                     No hay J3 ni J4 (somos 2)
                   </button>
@@ -444,7 +444,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         <div data-tour="colors-done" className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex items-center gap-2 shrink-0 overflow-x-auto">
           <span className="text-stone-500 text-xs shrink-0">Jugador:</span>
           {assignments.map((c, i) => (
-            <button key={c} onClick={() => setSelColor(c)}
+            <button key={c} onClick={() => { setSelColor(c); setSelPiece('settlement') }}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold shrink-0 transition-all ${
                 selColor === c ? 'bg-current/10' : 'border-stone-600 text-stone-400'
               }`}
