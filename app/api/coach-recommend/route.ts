@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Translate edge ids "lo_hi" → [lo, hi] tuples
-    const roads = (body.roads ?? []).map(id => {
+    const roads = (body.roads ?? [] as string[]).map(id => {
       const parts = id.replace(/^e/, '').split('_').map(Number)
       return parts.length === 2 ? parts : [0, 1]
     })
@@ -90,8 +90,8 @@ export async function POST(req: NextRequest) {
       player: {
         color: 'red',
         resources,
-        settlements: body.settlements ?? [],
-        cities: body.cities ?? [],
+        settlements: Array.isArray(body.settlements) ? body.settlements : [],
+        cities:      Array.isArray(body.cities)      ? body.cities      : [],
         roads,
         dev_cards: {
           knight:         body.devCards?.knight        ?? 0,

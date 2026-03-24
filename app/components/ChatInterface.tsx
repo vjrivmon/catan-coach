@@ -9,6 +9,7 @@ import { BoardOverlay, type BoardConfirmPayload } from './coach/BoardOverlay'
 import { ResourceStepperBubble } from './coach/ResourceStepperBubble'
 import { DiceInputBubble } from './coach/DiceInputBubble'
 import { DevCardStepper } from './coach/DevCardStepper'
+import { ActionMenu, ActionChips, type GameAction } from './coach/ActionMenu'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
 import { VoiceInput } from './VoiceInput'
@@ -532,6 +533,41 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
     setIsLoading(false)
   }, [session, isLoading, activeConvId, persistToHistory])
 
+  // ── Handler para el menú de acciones contextuales ────────
+  const handleGameAction = useCallback((action: GameAction) => {
+    switch (action) {
+      case 'update-resources':
+        setCoachStep('waiting-resources')
+        break
+      case 'add-dev-cards': {
+        const msg: import('@/src/domain/entities').Message = {
+          id: `devcard-prompt-${Date.now()}`, role: 'assistant',
+          content: 'Indica tus cartas de desarrollo actuales.',
+          timestamp: Date.now(),
+        }
+        setSession(s => ({ ...s, messages: [...s.messages, msg] }))
+        setCoachStep('waiting-devCards')
+        break
+      }
+      case 'move-robber': {
+        const msg: import('@/src/domain/entities').Message = {
+          id: `robber-prompt-${Date.now()}`, role: 'assistant',
+          content: 'Abre el tablero (icono del hexágono en la esquina superior) y arrastra el ladrón al nuevo hex. Cuando confirmes, actualizaré el estado.',
+          timestamp: Date.now(),
+        }
+        setSession(s => ({ ...s, messages: [...s.messages, msg] }))
+        setShowBoard(true)
+        break
+      }
+      case 'update-board':
+        setShowBoard(true)
+        break
+      case 'next-turn':
+        setCoachStep('waiting-dice')
+        break
+    }
+  }, [])
+
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); sendMessage(input) }
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) }
@@ -908,13 +944,17 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               <div className="flex justify-start mb-3">
                 <button
                   onClick={() => {
+                    // Turno 0: nadie tiene cartas de desarrollo aún — ir directamente al dado
                     const startMsg: import('@/src/domain/entities').Message = {
                       id: `start-${Date.now()}`, role: 'assistant',
-                      content: '¿Cuántas cartas de desarrollo tienes? Indícalas para que pueda tenerte en cuenta en las recomendaciones.',
+                      content: 'Partida iniciada. Turno 1. ¿Cuál es el resultado del dado?',
                       timestamp: Date.now(),
                     }
                     setSession(s => ({ ...s, messages: [...s.messages, startMsg] }))
-                    setCoachStep('waiting-devCards')
+                    setSavedDevCards({ knight: 0, monopoly: 0, year_of_plenty: 0, road_building: 0, vp: 0 })
+                    setGameStarted(true)
+                    setCurrentTurn(1)
+                    setCoachStep('waiting-dice')
                   }}
                   className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
                 >
@@ -946,32 +986,55 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
           {/* Input area */}
           <div className="shrink-0 bg-stone-800 border-t border-stone-700 px-4 py-3">
-            <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-              <div className="flex items-center gap-2 bg-stone-700 rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-amber-600">
-                <textarea
-                  data-tour="chat-input"
-                  ref={inputRef}
-                  value={input}
-                  onChange={e => { setInput(e.target.value); autoResize() }}
-                  onKeyDown={handleKeyDown}
-                  placeholder={hasSelectedMode ? 'Pregunta sobre Catan...' : 'Elige una opción para empezar'}
-                  rows={1}
-                  disabled={isLoading || !hasSelectedMode}
-                  className="flex-1 bg-transparent text-stone-100 placeholder-stone-400 resize-none focus:outline-none disabled:opacity-50 text-sm leading-relaxed py-1 overflow-hidden"
-                />
-                <VoiceInput onTranscript={text => { setInput(prev => prev + text); setTimeout(autoResize, 0) }} disabled={isLoading || !hasSelectedMode} />
-                <button
-                  type="submit"
-                  disabled={isLoading || !input.trim() || !hasSelectedMode}
-                  className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg p-2 transition-colors shrink-0"
-                  aria-label="Enviar"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </button>
-              </div>
-            </form>
+            <div className="max-w-2xl mx-auto flex flex-col gap-2">
+              {/* Desktop: action chips encima del input (md+) */}
+              {hasSelectedMode && coachMode && (
+                <div className="hidden md:flex">
+                  <ActionChips
+                    gameStarted={gameStarted}
+                    boardConfigured={boardConfigured}
+                    onAction={handleGameAction}
+                  />
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div className="flex items-center gap-2 bg-stone-700 rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-amber-600">
+                  {/* Móvil: botón + a la izquierda (oculto en md+) */}
+                  {hasSelectedMode && coachMode && (
+                    <div className="md:hidden">
+                      <ActionMenu
+                        gameStarted={gameStarted}
+                        boardConfigured={boardConfigured}
+                        onAction={handleGameAction}
+                      />
+                    </div>
+                  )}
+                  <textarea
+                    data-tour="chat-input"
+                    ref={inputRef}
+                    value={input}
+                    onChange={e => { setInput(e.target.value); autoResize() }}
+                    onKeyDown={handleKeyDown}
+                    placeholder={hasSelectedMode ? 'Pregunta sobre Catan...' : 'Elige una opción para empezar'}
+                    rows={1}
+                    disabled={isLoading || !hasSelectedMode}
+                    className="flex-1 bg-transparent text-stone-100 placeholder-stone-400 resize-none focus:outline-none disabled:opacity-50 text-sm leading-relaxed py-1 overflow-hidden"
+                  />
+                  <VoiceInput onTranscript={text => { setInput(prev => prev + text); setTimeout(autoResize, 0) }} disabled={isLoading || !hasSelectedMode} />
+                  <button
+                    type="submit"
+                    disabled={isLoading || !input.trim() || !hasSelectedMode}
+                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg p-2 transition-colors shrink-0"
+                    aria-label="Enviar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
           </>}
 

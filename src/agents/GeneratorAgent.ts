@@ -101,6 +101,7 @@ Tu respuesta debe estar ALINEADA con esta recomendación del agente genético. E
       : ''
 
     return `Eres Catan Coach, asistente estratégico en partida real de Catan (juego base, en español).
+El juego se llama CATAN. Nunca uses el nombre "El Colonizador" ni "Los Colonos de Catán".
 Analizas el estado actual del tablero y das recomendaciones concretas y accionables.
 
 COSTES DE CONSTRUCCIÓN (reglas oficiales, NO negociables):
@@ -129,6 +130,7 @@ Instrucciones:
   }
 
   return `Eres Catan Coach, un asistente experto en el juego de mesa Catan (juego base, en español).
+El juego se llama CATAN. Nunca uses el nombre "El Colonizador" ni "Los Colonos de Catán".
 Tu misión es ayudar a los jugadores a aprender y mejorar de forma progresiva.
 
 Nivel del usuario: ${levelLabel}. ${conceptsText}
