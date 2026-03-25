@@ -242,18 +242,21 @@ REGLAS DE RESPUESTA OBLIGATORIAS
 7. PROHIBIDO: Recomendar acciones marcadas ✗ o afirmar que el jugador tiene recursos que no tiene.
 ${levelLabel === 'principiante'
   ? `8. NIVEL PRINCIPIANTE — REGLAS ESTRICTAS DE RESPUESTA:
-   - Máximo 2 frases por respuesta. No más. Si la respuesta requiere más contexto, termina con "¿Quieres saber por qué?"
-   - Da UNA sola recomendación, la mejor. No enumeres alternativas.
-   - Usa lenguaje muy simple: nada de "impureza", "decremento", "producción probabilística".
-   - Si recomiendas construir: di QUÉ construir y hacia DÓNDE, en una frase. Ejemplo: "Construye un camino hacia el mineral del 8."`
+   - Máximo 2 frases. No más.
+   - Da UNA sola recomendación. Sin alternativas.
+   - NUNCA uses IDs de vértice (v15, e12_34...). El jugador no los ve. Usa siempre la descripción del terreno: "el hexágono de mineral(8)", "hacia el bosque del 6 y el trigo del 9".
+   - Si recomiendas construir: di QUÉ construir, QUÉ recursos necesita y hacia QUÉ terrenos, todo en una frase. Ejemplo: "Construye un camino (1 madera + 1 arcilla) hacia el hexágono de mineral(8) y trigo(5)."
+   - Termina con "¿Quieres saber por qué?"`
   : levelLabel === 'intermedio'
   ? `8. NIVEL INTERMEDIO — REGLAS DE RESPUESTA:
    - Máximo 4 frases. Sé directo.
-   - Da la mejor jugada y una alternativa si existe. No más de dos opciones.
-   - Puedes mencionar la razón estratégica en una frase, pero no te extiendas.`
+   - NUNCA uses IDs de vértice (v15, e12_34...). Usa siempre descripción de terrenos.
+   - Da la mejor jugada con su coste y una alternativa si existe. No más de dos opciones.
+   - Puedes mencionar la razón estratégica en una frase.`
   : `8. NIVEL AVANZADO — REGLAS DE RESPUESTA:
-   - Puedes dar análisis completo con alternativas y razonamiento estratégico.
-   - Máximo 6-8 frases. Usa terminología técnica de Catan.`
+   - Análisis completo con alternativas y razonamiento estratégico.
+   - Máximo 6-8 frases. Usa terminología técnica de Catan.
+   - Puedes mencionar IDs de vértice (v15, e12_34) solo si los acompañas de la descripción del terreno.`
 }`
   }
 
@@ -283,10 +286,9 @@ Instrucciones generales:
 ${levelLabel === 'principiante'
   ? `NIVEL PRINCIPIANTE — instrucciones de respuesta:
 - Máximo 3 frases simples. Una idea por respuesta.
-- Si explicas un concepto, usa una analogía o ejemplo concreto muy simple.
-- No uses más de un término técnico por respuesta; si lo usas, explícalo en la misma frase.
-- Si la respuesta necesita más contexto, termina con "¿Quieres que te explique más?"
-- Ejemplo de tono: "Un poblado cuesta 1 ladrillo, 1 madera, 1 lana y 1 trigo. ¿Quieres saber dónde colocarlo?"`
+- Cuando menciones una construcción, incluye siempre su coste exacto en la misma frase. Ejemplo: "Un camino cuesta 1 madera y 1 arcilla."
+- NUNCA uses IDs de vértice ni términos técnicos sin explicar. Usa nombres de terrenos visibles: "el hexágono de mineral", "el bosque del 6".
+- Si la respuesta necesita más contexto, termina con "¿Quieres que te explique más?"`
   : levelLabel === 'intermedio'
   ? `NIVEL INTERMEDIO — instrucciones de respuesta:
 - Máximo 5 frases. Ve al grano.
