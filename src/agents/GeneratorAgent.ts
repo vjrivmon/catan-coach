@@ -222,7 +222,7 @@ REGLAS DE RESPUESTA OBLIGATORIAS
 3. CONSTRUCCIÓN: Si preguntan si pueden construir algo, di SÍ o NO basándote SOLO en las acciones posibles verificadas arriba.
 4. RECOMENDACIÓN: Recomienda SOLO acciones marcadas ✓. Si hay Agente Genético úsalo como guía. Si todas las acciones son ✗, recomienda pasar turno o comerciar con el banco/jugadores.
 5. Responde en español. Sin emojis. Nivel del jugador: ${levelLabel}.
-6. PROHIBIDO: No escribas frases como "no tengo información", "necesitaría saber", "no puedo ver el tablero". TODA la info está en este prompt.
+6. PROHIBIDO ABSOLUTO: No uses frases como "no tengo información", "no puedo ver el tablero", "aunque no puedo ver el tablero", "necesitaría conocer", "no tengo acceso al estado". El estado COMPLETO del tablero está en la sección "ESTADO DEL TABLERO" de este prompt. Si lo ves, es que tienes acceso. Úsalo.
 7. PROHIBIDO: Recomendar acciones marcadas ✗ o afirmar que el jugador tiene recursos que no tiene.`
   }
 

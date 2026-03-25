@@ -85,7 +85,7 @@ const PORT_DEFS: PortDef[] = [
 ]
 
 const PORT_LABEL: Record<PortType, string> = {
-  mineral: 'Min', clay: 'Arc', cereal: 'Tri', wool: 'Lan', wood: 'Mad', '3:1': '3:1',
+  mineral: '⛰️', clay: '🧱', cereal: '🌾', wool: '🐑', wood: '🌲', '3:1': '3:1',
 }
 
 /** Compute port geometry from hex/edge definition */
@@ -237,7 +237,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
 
     setPieces(p => {
       // Removing an existing own piece — always allowed
-      if (p[k]?.color === selColor && p[k]?.type === selPiece) {
+      if (p[k]?.color === selColor && (p[k]?.type === selPiece || (selPiece === 'settlement' && p[k]?.type === 'city'))) {
         const n = { ...p }
         delete n[k]
         return n
@@ -246,8 +246,8 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
       // Placing a new settlement — run rules
       const { settlements } = countByPlayer(p, selColor)
 
-      // Rule 1: max 2 settlements per player in initial phase
-      if (!p[k] && settlements >= MAX_SETTLEMENTS) {
+      // Rule 1: max 2 settlements per player in initial phase (skip in game)
+      if (!gameStarted && !p[k] && settlements >= MAX_SETTLEMENTS) {
         showWarning(`Máximo ${MAX_SETTLEMENTS} poblados por jugador en la colocación inicial`)
         return p
       }
@@ -288,9 +288,9 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         return n
       }
 
-      // Rule: max 4 roads per player in initial phase
+      // Rule: max 4 roads per player in initial phase (skip in game)
       const { roads } = countByPlayer(p, selColor)
-      if (roads >= MAX_ROADS) {
+      if (!gameStarted && roads >= MAX_ROADS) {
         showWarning(`Máximo ${MAX_ROADS} caminos por jugador en la colocación inicial`)
         return p
       }
@@ -347,14 +347,16 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
 
       {/* Botón X para cerrar — visible cuando ya hay tablero configurado y NO hay preview */}
       {colorsConfirmed && !previewRecommendation && (
-        <button
-          onClick={onClose}
-          aria-label="Cerrar tablero"
-          className="absolute top-3 right-3 z-50 w-8 h-8 flex items-center justify-center rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-300 hover:text-white transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center justify-end bg-stone-900/60 border-b border-stone-700 px-3 py-1.5 shrink-0">
+          <button
+            onClick={onClose}
+            aria-label="Cerrar tablero"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-300 hover:text-white transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       )}
 
       {/* Color assignment (sequential) or Player selector */}
@@ -442,16 +444,20 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
       {/* Piece selector + per-player status — only shown once colors confirmed */}
       {colorsConfirmed && (
         <div className="bg-stone-800 border-b border-stone-700 px-3 py-2 flex flex-col gap-2 shrink-0">
-          {/* Piece type buttons — cities hidden in initial phase */}
+          {/* Piece type buttons */}
           <div className="flex gap-2 items-center flex-wrap">
-            {(['settlement','road'] as const).map(p => {
+            {(['settlement','road','city'] as const).map(p => {
               const { settlements, roads } = countByPlayer(pieces, selColor)
-              const isDisabled = p === 'settlement'
-                ? settlements >= MAX_SETTLEMENTS
-                : roads >= MAX_ROADS
+              // En colocación inicial, limitar por MAX; en partida en curso, siempre habilitado
+              const isDisabled = gameStarted ? false : (
+                p === 'settlement' ? settlements >= MAX_SETTLEMENTS :
+                p === 'road'       ? roads >= MAX_ROADS :
+                true  // city siempre deshabilitada en fase inicial
+              )
+              if (p === 'city' && !gameStarted) return null  // ocultar ciudad en fase inicial
               return (
                 <button key={p}
-                  onClick={() => { if (!isDisabled) { setSelPiece(p); setMovingRobber(false) } }}
+                  onClick={() => { if (!isDisabled) { setSelPiece(p as 'settlement' | 'road'); setMovingRobber(false) } }}
                   disabled={isDisabled}
                   className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
                     isDisabled
@@ -461,8 +467,10 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                         : 'border-stone-600 text-stone-400 bg-stone-700'
                   }`}>
                   {p === 'settlement'
-                    ? `Pueblo ${settlements}/${MAX_SETTLEMENTS}`
-                    : `Camino ${roads}/${MAX_ROADS}`}
+                    ? (gameStarted ? 'Poblado' : `Pueblo ${settlements}/${MAX_SETTLEMENTS}`)
+                    : p === 'road'
+                    ? (gameStarted ? 'Camino' : `Camino ${roads}/${MAX_ROADS}`)
+                    : 'Ciudad'}
                 </button>
               )
             })}
@@ -474,9 +482,9 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                   className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
                     movingRobber
                       ? 'border-red-500 text-red-400 bg-red-500/10'
-                      : 'border-stone-600 text-stone-500 bg-stone-700'
+                      : 'border-amber-700/60 text-amber-400/80 bg-amber-900/20 hover:border-amber-600 hover:text-amber-300'
                   }`}>
-                  {movingRobber ? 'Cancelar' : 'Mover ladrón'}
+                  {movingRobber ? '✕ Cancelar' : '🦹 Mover ladrón'}
                 </button>
                 {movingRobber && (
                   <span className="text-red-400 text-xs">Toca un hex para mover el ladrón</span>
@@ -653,9 +661,8 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                   fill={owned ? 'rgba(120,80,0,0.92)' : 'rgba(15,23,42,0.88)'}
                   stroke={owned ? '#fbbf24' : 'rgba(251,191,36,0.5)'}
                   strokeWidth={owned ? 2 : 1}/>
-                {/* Label text (no emoji) */}
-                <text x={px - pw/2 + 8} y={py + 4} textAnchor="middle" fontSize={9}
-                  fill={owned ? '#fde68a' : '#d6d3d1'} fontWeight="bold"
+                {/* Label emoji + ratio */}
+                <text x={px - pw/2 + 11} y={py + 4} textAnchor="middle" fontSize={11}
                   style={{ userSelect: 'none' }}>{label}</text>
                 <text x={px + pw/2 - 10} y={py + 4} textAnchor="middle" fontSize={8}
                   fill={owned ? '#fbbf24' : '#a8a29e'}

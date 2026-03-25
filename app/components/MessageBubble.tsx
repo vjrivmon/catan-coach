@@ -49,11 +49,11 @@ export function MessageBubble({ message, isStreaming, onShowRecommendation }: Pr
         ) : (
           <div className="prose prose-sm prose-invert max-w-none
             prose-p:my-1 prose-p:leading-relaxed
-            prose-strong:text-amber-300 prose-strong:font-semibold
+            prose-strong:text-white prose-strong:font-semibold
             prose-ul:my-1 prose-ul:pl-4 prose-ul:space-y-0.5
             prose-ol:my-1 prose-ol:pl-4 prose-ol:space-y-0.5
             prose-li:my-0
-            prose-headings:text-amber-300 prose-headings:font-semibold prose-headings:my-2
+            prose-headings:text-stone-200 prose-headings:font-semibold prose-headings:my-2
           ">
             <ReactMarkdown>{message.content}</ReactMarkdown>
           </div>
