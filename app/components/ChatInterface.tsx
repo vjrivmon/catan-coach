@@ -747,13 +747,13 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         {/* Sidebar: panel lateral (split-screen) con backdrop en móvil, inline en desktop */}
         {sidebarOpen && (
           <>
-            {/* Backdrop — cubre el chat de fondo, click cierra */}
+            {/* Backdrop — cubre el chat de fondo, click cierra en móvil */}
             <div
               className="absolute inset-0 z-10 sm:hidden"
               onClick={() => setSidebarOpen(false)}
             />
-            {/* Panel */}
-            <div className="absolute left-0 top-0 bottom-0 z-20 w-72 sm:relative sm:inset-auto sm:z-auto sm:w-60 sm:shrink-0">
+            {/* Panel + drag handle */}
+            <div className="absolute left-0 top-0 bottom-0 z-20 w-72 sm:relative sm:inset-auto sm:z-auto sm:w-60 sm:shrink-0 flex">
               <Sidebar
                 conversations={history}
                 activeId={activeConvId}
@@ -761,6 +761,34 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 onNew={startNewConversation}
                 onClose={() => setSidebarOpen(false)}
               />
+              {/* Drag handle — borde derecho, solo en sm+, arrastra izquierda para colapsar */}
+              <div
+                className="hidden sm:flex w-1.5 cursor-col-resize shrink-0 items-center justify-center group select-none z-30"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  const startX = e.clientX
+                  const onMove = (ev: MouseEvent) => {
+                    // Si arrastra más de 60px hacia la izquierda → colapsar
+                    if (startX - ev.clientX > 60) {
+                      setSidebarOpen(false)
+                      cleanup()
+                    }
+                  }
+                  const cleanup = () => {
+                    window.removeEventListener('mousemove', onMove)
+                    window.removeEventListener('mouseup', cleanup)
+                    document.body.style.cursor = ''
+                    document.body.style.userSelect = ''
+                  }
+                  document.body.style.cursor = 'col-resize'
+                  document.body.style.userSelect = 'none'
+                  window.addEventListener('mousemove', onMove)
+                  window.addEventListener('mouseup', cleanup)
+                }}
+              >
+                {/* Indicador visual — línea naranja al hover */}
+                <div className="w-0.5 h-12 rounded-full bg-stone-700 group-hover:bg-amber-600 transition-colors" />
+              </div>
             </div>
           </>
         )}
