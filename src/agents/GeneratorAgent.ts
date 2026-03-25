@@ -164,16 +164,31 @@ ${gr.alternatives && gr.alternatives.length > 0
   ? `Alternativas: ${gr.alternatives.map((a: any) => `${toEs(a.action ?? a.actionEs)}(${(a.score as number).toFixed(2)})`).join(', ')}`
   : ''}
 ${positionBlock}
-REGLA OBLIGATORIA: Si recomiendas construir un camino o poblado, indica exactamente hacia qué terrenos expandirte usando los vértices de expansión listados arriba. No digas "expandirte hacia nuevas áreas" sin especificar cuáles.
+REGLA OBLIGATORIA: Si recomiendas construir un camino o poblado, indica exactamente hacia qué terrenos expandirte usando los vértices de expansión listados arriba. No digas "expandirte hacia nuevas áreas" sin especificar cuáles.`
+      : ''
 
-Cuando recomiendes colocar una pieza física en el tablero (camino, poblado o ciudad), AÑADE al final de tu respuesta este bloque exacto (sin modificar el formato):
-RECOMMENDATION_JSON:{"type":"road|settlement|city","position":"eX_Y o vN","label":"descripción breve del lugar"}
-Ejemplos:
+    // La instrucción RECOMMENDATION_JSON siempre presente en modo coach con tablero
+    // Usar IDs reales de la frontera si están disponibles
+    const frontierIds = pc?.frontier?.map(f => {
+      const match = f.match(/^(v\d+|e\d+_\d+)/)
+      return match ? match[1] : null
+    }).filter(Boolean) ?? []
+
+    const recommendationInstruction = `
+════════════════════════════════════════
+INSTRUCCIÓN DE RECOMENDACIÓN EN TABLERO
+════════════════════════════════════════
+Cuando recomiendes colocar una pieza física (camino, poblado o ciudad), AÑADE al final de tu respuesta este bloque EXACTO (última línea, sin espacios extra):
+RECOMMENDATION_JSON:{"type":"road|settlement|city","position":"eX_Y o vN","label":"descripción breve"}
+${frontierIds.length > 0
+  ? `IDs de posición válidos para esta partida: ${frontierIds.join(', ')}
+Usa SIEMPRE uno de estos IDs en el campo "position". No inventes IDs.`
+  : 'Usa el formato vN para vértices (poblado/ciudad) o eA_B para aristas (camino).'}
+Ejemplos válidos:
 RECOMMENDATION_JSON:{"type":"road","position":"e30_38","label":"hacia mineral(10)+arcilla(6)"}
 RECOMMENDATION_JSON:{"type":"settlement","position":"v42","label":"cereal(5)+lana(9)+madera(3)"}
 RECOMMENDATION_JSON:{"type":"city","position":"v10","label":"mineral(10)+trigo(12)"}
-Si NO recomiendas una pieza física concreta, NO incluyas el bloque.`
-      : ''
+Si NO recomiendas una pieza física concreta, NO incluyas el bloque RECOMMENDATION_JSON.`
 
     const vpSummary         = computeVP(coachState.boardSummary, coachState.devCards)
     const productionTable   = computeProductionTable(coachState.boardSummary)
@@ -214,6 +229,7 @@ ${computeActions(coachState.resources)}
 
 ⚠️ REGLA ABSOLUTA DE RECURSOS: Las marcadas con ✗ son IMPOSIBLES con los recursos actuales. NUNCA recomiendes una accion ✗. Si todas son ✗, recomienda pasar el turno o comerciar.
 ${geneticBlock}
+${recommendationInstruction}
 ════════════════════════════════════════
 REGLAS DE RESPUESTA OBLIGATORIAS
 ════════════════════════════════════════
