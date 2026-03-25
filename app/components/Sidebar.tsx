@@ -49,8 +49,25 @@ function timeLabel(ts: number): string {
 
 // Título limpio para mostrar en el historial
 function cleanTitle(conv: Conversation): string {
+  // Intentar sacar el primer mensaje de usuario real (no mensajes de sistema)
+  const SYSTEM_PREFIXES = [
+    /^Tablero (configurado|actualizado|listo)/i,
+    /^Recursos confirmados:/i,
+    /^Cartas:/i,
+    /^Sin cartas de desarrollo/i,
+    /^Dado:/i,
+    /^Jugada realizada:/i,
+    /^Partida iniciada/i,
+  ]
+  const firstRealUserMsg = conv.session.messages.find(m =>
+    m.role === 'user' && !SYSTEM_PREFIXES.some(p => p.test(m.content))
+  )
+  if (firstRealUserMsg) {
+    const t = firstRealUserMsg.content.trim()
+    return t.length > 40 ? t.slice(0, 40) + '…' : t
+  }
+  // Fallback: limpiar el título guardado
   const raw = conv.title
-  // Eliminar prefijos de sistema
   const cleaned = raw
     .replace(/^Tablero (configurado|actualizado|listo)[^—]*—\s*/i, '')
     .replace(/^Tablero (configurado|actualizado|listo)\s*/i, '')
@@ -79,18 +96,23 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onClose }: P
   const touchStartX = useRef<number | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
+  const touchStartY = useRef<number | null>(null)
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
   }, [])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null) return
+    if (touchStartX.current === null || touchStartY.current === null) return
     const deltaX = touchStartX.current - e.changedTouches[0].clientX
-    if (deltaX > 60) {
-      // Swipe izquierda suficiente → cerrar
+    const deltaY = Math.abs(touchStartY.current - e.changedTouches[0].clientY)
+    // Solo activar si el movimiento es más horizontal que vertical y suficientemente largo
+    if (deltaX > 50 && deltaX > deltaY * 1.5) {
       onClose()
     }
     touchStartX.current = null
+    touchStartY.current = null
   }, [onClose])
 
   const filtered = useMemo(() => {
@@ -118,7 +140,6 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onClose }: P
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className="flex flex-col h-full w-full sm:w-60 bg-stone-900 border-r border-stone-700/50 overflow-hidden"
-      style={{ touchAction: 'pan-y' }}
     >
       {/* Header — SIN botón X (el header principal ya lo tiene) */}
       <div className="px-3 pt-3 pb-2 border-b border-stone-700/50 shrink-0">
