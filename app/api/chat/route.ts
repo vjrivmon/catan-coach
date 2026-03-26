@@ -18,6 +18,39 @@ function isTurnsQuestion(msg: string): boolean {
   )
 }
 
+/** Detect if user claims to have resources they don't have according to coachState */
+function detectResourceContradiction(
+  msg: string,
+  resources: Record<string, number> | null | undefined
+): string | null {
+  if (!resources) return null
+  const lower = msg.toLowerCase()
+
+  // Patterns: "tengo X de mineral", "tengo X mineral", "con mis X mineral"
+  const claimPatterns = [
+    { re: /tengo (\d+) (?:de )?mineral/i, key: 'mineral' },
+    { re: /tengo (\d+) (?:de )?madera/i, key: 'wood' },
+    { re: /tengo (\d+) (?:de )?arcilla/i, key: 'clay' },
+    { re: /tengo (\d+) (?:de )?ladrillo/i, key: 'clay' },
+    { re: /tengo (\d+) (?:de )?trigo/i, key: 'cereal' },
+    { re: /tengo (\d+) (?:de )?cereal/i, key: 'cereal' },
+    { re: /tengo (\d+) (?:de )?lana/i, key: 'wool' },
+  ]
+
+  for (const { re, key } of claimPatterns) {
+    const match = lower.match(re)
+    if (match) {
+      const claimed = parseInt(match[1])
+      const actual = resources[key] ?? 0
+      if (claimed !== actual) {
+        const RES_ES: Record<string, string> = { mineral: 'Mineral', wood: 'Madera', clay: 'Arcilla', cereal: 'Trigo', wool: 'Lana' }
+        return `⚠️ CORRECCIÓN: El usuario dice tener ${claimed} de ${RES_ES[key]}, pero según el tablero actual tiene ${actual}. Corrige amablemente esta discrepancia en tu respuesta.`
+      }
+    }
+  }
+  return null
+}
+
 const router = new RouterAgent()
 const ollamaAdapter = new OllamaAdapter()
 const chromaAdapter = new ChromaAdapter()
@@ -88,6 +121,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 2.6 Detect user claiming resources they don't have → inject correction
+    const resourceCorrection = activeCoachState?.resources
+      ? detectResourceContradiction(message, activeCoachState.resources)
+      : null
+
     // 3. Stream the response
     const stream = new ReadableStream({
       async start(controller) {
@@ -97,9 +135,12 @@ export async function POST(req: NextRequest) {
           let fullResponse = ''
 
           // Stream LLM tokens — buffer full response for post-processing
+          // Build final context with any pre-computed corrections
+          const finalContext = [resourceCorrection, turnsContext, context].filter(Boolean).join('\n')
+
           for await (const token of generator.generateStream(
             message,
-            turnsContext ? turnsContext + '\n' + context : context,
+            finalContext,
             cleanHistory,
             userLevel,
             seenConcepts,
