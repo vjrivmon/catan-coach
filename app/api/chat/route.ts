@@ -135,7 +135,13 @@ export async function POST(req: NextRequest) {
       : null
     debugLog.systemPrompt(`[BoardRecommendationBuilder] builderResult: ${JSON.stringify(builderResult)}`)
 
-    // 5. Stream the response
+    // 5. Detect if question asks for a recommendation (best move)
+    const isRecommendationQ = (() => {
+      const lower = message.toLowerCase()
+      return /mejor jugada|qué construir|qu[eé] deber[ií]a|qu[eé] hago|qu[eé] puedo hacer|mejor opci[oó]n|recomend/i.test(lower)
+    })()
+
+    // 6. Stream the response
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder()
@@ -143,9 +149,8 @@ export async function POST(req: NextRequest) {
         try {
           let fullResponse = ''
 
-          if (boardContext && builderResult) {
-            // ── COACH MODE: NarratorAgent with pre-computed data ──
-            // Add turns context and resource correction as extra context in the narration
+          if (boardContext && builderResult && isRecommendationQ) {
+            // ── COACH: pregunta de recomendación → narrar la jugada ──
             let extraContext = ''
             if (isTurnsQuestion(message) && activeCoachState?.boardSummary) {
               const estimate = computeTurnsEstimate(activeCoachState.boardSummary, activeCoachState.resources ?? null)
@@ -154,7 +159,6 @@ export async function POST(req: NextRequest) {
             const resourceCorrection = detectResourceContradiction(message, activeCoachState?.resources)
             if (resourceCorrection) extraContext += resourceCorrection + '\n'
 
-            // Augment builder result with extra context if needed
             const augmentedBuilder = extraContext
               ? { ...builderResult, reason: `${extraContext}${builderResult.reason}` }
               : builderResult
@@ -170,13 +174,20 @@ export async function POST(req: NextRequest) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
             }
           } else {
-            // ── APRENDE / RULES / STRATEGY MODE: NarratorAgent simple ──
+            // ── Pregunta libre (aprende, reglas, estrategia, o coach sin recomendación) ──
+            // Si estamos en coach mode, inyectar contexto del tablero como background
+            const boardBackground = boardContext
+              ? `Estado actual del tablero:\n${boardContext.resourceLine}\n${boardContext.vpSummary}\n${boardContext.productionTable}\nAcciones posibles: ${boardContext.actions}\n`
+              : ''
             const finalContext = [
               detectResourceContradiction(message, activeCoachState?.resources),
+              boardBackground,
               context,
             ].filter(Boolean).join('\n')
 
-            for await (const token of aprendeNarrator.narrateSimple(
+            // En coach mode usa el modelo rápido, en aprende el de calidad
+            const narrator = activeCoachState ? coachNarrator : aprendeNarrator
+            for await (const token of narrator.narrateSimple(
               message,
               finalContext,
               userLevel,
@@ -187,8 +198,8 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // Board recommendation comes from BoardRecommendationBuilder, NOT from LLM output
-          const finalRecommendation = builderResult?.boardRecommendation ?? null
+          // Board recommendation only for recommendation questions
+          const finalRecommendation = isRecommendationQ ? (builderResult?.boardRecommendation ?? null) : null
 
           // Send suggestions, metadata, and optional board recommendation
           controller.enqueue(
