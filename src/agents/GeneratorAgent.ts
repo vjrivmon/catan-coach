@@ -307,7 +307,7 @@ ${levelLabel === 'principiante'
 }`
 }
 
-function buildUserPrompt(message: string, context: string, history: Message[]): string {
+function buildUserPrompt(message: string, context: string, history: Message[], hasCoachState: boolean): string {
   const historyText = history.slice(-6).map(m =>
     `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${m.content}`
   ).join('\n')
@@ -315,6 +315,13 @@ function buildUserPrompt(message: string, context: string, history: Message[]): 
   let prompt = ''
   if (historyText) prompt += `Historial reciente:\n${historyText}\n\n`
   if (context) prompt += `Contexto relevante del reglamento/estrategia:\n${context}\n\n`
+
+  // When coach state is present, remind the model that all data is already in the system prompt
+  // so it doesn't ask for information it already has
+  if (hasCoachState) {
+    prompt += `[RECUERDA: El tablero, recursos, producción por dado y acciones posibles están en el system prompt. Responde directamente con datos concretos. No pidas información adicional.]\n\n`
+  }
+
   prompt += `Pregunta actual: ${message}`
 
   return prompt
@@ -369,7 +376,7 @@ export class GeneratorAgent {
     const systemPrompt = buildSystemPrompt(level, seenConcepts, coachState)
     debugLog.systemPrompt(systemPrompt)
     debugLog.llmStart(config.ollama.mainModel)
-    const userPrompt = buildUserPrompt(message, context, history)
+    const userPrompt = buildUserPrompt(message, context, history, !!coachState)
 
     const ollamaUrl = `${config.ollama.baseUrl}/api/generate`
     const body = JSON.stringify({
