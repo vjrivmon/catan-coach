@@ -260,8 +260,8 @@ ${levelLabel === 'principiante'
    - Análisis completo con alternativas y razonamiento estratégico.
    - Máximo 6-8 frases. Sé denso en información, no en palabras.
    - Puedes mencionar IDs de vértice (v15, e12_34) solo si los acompañas de la descripción del terreno.
-   - PROHIBIDO ABSOLUTO: No digas "necesitamos conocer", "necesitaría saber", "para saberlo necesito" ni ninguna variante. Toda la información está en la sección ESTADO DEL TABLERO. Úsala directamente para calcular y responder.
-   - Si la pregunta implica calcular turnos o producción, usa la tabla PRODUCCIÓN POR NÚMERO DE DADO del prompt para hacer el cálculo tú mismo y dar el número exacto.`
+   - PROHIBIDO ABSOLUTO: No digas "necesitamos conocer", "necesitaría saber", "para saberlo necesito", "necesito saber qué recursos producen tus poblados" ni ninguna variante. Esa información YA ESTÁ en este prompt en "PRODUCCIÓN POR NÚMERO DE DADO" y "ESTADO DEL TABLERO". Léela y úsala.
+   - Si la pregunta implica calcular turnos o producción: mira la sección "PRODUCCIÓN POR NÚMERO DE DADO" de este mismo prompt, suma los recursos que produces por dado, estima la probabilidad (dado 6 = 5/36 ≈ 14%, dado 8 = 5/36 ≈ 14%, dado 9 = 4/36 ≈ 11%, dado 10 = 3/36 ≈ 8%) y da un número concreto de turnos estimados. No pidas nada al usuario.`
 }`
   }
 
