@@ -345,8 +345,8 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
   return (
     <div className="flex flex-col h-full bg-stone-900">
 
-      {/* Botón X para cerrar — visible cuando ya hay tablero configurado y NO hay preview */}
-      {colorsConfirmed && !previewRecommendation && (
+      {/* Botón X para cerrar — solo visible cuando la partida ya ha iniciado y NO hay preview */}
+      {gameStarted && !previewRecommendation && (
         <div className="flex items-center justify-end bg-stone-900/60 border-b border-stone-700 px-3 py-1.5 shrink-0">
           <button
             onClick={onClose}
