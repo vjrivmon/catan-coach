@@ -316,10 +316,16 @@ function buildUserPrompt(message: string, context: string, history: Message[], h
   if (historyText) prompt += `Historial reciente:\n${historyText}\n\n`
   if (context) prompt += `Contexto relevante del reglamento/estrategia:\n${context}\n\n`
 
-  // When coach state is present, remind the model that all data is already in the system prompt
-  // so it doesn't ask for information it already has
+  // When coach state is present, inject a grounding prefix so the model uses
+  // the data already computed in the system prompt instead of asking for it
   if (hasCoachState) {
-    prompt += `[RECUERDA: El tablero, recursos, producción por dado y acciones posibles están en el system prompt. Responde directamente con datos concretos. No pidas información adicional.]\n\n`
+    prompt += `[CONTEXTO YA DISPONIBLE EN EL SYSTEM PROMPT — úsalo para responder sin pedir nada más:
+- Tablero completo con posiciones, terrenos y números de dado
+- Recursos en mano del jugador
+- Tabla "PRODUCCIÓN POR NÚMERO DE DADO" con exactamente qué produce cada dado
+- Tabla "ACCIONES POSIBLES" con qué puede y no puede construir
+- PV actuales ya calculados
+Responde directamente usando esos datos. No escribas "necesito saber", "no tengo información" ni pidas nada al usuario.]\n\n`
   }
 
   prompt += `Pregunta actual: ${message}`
