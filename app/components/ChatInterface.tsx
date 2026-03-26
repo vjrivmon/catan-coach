@@ -717,7 +717,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           }}
           title={boardConfigured ? 'Ver tablero' : 'Opciones de partida'}
           data-tour="board-btn"
-          className="relative flex items-center justify-center w-9 h-9 rounded-xl shrink-0 bg-stone-900/60 border border-stone-700 hover:border-amber-600 transition-colors text-stone-400 hover:text-amber-400"
+          className="relative flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl shrink-0 bg-stone-900/60 border border-stone-700 hover:border-amber-600 transition-colors text-stone-400 hover:text-amber-400"
         >
           <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L21.196 7V17L12 22L2.804 17V7L12 2Z"
