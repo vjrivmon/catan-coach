@@ -97,6 +97,72 @@ function computeProductionTable(boardSummary: string): string {
   return lines.join('\n')
 }
 
+/**
+ * Pre-compute turn estimates for each buildable thing based on production table.
+ * Dice probabilities (out of 36): 2→1, 3→2, 4→3, 5→4, 6→5, 8→5, 9→4, 10→3, 11→2, 12→1
+ * Returns a string ready to inject into the system prompt so the LLM never has to ask.
+ */
+function computeTurnsEstimate(boardSummary: string, resources: Record<string, number> | null): string {
+  const DICE_PROB: Record<number, number> = { 2:1,3:2,4:3,5:4,6:5,8:5,9:4,10:3,11:2,12:1 }
+  const RESOURCE_MAP: Record<string, string> = {
+    arcilla:'clay', barro:'clay', ladrillo:'clay',
+    madera:'wood', bosque:'wood', leña:'wood',
+    trigo:'cereal', cereal:'cereal', grano:'cereal',
+    lana:'wool', pasto:'wool', oveja:'wool',
+    mineral:'mineral', roca:'mineral', piedra:'mineral',
+  }
+
+  const mySection = boardSummary.match(/TU COLOR[^]*?(?=\n[A-Z]|$)/)
+  if (!mySection) return ''
+
+  // Parse production: resource → prob/36 per turn
+  const prodProb: Record<string, number> = {}
+  const tokenRe = /(\w+)\((\d+)=\d+pts(?:,LADRÓN)?\)/g
+  let m
+  while ((m = tokenRe.exec(mySection[0])) !== null) {
+    const terrain = m[1].toLowerCase()
+    const num = parseInt(m[2])
+    if (num < 2 || num > 12 || num === 7) continue
+    const res = RESOURCE_MAP[terrain]
+    if (!res) continue
+    prodProb[res] = (prodProb[res] ?? 0) + (DICE_PROB[num] ?? 0)
+  }
+
+  if (Object.keys(prodProb).length === 0) return ''
+
+  const res = resources ?? {}
+  const have = (r: string) => res[r] ?? 0
+
+  // Turns to accumulate N of a resource = ceil(needed / (prob/36))
+  // Using expected value: E[turns to get N] ≈ N * 36 / prob (geometric distribution approximation)
+  function turnsFor(need: Record<string, number>): number {
+    let maxTurns = 0
+    for (const [r, needed] of Object.entries(need)) {
+      const curr = have(r)
+      const missing = Math.max(0, needed - curr)
+      if (missing === 0) continue
+      const prob = prodProb[r] ?? 0
+      if (prob === 0) return 999  // no production → essentially impossible
+      const turns = Math.ceil(missing * 36 / prob)
+      maxTurns = Math.max(maxTurns, turns)
+    }
+    return maxTurns
+  }
+
+  const turnsRoad       = turnsFor({ wood:1, clay:1 })
+  const turnsSettlement = turnsFor({ wood:1, clay:1, wool:1, cereal:1 })
+  const turnsCity       = turnsFor({ mineral:3, cereal:2 })
+  const turnsDevCard    = turnsFor({ mineral:1, wool:1, cereal:1 })
+
+  const fmt = (t: number) => t === 0 ? 'ahora mismo (tiene recursos)' : t === 999 ? 'imposible (no produce ese recurso)' : `~${t} turnos`
+
+  return `ESTIMACIÓN DE TURNOS (pre-calculado, úsalo directamente):
+  Camino:           ${fmt(turnsRoad)}
+  Poblado:          ${fmt(turnsSettlement)}
+  Ciudad:           ${fmt(turnsCity)}
+  Carta desarrollo: ${fmt(turnsDevCard)}`
+}
+
 function buildSystemPrompt(level: UserLevel, seenConcepts: string[] | undefined, coachState?: CoachState): string {
   const levelLabel = level === 'beginner' ? 'principiante' : level === 'intermediate' ? 'intermedio' : 'avanzado'
   const concepts = seenConcepts ?? []
@@ -192,6 +258,7 @@ Si NO recomiendas una pieza física concreta, NO incluyas el bloque RECOMMENDATI
 
     const vpSummary         = computeVP(coachState.boardSummary, coachState.devCards)
     const productionTable   = computeProductionTable(coachState.boardSummary)
+    const turnsEstimate     = computeTurnsEstimate(coachState.boardSummary, coachState.resources ?? null)
 
     return `Eres Catan Coach, asistente estratégico en partida real de Catan (juego base, en español).
 El juego se llama CATAN. Nunca uses el nombre "El Colonizador" ni "Los Colonos de Catán".
@@ -224,7 +291,7 @@ ${vpSummary}
 PRODUCCIÓN POR NÚMERO DE DADO (tus piezas):
 ${productionTable}
 
-ACCIONES POSIBLES con los recursos actuales (verificadas matematicamente — NO las ignores):
+${turnsEstimate ? turnsEstimate + '\n' : ''}ACCIONES POSIBLES con los recursos actuales (verificadas matematicamente — NO las ignores):
 ${computeActions(coachState.resources)}
 
 ⚠️ REGLA ABSOLUTA DE RECURSOS: Las marcadas con ✗ son IMPOSIBLES con los recursos actuales. NUNCA recomiendes una accion ✗. Si todas son ✗, recomienda pasar el turno o comerciar.
@@ -324,6 +391,17 @@ function buildUserPrompt(message: string, context: string, history: Message[], h
   prompt += `Pregunta actual: ${message}`
 
   return prompt
+}
+
+/**
+ * Strip non-Latin script tokens that occasionally appear as LLM artifacts
+ * (e.g. Thai, Korean, Chinese characters from gemma3 tokenizer bleed-through).
+ * Keeps Spanish punctuation, numbers, and common symbols.
+ */
+export function stripNonLatinArtifacts(text: string): string {
+  // Remove isolated non-Latin words (sequences of non-ASCII non-space chars not preceded by valid context)
+  // Keep: Latin + extended Latin + numbers + punctuation + common symbols
+  return text.replace(/[\u0E00-\u0E7F\uAC00-\uD7AF\u4E00-\u9FFF\u3040-\u30FF]+/g, '').replace(/\s{2,}/g, ' ').trim()
 }
 
 /** Extract RECOMMENDATION_JSON block from full LLM response, return cleaned text + parsed rec */

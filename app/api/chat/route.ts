@@ -3,7 +3,7 @@ import { debugLog } from '@/src/lib/debugLog'
 import { RouterAgent } from '@/src/agents/RouterAgent'
 import { RulesAgent } from '@/src/agents/RulesAgent'
 import { StrategyAgent } from '@/src/agents/StrategyAgent'
-import { GeneratorAgent, extractRecommendation } from '@/src/agents/GeneratorAgent'
+import { GeneratorAgent, extractRecommendation, stripNonLatinArtifacts } from '@/src/agents/GeneratorAgent'
 import { SuggestionAgent, type CoachState } from '@/src/agents/SuggestionAgent'
 import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
           }
 
           // Parse RECOMMENDATION_JSON from full response
-          const { cleanText, recommendation } = extractRecommendation(fullResponse)
+          const { cleanText, recommendation } = extractRecommendation(stripNonLatinArtifacts(fullResponse))
           // If we were mid-suppression, make sure the clean final text was sent
           // (edge case: marker arrived in last token — already handled above)
           void cleanText  // used only for recommendation extraction; client built from tokens
