@@ -1129,8 +1129,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
                   if (value === 7) {
                     // Ladrón — mostrar instrucciones, abrir tablero automáticamente en modo mover ladrón
-                    const totalCards = savedResources
-                      ? Object.values(savedResources).reduce((a, b) => a + b, 0)
+                    const currentRes = savedResourcesRef.current
+                    const totalCards = currentRes
+                      ? Object.values(currentRes).reduce((a, b) => a + b, 0)
                       : 0
                     const discardNote = totalCards > 7
                       ? ` Tienes ${totalCards} cartas — debes descartar ${Math.floor(totalCards / 2)}.`
@@ -1146,12 +1147,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                     setCoachStep('waiting-dice')
                   } else {
                     // ── Cálculo automático de producción ─────────────────────
+                    // Usar refs (no state) para evitar stale closures — misma
+                    // estrategia que buildBoardSummary y buildGeneticPayload
                     const diceResult = computeResourcesFromDice(
                       value,
-                      savedPieces,
-                      savedMyColor,
-                      savedRobberHex,
-                      savedResources as ResourceCounts | null,
+                      savedPiecesRef.current,
+                      savedMyColorRef.current,
+                      savedRobberHexRef.current,
+                      (savedResourcesRef.current ?? null) as ResourceCounts | null,
                     )
 
                     // Actualizar recursos automáticamente

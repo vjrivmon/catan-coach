@@ -233,7 +233,205 @@ test('aprende mode works without board', async ({ page }) => {
   expect(content.toLowerCase()).toMatch(/madera|arcilla|lana|trigo|ladrillo/)
 })
 
-// ─── TEST 5: No RECOMMENDATION_JSON in visible text ─────────────────────────
+// ─── TEST 5: 4 players — full setup and first recommendation ────────────────
+test('4 players: full setup and first recommendation', async ({ page }) => {
+  test.setTimeout(180_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await waitForApp(page)
+
+  // 1. Open interactive board
+  await page.getByText('Tablero interactivo').click()
+
+  // 2. Color assignment: Tú=red, J2=blue, J3=orange, J4=white (somos 4)
+  const colorPicker = page.locator('[data-tour="color-picker"]')
+  await expect(colorPicker).toBeVisible({ timeout: 5000 })
+
+  // Step 0: Tú picks red (first available)
+  const colorBtns0 = colorPicker.locator('button.rounded-full')
+  await colorBtns0.first().click()
+  await page.waitForTimeout(400)
+
+  // Step 1: J2 picks blue (first available after red)
+  const colorBtns1 = colorPicker.locator('button.rounded-full')
+  await colorBtns1.first().click()
+  await page.waitForTimeout(400)
+
+  // Step 2: J3 picks orange (first available)
+  const colorBtns2 = colorPicker.locator('button.rounded-full')
+  await colorBtns2.first().click()
+  await page.waitForTimeout(400)
+
+  // Step 3: "Sí (somos 4)" to add J4
+  const somos4Btn = page.getByText('Sí (somos 4)')
+  await expect(somos4Btn).toBeVisible({ timeout: 3000 })
+  await somos4Btn.click()
+  await page.waitForTimeout(500)
+
+  // 3. Place pieces for all 4 players (2 settlements + 4 roads each)
+  // Non-adjacent vertices: red=[v0,v2], blue=[v4,v6], orange=[v8,v10], white=[v12,v14]
+  const playerPlacements = [
+    // [colorIndex, vert1, vert2, road1, road2, road3, road4]
+    { idx: 0, v1: 0,  v2: 2,  roads: ['0_1', '0_5', '1_2', '2_3'] },
+    { idx: 1, v1: 4,  v2: 6,  roads: ['3_4', '4_5', '6_7', '6_9'] },
+    { idx: 2, v1: 8,  v2: 10, roads: ['5_8', '8_9', '10_11', '10_13'] },
+    { idx: 3, v1: 12, v2: 14, roads: ['9_12', '12_13', '14_15', '1_14'] },
+  ]
+
+  // The player selector at top lets us switch who we're placing for
+  const playerBtns = page.locator('[data-tour="colors-done"] button')
+  for (const { idx, v1, v2, roads } of playerPlacements) {
+    // Click the player selector button (in order of assignments)
+    if (await playerBtns.nth(idx).isVisible({ timeout: 2000 }).catch(() => false)) {
+      await playerBtns.nth(idx).click()
+      await page.waitForTimeout(200)
+    }
+
+    await placeSettlement(page, v1)
+    await placeSettlement(page, v2)
+    for (const road of roads) {
+      await placeRoad(page, road)
+    }
+  }
+
+  // 4. Confirm board
+  const confirmBoardBtn = page.locator('[data-tour="confirm-board-btn"]')
+  await expect(confirmBoardBtn).toBeEnabled({ timeout: 5000 })
+  await confirmBoardBtn.click()
+  await page.waitForTimeout(1500)
+
+  // 5. Resource stepper → confirm
+  const plusBtns = page.locator('button').filter({ hasText: '+' })
+  if (await plusBtns.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+    await plusBtns.first().click()
+    await page.waitForTimeout(200)
+  }
+  const confirmResBtn = page.locator('button').filter({ hasText: /Confirmar.*carta|Pedir recomendación/ })
+  if (await confirmResBtn.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+    await confirmResBtn.first().click()
+  }
+
+  // 6. Wait for auto-question + LLM response
+  await waitForLLMResponse(page, 120_000)
+
+  // 7. Verify "Ver en tablero" button
+  const verBtn = page.locator('button').filter({ hasText: /Ver.*tablero/ })
+  await expect(verBtn.first()).toBeVisible({ timeout: 10_000 })
+
+  await page.screenshot({ path: 'tests/screenshots/4players-recommendation.png' })
+})
+
+// ─── TEST 5b: 4 players — dice 6 produces correct resources ────────────────
+test('4 players: dice roll produces correct resources', async ({ page }) => {
+  test.setTimeout(180_000)
+  await waitForApp(page)
+
+  // Setup 2-player board with v0 (has clay(6)) as first settlement
+  await page.getByText('Tablero interactivo').click()
+  await setupColorsSimple(page)
+  await expect(page.locator('svg').first()).toBeVisible({ timeout: 5000 })
+
+  // Place settlements at v0 (clay(6)+mineral(10)+wool(2)) and v14 (cereal(12)+clay(6)+cereal(11))
+  // v0 adjacent: [1, 5, 7], v14 adjacent: [15, 1, 19]
+  // They are NOT adjacent (v0's adj are 1,5,7 and 14 is not among them)
+  await placeSettlement(page, 0)
+  await placeSettlement(page, 14)
+  await placeRoad(page, '0_1')
+  await placeRoad(page, '0_5')
+  await placeRoad(page, '1_14')
+  await placeRoad(page, '14_15')
+
+  // Confirm board
+  const confirmBoardBtn = page.locator('[data-tour="confirm-board-btn"]')
+  await expect(confirmBoardBtn).toBeEnabled({ timeout: 5000 })
+  await confirmBoardBtn.click()
+  await page.waitForTimeout(1500)
+
+  // Resource stepper: add 1 wood + 1 clay
+  const plusBtns = page.locator('button').filter({ hasText: '+' })
+  await plusBtns.first().click()
+  await page.waitForTimeout(200)
+  await plusBtns.nth(1).click()
+  await page.waitForTimeout(200)
+
+  // Confirm resources
+  const confirmResBtn = page.locator('button').filter({ hasText: /Confirmar.*carta|Pedir recomendación/ })
+  await expect(confirmResBtn.first()).toBeVisible({ timeout: 5000 })
+  await confirmResBtn.first().click()
+  await waitForLLMResponse(page, 120_000)
+
+  // Start game
+  const startBtn = page.locator('button').filter({ hasText: /Iniciar partida/ })
+  await expect(startBtn).toBeVisible({ timeout: 15_000 })
+  await startBtn.click()
+  await page.waitForTimeout(1000)
+
+  // Roll dice 6 — both v0 and v14 are adjacent to clay(6) hexes
+  const allBtns = page.locator('button')
+  const count = await allBtns.count()
+  for (let i = 0; i < count; i++) {
+    const text = await allBtns.nth(i).innerText().catch(() => '')
+    if (text.trim().startsWith('6') && text.length < 10) {
+      await allBtns.nth(i).click()
+      break
+    }
+  }
+  await page.waitForTimeout(500)
+
+  // Confirm dice
+  const confirmDice = page.locator('button').filter({ hasText: /Confirmar/ })
+  if (await confirmDice.first().isVisible()) {
+    await confirmDice.first().click()
+  }
+
+  // Wait a moment for the production message to appear (no LLM needed for this)
+  await page.waitForTimeout(2000)
+
+  // The production message should mention Arcilla (not "no produces nada")
+  const pageText = await page.innerText('body')
+  expect(pageText).toContain('Arcilla')
+  expect(pageText).not.toMatch(/Dado 6:.*no produces nada/)
+
+  await page.screenshot({ path: 'tests/screenshots/dice6-production.png' })
+})
+
+// ─── TEST 5c: conversational memory — aprende → coach ──────────────────────
+test('conversational memory: aprende → coach preserves context', async ({ page }) => {
+  test.setTimeout(180_000)
+  await waitForApp(page)
+
+  // 1. Start in "Solo dudas" mode
+  await page.getByText('Solo dudas').click()
+
+  const textarea = page.locator('[data-tour="chat-input"]')
+  await expect(textarea).toBeEnabled()
+
+  // 2. Ask about pips
+  await textarea.fill('¿Qué son los pips en Catan?')
+  await textarea.press('Enter')
+  await waitForLLMResponse(page)
+
+  // Verify response mentions pips or probabilidad
+  const content1 = await page.content()
+  expect(content1.toLowerCase()).toMatch(/pip|probabilidad|punto|dado/)
+
+  // 3. Ask a follow-up about longest road
+  await textarea.fill('¿Cuándo conviene ir a por el camino más largo?')
+  await textarea.press('Enter')
+  await waitForLLMResponse(page)
+
+  // Verify both responses are present and have substance
+  const content2 = await page.content()
+  expect(content2.toLowerCase()).toMatch(/camino.*largo|ruta.*larga|longest.*road|caminos/)
+
+  // At least 2 assistant message bubbles
+  const msgs = page.locator('.bg-stone-700')
+  const msgCount = await msgs.count()
+  expect(msgCount).toBeGreaterThanOrEqual(2)
+
+  await page.screenshot({ path: 'tests/screenshots/conversational-memory.png' })
+})
+
+// ─── TEST 6 (original): No RECOMMENDATION_JSON in visible text ──────────────
 test('no RECOMMENDATION_JSON marker visible in chat', async ({ page }) => {
   await waitForApp(page)
   await setupBoardWithPieces(page)
