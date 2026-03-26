@@ -99,7 +99,7 @@ export function VoiceInput({ onTranscript, disabled }: Props) {
           : state === 'transcribing' ? 'Transcribiendo...'
             : 'Hablar'
       }
-      className={`rounded-lg p-2 transition-colors shrink-0 ${
+      className={`rounded-lg p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors shrink-0 ${
         state === 'recording'
           ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
           : state === 'transcribing'

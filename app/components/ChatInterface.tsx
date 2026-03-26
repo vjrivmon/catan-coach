@@ -679,7 +679,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         {backHref ? (
           <Link
             href={backHref}
-            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-stone-700 transition-colors shrink-0"
+            className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-stone-700 transition-colors shrink-0"
             aria-label="Volver"
           >
             <svg className="w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -690,7 +690,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         <button
           onClick={() => setSidebarOpen(o => !o)}
           aria-label={sidebarOpen ? 'Cerrar historial' : 'Abrir historial'}
-          className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-stone-700 transition-colors shrink-0"
+          className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-stone-700 transition-colors shrink-0"
         >
           {sidebarOpen ? (
             <svg className="w-5 h-5 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1236,7 +1236,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
           </div>}
 
           {/* Input area */}
-          <div className="shrink-0 bg-stone-800 border-t border-stone-700 px-4 py-3">
+          <div className="shrink-0 bg-stone-800 border-t border-stone-700 px-4 py-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
             <div className="max-w-2xl mx-auto flex flex-col gap-2">
               {/* Desktop: action chips encima del input (md+) */}
               {hasSelectedMode && coachMode && (
@@ -1276,7 +1276,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                   <button
                     type="submit"
                     disabled={isLoading || !input.trim() || !hasSelectedMode}
-                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg p-2 transition-colors shrink-0"
+                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors shrink-0"
                     aria-label="Enviar"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

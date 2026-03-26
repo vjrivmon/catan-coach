@@ -351,7 +351,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
           <button
             onClick={onClose}
             aria-label="Cerrar tablero"
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-300 hover:text-white transition-colors">
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-300 hover:text-white transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -376,13 +376,13 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                   <span className="text-sm text-stone-300 font-bold shrink-0">¿Hay J4?</span>
                   <button
                     onClick={() => { setAssignments([...assignments, j4Color]); setColorsConfirmed(true); setSelPiece('settlement') }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-stone-600 text-xs font-bold text-stone-300 hover:border-stone-400 transition-colors">
+                    className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full border border-stone-600 text-sm font-bold text-stone-300 hover:border-stone-400 transition-colors">
                     <div className="w-4 h-4 rounded-full" style={{ background: PLAYER_COLORS[j4Color] }} />
                     Sí (somos 4)
                   </button>
                   <button
                     onClick={() => { setColorsConfirmed(true); setSelPiece('settlement') }}
-                    className="px-3 py-1.5 rounded-full border border-stone-600 text-xs text-stone-500 hover:text-stone-300 transition-colors">
+                    className="px-4 py-2.5 min-h-[44px] rounded-full border border-stone-600 text-sm text-stone-500 hover:text-stone-300 transition-colors">
                     No (somos 3)
                   </button>
                 </div>
@@ -407,7 +407,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                     {remaining.map(c => (
                       <button key={c}
                         onClick={() => pickColor(c)}
-                        className="w-10 h-10 rounded-full border-2 border-stone-600 hover:scale-110 active:scale-95 transition-transform"
+                        className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border-2 border-stone-600 hover:border-white hover:scale-110 active:scale-90 active:ring-2 active:ring-white active:ring-offset-2 active:ring-offset-stone-800 transition-all"
                         style={{ background: PLAYER_COLORS[c] }}
                       />
                     ))}
@@ -416,7 +416,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                 {/* Escape only at J2 step — at J3 step, must pick color first */}
                 {step === 1 && (
                   <button onClick={() => { setColorsConfirmed(true); setSelPiece('settlement') }}
-                    className="self-start text-xs text-stone-500 hover:text-stone-300 transition-colors underline underline-offset-2">
+                    className="self-start min-h-[44px] px-4 py-3 text-sm text-amber-400 hover:text-amber-300 transition-colors underline underline-offset-2">
                     No hay J3 ni J4 (somos 2)
                   </button>
                 )}
@@ -438,6 +438,43 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
               {PLAYER_LABELS[i]}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Setup guide — shown during color assignment */}
+      {!colorsConfirmed && (
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6" style={{ background: '#0f1f40' }}>
+          {/* Progress dots */}
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-amber-500" />
+            <div className="w-8 h-0.5 bg-stone-600" />
+            <div className="w-3 h-3 rounded-full border-2 border-stone-600" />
+            <div className="w-8 h-0.5 bg-stone-600" />
+            <div className="w-3 h-3 rounded-full border-2 border-stone-600" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-2xl font-bold text-amber-400">Elige los colores</h2>
+            <p className="text-stone-400 text-sm max-w-xs">
+              Asigna un color a cada jugador. Después colocarás pueblos y caminos en el tablero.
+            </p>
+          </div>
+          {/* Already assigned colors preview */}
+          {assignments.length > 0 && (
+            <div className="flex gap-3 items-center">
+              {assignments.map((c, i) => (
+                <div key={c} className="flex flex-col items-center gap-1">
+                  <div className="w-10 h-10 rounded-full ring-2 ring-white ring-offset-2 ring-offset-[#0f1f40]" style={{ background: PLAYER_COLORS[c] }} />
+                  <span className="text-xs text-stone-400">{i === 0 ? 'Tú' : `J${i + 1}`}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Steps preview */}
+          <div className="flex flex-col gap-1 text-xs text-stone-500">
+            <span>{assignments.length > 0 ? '✓' : '→'} Colores de jugadores</span>
+            <span>→ Colocar piezas en el tablero</span>
+            <span>→ Recibir recomendaciones</span>
+          </div>
         </div>
       )}
 

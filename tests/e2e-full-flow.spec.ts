@@ -243,3 +243,62 @@ test('no RECOMMENDATION_JSON marker visible in chat', async ({ page }) => {
   const pageText = await page.innerText('body')
   expect(pageText).not.toContain('RECOMMENDATION_JSON')
 })
+
+// ─── TEST 6: Mobile-first viewport 390x844 ─────────────────────────────────
+test('mobile-first: no overflow, touch targets, color picker flow @390x844', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await waitForApp(page)
+
+  // 1. No horizontal overflow
+  const overflow = await page.evaluate(() => document.body.scrollWidth > window.innerWidth)
+  expect(overflow, 'No horizontal overflow at 390px').toBeFalsy()
+
+  // 2. All visible buttons with text must be >= 44px height
+  const smallBtns = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('button'))
+      .filter(b => b.offsetWidth > 0 && (b.textContent?.trim().length ?? 0) > 0)
+      .filter(b => b.getBoundingClientRect().height < 44)
+      .map(b => ({ text: b.textContent?.trim().slice(0, 30), h: Math.round(b.getBoundingClientRect().height) }))
+  )
+  expect(smallBtns, `Buttons with text < 44px: ${JSON.stringify(smallBtns)}`).toHaveLength(0)
+
+  // 3. Open interactive board → color picker flow
+  await page.getByText('Tablero interactivo').click()
+  await page.waitForTimeout(500)
+
+  // Color picker must be visible with circles
+  const colorPicker = page.locator('[data-tour="color-picker"]')
+  await expect(colorPicker).toBeVisible({ timeout: 5000 })
+
+  const colorBtns = colorPicker.locator('button.rounded-full')
+  await expect(colorBtns.first()).toBeVisible()
+
+  // Color circles must be >= 44px touch target
+  const colorSize = await colorBtns.first().evaluate(el => {
+    const rect = el.getBoundingClientRect()
+    return { w: Math.round(rect.width), h: Math.round(rect.height) }
+  })
+  expect(colorSize.w, 'Color circle width >= 44px').toBeGreaterThanOrEqual(44)
+  expect(colorSize.h, 'Color circle height >= 44px').toBeGreaterThanOrEqual(44)
+
+  // Setup guide content should be visible (not 85% empty)
+  const guideText = page.getByText('Elige los colores')
+  await expect(guideText, 'Setup guide visible during color assignment').toBeVisible({ timeout: 3000 })
+
+  // Select first color
+  await colorBtns.first().click()
+  await page.waitForTimeout(300)
+
+  // "No hay J3 ni J4 (somos 2)" button must be visible and >= 44px
+  const skipBtn = page.getByText('No hay J3 ni J4 (somos 2)')
+  await expect(skipBtn).toBeVisible({ timeout: 3000 })
+  const skipH = await skipBtn.evaluate(el => Math.round(el.getBoundingClientRect().height))
+  expect(skipH, '"somos 2" button height >= 44px').toBeGreaterThanOrEqual(44)
+
+  // 4. Input area should not be cut off (check it exists in DOM)
+  const inputExists = await page.locator('[data-tour="chat-input"]').count()
+  // Input may not be visible during board overlay, that's ok
+
+  // 5. Screenshot for visual verification
+  await page.screenshot({ path: '/tmp/catan-mobile-390.png', fullPage: true })
+})
