@@ -248,13 +248,13 @@ Cuando recomiendes colocar una pieza física (camino, poblado o ciudad), AÑADE 
 RECOMMENDATION_JSON:{"type":"road|settlement|city","position":"eX_Y o vN","label":"descripción breve"}
 ${frontierIds.length > 0
   ? `IDs de posición válidos para esta partida: ${frontierIds.join(', ')}
-Usa SIEMPRE uno de estos IDs en el campo "position". No inventes IDs.`
-  : 'Usa el formato vN para vértices (poblado/ciudad) o eA_B para aristas (camino).'}
+Usa uno de estos IDs en el campo "position" si puedes. Si la posición recomendada no está en la lista, usa el formato vN o eA_B.`
+  : 'Usa el formato vN para vértices (poblado/ciudad) o eA_B para aristas (camino). Elige el ID que mejor describa la posición recomendada.'}
 Ejemplos válidos:
 RECOMMENDATION_JSON:{"type":"road","position":"e30_38","label":"hacia mineral(10)+arcilla(6)"}
 RECOMMENDATION_JSON:{"type":"settlement","position":"v42","label":"cereal(5)+lana(9)+madera(3)"}
 RECOMMENDATION_JSON:{"type":"city","position":"v10","label":"mineral(10)+trigo(12)"}
-Si NO recomiendas una pieza física concreta, NO incluyas el bloque RECOMMENDATION_JSON.`
+IMPORTANTE: Siempre que recomiendes construir un camino, poblado o ciudad, AÑADE el bloque RECOMMENDATION_JSON. No es opcional.`
 
     const vpSummary         = computeVP(coachState.boardSummary, coachState.devCards)
     const productionTable   = computeProductionTable(coachState.boardSummary)
@@ -310,12 +310,13 @@ REGLAS DE RESPUESTA OBLIGATORIAS
 8. PROHIBIDO ABSOLUTO: No menciones en ningún caso el "Agente Genético", "GeneticAgent", "agente", "algoritmo", "IA interna", "sistema de análisis" ni ninguna referencia a cómo se calcula la recomendación. Presenta siempre la recomendación como tuya, de forma natural y directa.
 ${levelLabel === 'principiante'
   ? `8. NIVEL PRINCIPIANTE — REGLAS ESTRICTAS DE RESPUESTA:
-   - Máximo 2 frases. No más.
+   - Máximo 3 frases. No más.
    - Da UNA sola recomendación. Sin alternativas.
    - NUNCA uses IDs de vértice (v15, e12_34...). Usa siempre descripción de terrenos: "el hexágono de mineral(8)", "hacia el bosque del 6 y el trigo del 9".
-   - Frase 1: di QUÉ construir, QUÉ recursos necesita y hacia QUÉ terrenos. Ejemplo: "Construye un camino (1 madera + 1 arcilla) hacia el hexágono de mineral(8) y trigo(5)."
-   - Frase 2: justifica brevemente por qué en lenguaje simple. Ejemplo: "Así te acercas a más recursos y podrás colocar un poblado ahí más adelante."
-   - NO termines con una pregunta abierta. La justificación va integrada en la respuesta.`
+   - Frase 1: di QUÉ construir y QUÉ recursos necesita. Ejemplo: "Construye un camino (1 madera + 1 arcilla)."
+   - Frase 2: di HACIA DÓNDE expandirte con terrenos concretos. Ejemplo: "Dirígete hacia el hexágono de mineral(8) y trigo(5)."
+   - Frase 3 (opcional): justifica brevemente con la regla relevante. Ejemplo: "Los hexágonos con números 6 y 8 producen con más frecuencia, por eso es la mejor ubicación."
+   - NO termines con una pregunta abierta.`
   : levelLabel === 'intermedio'
   ? `8. NIVEL INTERMEDIO — REGLAS DE RESPUESTA:
    - Máximo 4 frases. Sé directo.

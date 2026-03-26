@@ -1229,12 +1229,6 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               <div className="flex items-center gap-2 px-1 mb-1">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-stone-400 text-xs">Turno {currentTurn - 1} — Partida en curso</span>
-                <button
-                  onClick={() => setCoachStep('waiting-dice')}
-                  className="ml-auto text-xs text-amber-400 hover:text-amber-300 transition-colors"
-                >
-                  Siguiente turno →
-                </button>
               </div>
             )}
 
