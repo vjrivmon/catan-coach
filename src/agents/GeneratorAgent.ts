@@ -405,9 +405,16 @@ export function computeTurnsEstimatePublic(boardSummary: string, resources: Reco
  * Keeps Spanish punctuation, numbers, and common symbols.
  */
 export function stripNonLatinArtifacts(text: string): string {
-  // Remove isolated non-Latin words (sequences of non-ASCII non-space chars not preceded by valid context)
-  // Keep: Latin + extended Latin + numbers + punctuation + common symbols
-  return text.replace(/[\u0E00-\u0E7F\uAC00-\uD7AF\u4E00-\u9FFF\u3040-\u30FF]+/g, '').replace(/\s{2,}/g, ' ').trim()
+  let clean = text
+  // Remove non-Latin script artifacts (Thai, Korean, Chinese, Japanese)
+  clean = clean.replace(/[\u0E00-\u0E7F\uAC00-\uD7AF\u4E00-\u9FFF\u3040-\u30FF]+/g, '')
+  // Remove gemma3 special tokens like <unused3026>, <bos>, <eos>, etc.
+  clean = clean.replace(/<[a-z_]+\d*>/gi, '')
+  // Remove JSON code blocks the model sometimes emits (```json ... ```)
+  clean = clean.replace(/```(?:json)?[\s\S]*?```/g, '')
+  // Normalize multiple blank lines to single
+  clean = clean.replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '')
+  return clean.trim()
 }
 
 /** Extract RECOMMENDATION_JSON block from full LLM response, return cleaned text + parsed rec */
