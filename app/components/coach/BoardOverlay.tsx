@@ -686,6 +686,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
             ].join(' ')
             return (
               <g key={id}
+                data-edge-id={id}
                 onClick={() => toggleEdge(id)}
                 onTouchEnd={(e) => { e.preventDefault(); toggleEdge(id) }}
                 style={{ cursor: selPiece === 'road' ? 'pointer' : 'default', touchAction: 'none' }}>
@@ -717,6 +718,7 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
             const col = piece ? PLAYER_COLORS[piece.color] : undefined
             return (
               <g key={id}
+                data-vertex-id={id}
                 onClick={() => toggleVertex(id)}
                 onTouchEnd={(e) => { e.preventDefault(); toggleVertex(id) }}
                 style={{ cursor: isClickable ? 'pointer' : 'default', touchAction: 'none' }}>

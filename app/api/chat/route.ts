@@ -3,29 +3,19 @@ import { debugLog } from '@/src/lib/debugLog'
 import { RouterAgent } from '@/src/agents/RouterAgent'
 import { RulesAgent } from '@/src/agents/RulesAgent'
 import { StrategyAgent } from '@/src/agents/StrategyAgent'
-import { GeneratorAgent, extractRecommendation, stripNonLatinArtifacts, computeTurnsEstimatePublic } from '@/src/agents/GeneratorAgent'
 import { SuggestionAgent, type CoachState } from '@/src/agents/SuggestionAgent'
+import { computeBoardContext, computeTurnsEstimate } from '@/src/agents/BoardStateAgent'
+import { buildRecommendation, type GeneticResult } from '@/src/agents/BoardRecommendationBuilder'
+import { NarratorAgent } from '@/src/agents/NarratorAgent'
 import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
 import type { Message, UserLevel } from '@/src/domain/entities'
-
-/** Get relevant rule text for the genetic agent's recommended action */
-function getRuleContext(action: string): string {
-  const rules: Record<string, string> = {
-    build_road:       'REGLA — Camino: cuesta 1 Madera + 1 Arcilla. Los caminos conectan tus asentamientos y permiten expandirte. El jugador con el camino más largo (≥5 segmentos) gana 2 PV extra.',
-    build_settlement: 'REGLA — Poblado: cuesta 1 Madera + 1 Arcilla + 1 Lana + 1 Trigo. Debe colocarse en un vértice libre respetando la regla de distancia (mínimo 2 aristas de otro asentamiento). Vale 1 PV y produce 1 recurso por hexágono adyacente.',
-    build_city:       'REGLA — Ciudad: cuesta 3 Mineral + 2 Trigo. Reemplaza un poblado existente. Vale 2 PV y produce 2 recursos por hexágono adyacente en lugar de 1.',
-    buy_dev_card:     'REGLA — Carta de desarrollo: cuesta 1 Mineral + 1 Lana + 1 Trigo. Puede ser Caballero, Progreso (Monopolio/Año de la Abundancia/Caminos) o Punto de Victoria.',
-    pass:             'REGLA — Pasar turno: cuando no puedes construir ni comprar con los recursos actuales, es mejor guardar recursos para el siguiente turno.',
-  }
-  return rules[action] ?? ''
-}
 
 /** Detect if a message is asking about turn count / resource accumulation */
 function isTurnsQuestion(msg: string): boolean {
   const lower = msg.toLowerCase()
   return (
-    (lower.includes('turno') || lower.includes('turno') || lower.includes('cuánto tarda') || lower.includes('cuándo podré')) &&
+    (lower.includes('turno') || lower.includes('cuánto tarda') || lower.includes('cuándo podré')) &&
     (lower.includes('ciudad') || lower.includes('poblado') || lower.includes('camino') || lower.includes('carta') || lower.includes('acumul') || lower.includes('recurso'))
   )
 }
@@ -38,7 +28,6 @@ function detectResourceContradiction(
   if (!resources) return null
   const lower = msg.toLowerCase()
 
-  // Patterns: "tengo X de mineral", "tengo X mineral", "con mis X mineral"
   const claimPatterns = [
     { re: /tengo (\d+) (?:de )?mineral/i, key: 'mineral' },
     { re: /tengo (\d+) (?:de )?madera/i, key: 'wood' },
@@ -68,7 +57,7 @@ const ollamaAdapter = new OllamaAdapter()
 const chromaAdapter = new ChromaAdapter()
 const rulesAgent = new RulesAgent(chromaAdapter, ollamaAdapter)
 const strategyAgent = new StrategyAgent(chromaAdapter, ollamaAdapter)
-const generator = new GeneratorAgent(ollamaAdapter)
+const narrator = new NarratorAgent(ollamaAdapter)
 const suggestionAgent = new SuggestionAgent()
 
 export async function POST(req: NextRequest) {
@@ -89,9 +78,7 @@ export async function POST(req: NextRequest) {
     // Strict separation: aprende mode never gets coach state
     const activeCoachState = mode === 'coach' ? coachState : undefined
 
-    // Filtrar historial: eliminar mensajes de sistema (tablero/recursos) que no son
-    // conversación real, y truncar a los últimos 4 para evitar contaminación de
-    // respuestas genéricas previas al fix de /api/chat
+    // Filter history: remove system messages and truncate
     const SYSTEM_MSG_PATTERNS = [
       /^Tablero (configurado|actualizado|listo)/,
       /^Recursos confirmados:/,
@@ -101,7 +88,7 @@ export async function POST(req: NextRequest) {
     ]
     const cleanHistory = history
       .filter(m => !SYSTEM_MSG_PATTERNS.some(p => p.test(m.content)))
-      .slice(-4)  // solo últimos 4 mensajes reales
+      .slice(-4)
 
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: 'Mensaje vacío' }), { status: 400 })
@@ -120,25 +107,22 @@ export async function POST(req: NextRequest) {
       suggestionAgent.suggest(message, cleanHistory, userLevel, activeCoachState),
     ])
 
-    // 2.5 Short-circuit: if the question is about turns/production and we have coachState,
-    // prepend the pre-computed answer into context so the LLM just has to paraphrase it
-    let turnsContext = ''
-    if (activeCoachState?.boardSummary && isTurnsQuestion(message)) {
-      const estimate = computeTurnsEstimatePublic(
-        activeCoachState.boardSummary,
-        activeCoachState.resources ?? null
-      )
-      if (estimate) {
-        turnsContext = `RESPUESTA PRE-CALCULADA (usa estos números exactos, no los modifiques ni pidas más información):\n${estimate}\n`
-      }
-    }
+    // ================================================================
+    // NEW PIPELINE: BoardStateAgent → BoardRecommendationBuilder → NarratorAgent
+    // ================================================================
 
-    // 2.6 Detect user claiming resources they don't have → inject correction
-    const resourceCorrection = activeCoachState?.resources
-      ? detectResourceContradiction(message, activeCoachState.resources)
+    // 3. Compute board context (PURE CODE, 0 LLM)
+    const boardContext = computeBoardContext(activeCoachState)
+
+    // 4. Build recommendation from genetic result (PURE CODE, 0 LLM)
+    const geneticResult = activeCoachState?.geneticRecommendation as GeneticResult | null | undefined
+    debugLog.systemPrompt(`[BoardRecommendationBuilder] geneticResult: ${JSON.stringify(geneticResult)}`)
+    const builderResult = boardContext
+      ? buildRecommendation(geneticResult, boardContext)
       : null
+    debugLog.systemPrompt(`[BoardRecommendationBuilder] builderResult: ${JSON.stringify(builderResult)}`)
 
-    // 3. Stream the response
+    // 5. Stream the response
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder()
@@ -146,67 +130,52 @@ export async function POST(req: NextRequest) {
         try {
           let fullResponse = ''
 
-          // Stream LLM tokens — buffer full response for post-processing
-          // Build final context with any pre-computed corrections
-          const finalContext = [resourceCorrection, turnsContext, context].filter(Boolean).join('\n')
+          if (boardContext && builderResult) {
+            // ── COACH MODE: NarratorAgent with pre-computed data ──
+            // Add turns context and resource correction as extra context in the narration
+            let extraContext = ''
+            if (isTurnsQuestion(message) && activeCoachState?.boardSummary) {
+              const estimate = computeTurnsEstimate(activeCoachState.boardSummary, activeCoachState.resources ?? null)
+              if (estimate) extraContext += `RESPUESTA PRE-CALCULADA:\n${estimate}\n`
+            }
+            const resourceCorrection = detectResourceContradiction(message, activeCoachState?.resources)
+            if (resourceCorrection) extraContext += resourceCorrection + '\n'
 
-          for await (const token of generator.generateStream(
-            message,
-            finalContext,
-            cleanHistory,
-            userLevel,
-            seenConcepts,
-            activeCoachState
-          )) {
-            fullResponse += token
+            // Augment builder result with extra context if needed
+            const augmentedBuilder = extraContext
+              ? { ...builderResult, reason: `${extraContext}${builderResult.reason}` }
+              : builderResult
 
-            // Stream token to client only if it's not the RECOMMENDATION_JSON marker yet
-            // (suppress the marker line from being shown in the chat bubble)
-            const markerIdx = fullResponse.lastIndexOf('RECOMMENDATION_JSON:')
-            if (markerIdx === -1) {
-              // No marker yet — stream normally
+            for await (const token of narrator.narrateCoach(
+              message,
+              augmentedBuilder,
+              boardContext,
+              userLevel,
+              cleanHistory,
+            )) {
+              fullResponse += token
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
-            } else {
-              // Marker appeared — only stream text before it
-              const visibleSoFar = fullResponse.slice(0, markerIdx)
-              const prevVisible  = fullResponse.slice(0, markerIdx - token.length)
-              const newVisible   = visibleSoFar.slice(prevVisible.length)
-              if (newVisible) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token: newVisible })}\n\n`))
-              }
+            }
+          } else {
+            // ── APRENDE / RULES / STRATEGY MODE: NarratorAgent simple ──
+            const finalContext = [
+              detectResourceContradiction(message, activeCoachState?.resources),
+              context,
+            ].filter(Boolean).join('\n')
+
+            for await (const token of narrator.narrateSimple(
+              message,
+              finalContext,
+              userLevel,
+              cleanHistory,
+            )) {
+              fullResponse += token
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
             }
           }
 
-          // Parse RECOMMENDATION_JSON from full response
-          const { cleanText, recommendation } = extractRecommendation(stripNonLatinArtifacts(fullResponse))
-          void cleanText
-
-          // Fallback: if LLM didn't emit RECOMMENDATION_JSON but GeneticAgent recommended
-          // a physical build action, generate boardRecommendation from positionContext
-          let finalRecommendation = recommendation
-          if (!finalRecommendation && activeCoachState) {
-            const gr = (activeCoachState as any).geneticRecommendation
-            const pc = gr?.positionContext as { frontier?: string[] } | undefined
-            const action: string = gr?.action ?? ''
-            const BUILD_ACTIONS: Record<string, 'road' | 'settlement' | 'city'> = {
-              build_road: 'road',
-              build_settlement: 'settlement',
-              build_city: 'city',
-            }
-            const buildType = BUILD_ACTIONS[action]
-            if (buildType && pc?.frontier && pc.frontier.length > 0) {
-              // Pick best frontier position: first entry (GeneticAgent orders by score)
-              const firstFrontier = pc.frontier[0]
-              const posMatch = firstFrontier.match(/^(v\d+|e\d+_\d+)/)
-              if (posMatch) {
-                finalRecommendation = {
-                  type: buildType,
-                  position: posMatch[1],
-                  label: firstFrontier.replace(/^(v\d+|e\d+_\d+)\s*/, '').slice(0, 60),
-                }
-              }
-            }
-          }
+          // Board recommendation comes from BoardRecommendationBuilder, NOT from LLM output
+          const finalRecommendation = builderResult?.boardRecommendation ?? null
 
           // Send suggestions, metadata, and optional board recommendation
           controller.enqueue(
