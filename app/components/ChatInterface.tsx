@@ -1097,6 +1097,26 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               <DevCardStepper
                 onConfirm={(cards) => {
                   setCoachStep(null)
+
+                  // Descontar recursos por cartas compradas (comparar con estado anterior)
+                  if (gameStarted && savedDevCards) {
+                    const oldTotal = Object.values(savedDevCards).reduce((a,b) => a+b, 0)
+                    const newTotal = Object.values(cards).reduce((a,b) => a+b, 0)
+                    const purchased = Math.max(0, newTotal - oldTotal)
+                    if (purchased > 0) {
+                      // Coste por carta: 1 Mineral + 1 Lana + 1 Trigo
+                      setSavedResources(prev => {
+                        if (!prev) return prev
+                        return {
+                          ...prev,
+                          mineral: Math.max(0, (prev.mineral ?? 0) - purchased),
+                          wool:    Math.max(0, (prev.wool ?? 0) - purchased),
+                          cereal:  Math.max(0, (prev.cereal ?? 0) - purchased),
+                        }
+                      })
+                    }
+                  }
+
                   setSavedDevCards(cards)
                   const total = Object.values(cards).reduce((a,b) => a+b, 0)
                   const cardMsg: import('@/src/domain/entities').Message = {
@@ -1104,14 +1124,21 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                     content: total === 0 ? 'Sin cartas de desarrollo' : `Cartas: ${Object.entries(cards).filter(([,v])=>v>0).map(([k,v])=>`${k}×${v}`).join(', ')}`,
                     timestamp: Date.now(),
                   }
-                  const replyMsg: import('@/src/domain/entities').Message = {
-                    id: `dev-reply-${Date.now()}`, role: 'assistant',
-                    content: `Partida iniciada. Turno ${currentTurn}. ¿Cuál es el resultado del dado?`,
-                    timestamp: Date.now(),
+
+                  if (!gameStarted) {
+                    // Primera vez: iniciar partida
+                    const replyMsg: import('@/src/domain/entities').Message = {
+                      id: `dev-reply-${Date.now()}`, role: 'assistant',
+                      content: `Partida iniciada. Turno ${currentTurn}. ¿Cuál es el resultado del dado?`,
+                      timestamp: Date.now(),
+                    }
+                    setSession(s => ({ ...s, messages: [...s.messages, cardMsg, replyMsg] }))
+                    setGameStarted(true)
+                    setCoachStep('waiting-dice')
+                  } else {
+                    // Actualización mid-game
+                    setSession(s => ({ ...s, messages: [...s.messages, cardMsg] }))
                   }
-                  setSession(s => ({ ...s, messages: [...s.messages, cardMsg, replyMsg] }))
-                  setGameStarted(true)
-                  setCoachStep('waiting-dice')
                 }}
               />
             )}
