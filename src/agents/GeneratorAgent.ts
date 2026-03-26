@@ -120,10 +120,10 @@ function computeTurnsEstimate(boardSummary: string, resources: Record<string, nu
   const tokenRe = /(\w+)\((\d+)=\d+pts(?:,LADRÓN)?\)/g
   let m
   while ((m = tokenRe.exec(mySection[0])) !== null) {
-    const terrain = m[1].toLowerCase()
+    const terrain = m[1].toLowerCase()  // normalize to lowercase for map lookup
     const num = parseInt(m[2])
     if (num < 2 || num > 12 || num === 7) continue
-    const res = RESOURCE_MAP[terrain]
+    const res = RESOURCE_MAP[terrain] ?? RESOURCE_MAP[terrain.normalize('NFD').replace(/[\u0300-\u036f]/g, '')]
     if (!res) continue
     prodProb[res] = (prodProb[res] ?? 0) + (DICE_PROB[num] ?? 0)
   }
