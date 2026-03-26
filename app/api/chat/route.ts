@@ -3,11 +3,20 @@ import { debugLog } from '@/src/lib/debugLog'
 import { RouterAgent } from '@/src/agents/RouterAgent'
 import { RulesAgent } from '@/src/agents/RulesAgent'
 import { StrategyAgent } from '@/src/agents/StrategyAgent'
-import { GeneratorAgent, extractRecommendation, stripNonLatinArtifacts } from '@/src/agents/GeneratorAgent'
+import { GeneratorAgent, extractRecommendation, stripNonLatinArtifacts, computeTurnsEstimatePublic } from '@/src/agents/GeneratorAgent'
 import { SuggestionAgent, type CoachState } from '@/src/agents/SuggestionAgent'
 import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
 import type { Message, UserLevel } from '@/src/domain/entities'
+
+/** Detect if a message is asking about turn count / resource accumulation */
+function isTurnsQuestion(msg: string): boolean {
+  const lower = msg.toLowerCase()
+  return (
+    (lower.includes('turno') || lower.includes('turno') || lower.includes('cuánto tarda') || lower.includes('cuándo podré')) &&
+    (lower.includes('ciudad') || lower.includes('poblado') || lower.includes('camino') || lower.includes('carta') || lower.includes('acumul') || lower.includes('recurso'))
+  )
+}
 
 const router = new RouterAgent()
 const ollamaAdapter = new OllamaAdapter()
@@ -66,6 +75,19 @@ export async function POST(req: NextRequest) {
       suggestionAgent.suggest(message, cleanHistory, userLevel, activeCoachState),
     ])
 
+    // 2.5 Short-circuit: if the question is about turns/production and we have coachState,
+    // prepend the pre-computed answer into context so the LLM just has to paraphrase it
+    let turnsContext = ''
+    if (activeCoachState?.boardSummary && isTurnsQuestion(message)) {
+      const estimate = computeTurnsEstimatePublic(
+        activeCoachState.boardSummary,
+        activeCoachState.resources ?? null
+      )
+      if (estimate) {
+        turnsContext = `RESPUESTA PRE-CALCULADA (usa estos números exactos, no los modifiques ni pidas más información):\n${estimate}\n`
+      }
+    }
+
     // 3. Stream the response
     const stream = new ReadableStream({
       async start(controller) {
@@ -77,7 +99,7 @@ export async function POST(req: NextRequest) {
           // Stream LLM tokens — buffer full response for post-processing
           for await (const token of generator.generateStream(
             message,
-            context,
+            turnsContext ? turnsContext + '\n' + context : context,
             cleanHistory,
             userLevel,
             seenConcepts,

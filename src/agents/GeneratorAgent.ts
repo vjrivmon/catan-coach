@@ -393,6 +393,11 @@ function buildUserPrompt(message: string, context: string, history: Message[], h
   return prompt
 }
 
+/** Public export of computeTurnsEstimate for use in route.ts */
+export function computeTurnsEstimatePublic(boardSummary: string, resources: Record<string, number> | null): string {
+  return computeTurnsEstimate(boardSummary, resources)
+}
+
 /**
  * Strip non-Latin script tokens that occasionally appear as LLM artifacts
  * (e.g. Thai, Korean, Chinese characters from gemma3 tokenizer bleed-through).
