@@ -1,0 +1,1000 @@
+   97  clear
+   98  python3 Sim_RS.py 
+   99  sudo python3 Sim_RS.py 
+  100  clear
+  101  sudo systemctl stop apache2
+  102  apache2
+  103  clear
+  104  uname -a
+  105  clear
+  106  python3 Sim_RS.py 
+  107  python3 --version
+  108  python3 Sim_RS.py 
+  109  clear
+  110  ls
+  111  cd ireves-map/
+  112  python3.8 Sim_RS.py 
+  113  python3.8 -m venv venv
+  114  clear
+  115  python3.8 -m venv venv
+  116  sudo apt-get install python3-venv
+  117  clear
+  118  python3.8 -m venv venv
+  119  sudo apt-get install python3-venv
+  120  clear
+  121  python --version
+  122  python3 --version
+  123  python3 -m venv venv
+  124  sudo apt install python3-venv
+  125  pip3 install eel
+  126  python3 Sim_RS.py 
+  127  sudo python3 Sim_RS.py 
+  128  clear
+  129  apache2
+  130  apache
+  131  sudo python3 Sim_RS.py 
+  132  clear
+  133  netstat -tulpn | grep :80
+  134  sudo netstat -tulpn | grep :80
+  135  lsb_release -a
+  136  clear
+  137  sudo apt update
+  138  sudo apt upgrade
+  139  sudo apt install apache2
+  140  clear
+  141  sudo ufw app list
+  142  sudo ufw allow 'Apache'
+  143  sudo ufw status
+  144  sudo systemctl status apache2
+  145  clear
+  146  hostname -I
+  147  sudo systemctl stop apache2
+  148  sudo python3 Sim_RS.py 
+  149  clear
+  150  sudo apt install 
+  151  sudo apt install byobu
+  152  byobu
+  153  clear
+  154  ls
+  155  rm -r ireves-map/
+  156  sudo rm -r ireves-map/
+  157  clear
+  158  ls
+  159  git clone https://github.com/joancipria/ireves-map-server
+  160  clear
+  161  ls
+  162  cd ireves-map-server/
+  163  git pull
+  164  clear
+  165  python3.7 -m venv venv
+  166  sudo apt install python3.7
+  167  clear
+  168  sudo apt install python3.7
+  169  python3.7 -m venv venv
+  170  sudo apt-get install python3-venv
+  171  sudo apt-get install python3.7-venv
+  172  clear
+  173  byobu
+  174  netstat -an | grep :80
+  175  sudo ufw status
+  176  clear
+  177  netstat -an | grep :80
+  178  top
+  179  htop
+  180  sudo apt install htop
+  181  htop
+  182  clear
+  183  sudo ufw app list
+  184  sudo ufw status
+  185  clear
+  186  sudo ufw allow 80
+  187  sudo ufw app list
+  188  sudo ufw status
+  189  sudo ufw status verbose
+  190  clear
+  191  sudo python3 Sim_RS.py 
+  192  sudo nano
+  193  sudo python3 Sim_RS.py 
+  194  clear
+  195  nano Sim_RS.py 
+  196  touch test.py
+  197  nano test
+  198  nano test.py 
+  199  ls
+  200  ls frontend/
+  201  clear
+  202  nano test.py 
+  203  python2 test.py 
+  204  clear
+  205  nano test.py 
+  206  python2 test.py 
+  207  python3 test.py 
+  208  nano test.py 
+  209  python3 test.py 
+  210  sudo python3 test.py 
+  211  nano test.py 
+  212  cd
+  213  ls
+  214  cd ireves-map-server/
+  215  clear
+  216  python3.7 -m venv venv
+  217  . venv/bin/activate
+  218  sudo apt install rasterio
+  219  clear
+  220  pip install -r requirements.txt
+  221  pip install rasterio
+  222  python --version
+  223  clear
+  224  deactivate
+  225  sudo rm -r venv/
+  226  ls
+  227  python3.8 -m venv venv
+  228  sudo apt install python3.8-venv
+  229  clear
+  230  python3.8 -m venv venv
+  231  . venv/bin/activate
+  232  pip install -r requirements.txt
+  233  clear
+  234  deactivate
+  235  sudo rm -r venv/
+  236  python3.7 -m venv venv
+  237  . venv/bin/activate
+  238  python3.7 -m pip install cython
+  239  pip install -r requirements.txt
+  240  clear
+  241  pip --version
+  242  pip install -r requirements.txt
+  243  pip install rasterio
+  244  sudo apt install python3.7-dev
+  245  clear
+  246  pip install rasterio
+  247  clear
+  248  pip install rasterio
+  249  clear
+  250  pip install -r requirements.txt
+  251  clear
+  252  flask run
+  253  clear
+  254  ls
+  255  cd ireves-map-server/
+  256  git branch
+  257  git pull
+  258  clear
+  259  cd ..
+  260  ls
+  261  git pull https://github.com/joancipria/ireves-map
+  262  git pull https://github.com/joancipria/ireves-map.git
+  263  git clone https://github.com/joancipria/ireves-map.git
+  264  clear
+  265  cd ireves-map
+  266  clear
+  267  npm
+  268  cd
+  269  curl -sL https://deb.nodesource.com/setup_16.x | sudo bash -
+  270  sudo apt install curl
+  271  curl -sL https://deb.nodesource.com/setup_16.x | sudo bash -
+  272  sudo apt-get install -y nodejs
+  273  clear
+  274  cd ireves-map
+  275  npm install
+  276  clear
+  277  npm run build
+  278  clear
+  279  cd ireves-map-server/
+  280  byobu
+  281  cd ireves-map
+  282  uptime
+  283  git pull
+  284  clear
+  285  npm run build
+  286  ls dist/
+  287  cd /var/www/html/
+  288  ls
+  289  rm index.html 
+  290  sudo rm index.html 
+  291  cd ..
+  292  sudo chown gti html/
+  293  cd
+  294  cd ireves-map/dist/
+  295  ls
+  296  cp * /var/www/html/
+  297  cp -r * /var/www/html/
+  298  ls /var/www/html
+  299  cd ..
+  300  git clone
+  301  git pull
+  302  npm run build
+  303  cd dist/
+  304  cp -r * /var/www/html/
+  305  clear
+  306  byobu
+  307  git config --list
+  308  cd ..
+  309  git config --list
+  310  cd ireves-map-server/
+  311  git config --global user.name "Joan Ciprià"
+  312  git config --global user.email "joancipria@protonmail.com"
+  313  clear
+  314  byobu
+  315  byobu-enable
+  316  ls
+  317  clear
+  318  byobu
+  319  cd ..
+  320  cd ireves-map
+  321  clear
+  322  sudo netstat -tunlp
+  323  ls
+  324  clear
+  325  sudo ufw status verbose
+  326  git pull
+  327  clear
+  328  git pull
+  329  clear
+  330  npm run build
+  331  cp -r dist/* /var/www/html
+  332  ls ../ireves-map-server/
+  333  cat ../ireves-map-server/app.py 
+  334  clear
+  335  ls /home/gti/openrouteservice/docker/data/
+  336  docker container ls
+  337  sudo docker container ls
+  338  docker container restart 4c5446fd706b
+  339  sudo docker container restart 4c5446fd706b
+  340  sudo docker container stop 4c5446fd706b
+  341  ls /home/gti/openrouteservice/docker/data/
+  342  free
+  343  clear
+  344  ls
+  345  clear
+  346  cp -r dist/* /var/www/html
+  347  git pull
+  348  git branch
+  349  git checkout develop 
+  350  git pull
+  351  clear
+  352  npm run build
+  353  clear
+  354  npm run build
+  355  node --version
+  356  npm --version
+  357  npm update -g
+  358  sudo npm update -g
+  359  npm --version
+  360  clear
+  361  npm run build
+  362  npm install -g npm@8.5.3
+  363  sudo npm install -g npm@8.3.0
+  364  clear
+  365  npm --version
+  366  node --version
+  367  clear
+  368  git pull
+  369  clear
+  370  npm run build
+  371  npm install --save @/core/DataExport
+  372  clear
+  373  cd ..
+  374  ls
+  375  sudo rm -r ireves-map
+  376  git clone https://github.com/joancipria/ireves-map
+  377  cd ireves-map
+  378  git checkout develop
+  379  git pull
+  380  clear
+  381  npm install
+  382  clear
+  383  npm run build
+  384  git checkout master ter
+  385  git checkout master
+  386  clear
+  387  npm run build
+  388  clear
+  389  git checkout develop 
+  390  clear
+  391  npm run build
+  392  git pull
+  393  clear
+  394  npm run build
+  395  cp -r dist/* /var/www/html
+  396  cd /var/www/html/
+  397  sudo rm *
+  398  sudo rm -r *
+  399  cd 
+  400  cd ireves-map
+  401  cp -r dist/* /var/www/html
+  402  npm run build
+  403  clear
+  404  git pull
+  405  clear
+  406  cp -r dist/* /var/www/html
+  407  npm run build
+  408  clear
+  409  cp -r dist/* /var/www/html
+  410  git pull
+  411  npm run build
+  412  cp -r dist/* /var/www/html
+  413  htop
+  414  clear
+  415  id -nG
+  416  top
+  417  htop
+  418  clear
+  419  ls
+  420  docker run openrouteservice/openrouteservice
+  421  clear
+  422  ls
+  423  cd openrouteservice/doc
+  424  cd openrouteservice/docker/
+  425  ls
+  426  cd conf/
+  427  ls
+  428  nano ors-config.json 
+  429  clear
+  430  ls
+  431  curl "http://localhost:8080/ors/v2/health"
+  432  clear
+  433  cd
+  434  curl "http://localhost:8080/ors/v2/health"
+  435  ls
+  436  cd openrouteservice/
+  437  ls
+  438  htop
+  439  ls
+  440  cd docker/
+  441  ls
+  442  cd data/
+  443  ls
+  444  cd ..
+  445  free
+  446  clear
+  447  df -h
+  448  clear
+  449  cd
+  450  ls
+  451  rm docker-compose 
+  452  clear
+  453  ls
+  454  wget https://download.geofabrik.de/europe/spain-latest.osm.pbf
+  455  ls 
+  456  nano openrouteservice/docker/conf/ors-config.json 
+  457  clear
+  458  nano openrouteservice/docker/conf/ors-config.json 
+  459  ls openrouteservice/docker/data/
+  460  ls openrouteservice/docker/data/elevation_cache/
+  461  ls openrouteservice/docker/data/
+  462  ls
+  463  cp spain-latest.osm.pbf openrouteservice/docker/data/
+  464  rm spain-latest.osm.pbf 
+  465  ls openrouteservice/docker/data/
+  466  nano openrouteservice/docker/conf/ors-config.json 
+  467  sudo nano openrouteservice/docker/conf/ors-config.json 
+  468  clear
+  469  docker container ls
+  470  docker container restart container 3f03dff9363f
+  471  docker container restart 3f03dff9363f
+  472  docker container stop 3f03dff9363f
+  473  docker container start 3f03dff9363f
+  474  ls openrouteservice/docker/
+  475  docker container stop 3f03dff9363f
+  476  docker container start 3f03dff9363f
+  477  docker container stop 3f03dff9363f
+  478  docker system prune
+  479  clear
+  480  sudo rm -r openrouteservice/
+  481  ls
+  482  git clone https://github.com/GIScience/openrouteservice
+  483  cd openrouteservice/
+  484  ñs
+  485  ls
+  486  cd docker/
+  487  ls
+  488  cd data/
+  489  ls
+  490  cp /home/gti/spain-latest.osm.pbf /home/gti/openrouteservice/docker/data/
+  491  clear
+  492  cd ..
+  493  nano docker-compose.yml 
+  494  ls data/
+  495  nano docker-compose.yml 
+  496  ./data/spain-latest.osm.pbf
+  497  ls
+  498  cd ..
+  499  clear
+  500  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && sudo docker compose up
+  501  cd logs/ors/
+  502  ls
+  503  nano ors.log 
+  504  sudo nano ors.log 
+  505  cd 
+  506  ls
+  507  sudo rm -r openrouteservice
+  508  git clone https://github.com/GIScience/openrouteservice/
+  509  cd openrouteservice
+  510  cd docker/
+  511  cp /home/gti/spain-latest.osm.pbf /home/gti/openrouteservice/docker/data/
+  512  nano docker-compose.yml 
+  513  cd ..
+  514  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && sudo docker
+  515  cd
+  516  htop
+  517  clear
+  518  sudo docker container ls
+  519  clear
+  520  service --status-all | grep service_name
+  521  service --status-all | grep apache2
+  522  systemctl -l --type service --all | grep apache2
+  523  systemctl list-units --all --type=service --no-pager
+  524  clear
+  525  systemctl list-units --all --type=service --no-pager
+  526  ls
+  527  cd openrouteservice/
+  528  ls docker
+  529  ls docker/data/
+  530  nano docker/docker-compose.yml 
+  531  cd docker/
+  532  ls
+  533  nano docker-compose.yml 
+  534  clear
+  535  . venv/bin/activate
+  536  flask run
+  537  export FLASK_ENV=development
+  538  flask run
+  539  clear
+  540  flask run
+  541  nano app.py 
+  542  ls
+  543  clear
+  544  flask run --host=0.0.0.0
+  545  clear
+  546  git pull
+  547  clear
+  548  git pull
+  549  clear
+  550  git checkout develop
+  551  git pull
+  552  ls
+  553  cat app.py 
+  554  clear
+  555  . venv/bin/activate
+  556  flask run
+  557  flask run --host=0.0.0.0
+  558  clear
+  559  git branch 
+  560  flask run --host=0.0.0.0
+  561  curl --resquest http://localhost:8080/ors/v2/health
+  562  curl --resquest GET http://localhost:8080/ors/v2/health
+  563  curl --resquest GET --url http://localhost:8080/ors/v2/health
+  564  curl --request GET --url http://localhost:8080/ors/v2/health
+  565  curl --request GET --url http://localhost:8080/ors/v2/directions
+  566  curl --request GET --url http://localhost:8080/ors/v2/health
+  567  docker stop openrouteservice
+  568  sudo docker stop openrouteservice
+  569  ls
+  570  curl "http://localhost:8080/ors/v2/health"
+  571  curl "http://localhost:8080"
+  572  clear
+  573  docker ps
+  574  sudo docker ps
+  575  docker stop 6107763d6bc1
+  576  sudo docker stop 6107763d6bc1
+  577  git clone https://github.com/GIScience/openrouteservice
+  578  ls
+  579  cd openrouteservice/
+  580  cd docker && docker-compose up
+  581  sudo apt install docker-compose
+  582  clear
+  583  cd ..
+  584  clear
+  585  cd docker && docker-compose up
+  586  mkdir -p conf elevation_cache graphs logs/ors logs/tomcat
+  587  docker-compose up -d
+  588  clear
+  589  cd ..
+  590  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && docker-compose up
+  591  docker --version
+  592  clear
+  593  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && docker-compose up
+  594  cd ..
+  595  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && docker compose up
+  596  docker-compose --version
+  597  sudo apt remove docker-compose 
+  598  cd
+  599  sudo rm -r openrouteservice/
+  600  git clone https://github.com/GIScience/openrouteservice
+  601  clear
+  602  sudo curl -L https://github.com/docker/compose/releases/download/2.2.3/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+  603  ls
+  604  sudo chmod +x /usr/local/bin/docker-compose
+  605  docker-compose --version
+  606  sudo rm /usr/local/bin/docker-compose 
+  607  clear
+  608  sudo curl -L https://github.com/docker/compose/releases/download/2.2.3/docker-compose-`uname -s`-`uname -m` -o .
+  609  sudo curl -L https://github.com/docker/compose/releases/download/2.2.3/docker-compose-`uname -s`-`uname -m` -o /home/gti/
+  610  sudo curl -L https://github.com/docker/compose/releases/download/2.2.3/docker-compose-`uname -s`-`uname -m` -o /home/gti/docker-compose
+  611  ls
+  612  cp docker-compose /home/gti/.docker/cli-plugins
+  613  clear
+  614  mkdir -p ~/.docker/cli-plugins/
+  615  curl -SL https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+  616  chmod +x ~/.docker/cli-plugins/docker-compose
+  617  docker compose version
+  618  clear
+  619  docker-compose
+  620  clear
+  621  curl -fL https://raw.githubusercontent.com/docker/compose-switch/master/install_on_linux.sh | sh
+  622  sudo curl -fL https://raw.githubusercontent.com/docker/compose-switch/master/install_on_linux.sh | sh
+  623  clear
+  624  sudo  curl -fL https://github.com/docker/compose-switch/releases/download/v1.0.4/docker-compose-linux-amd64 -o /usr/local/bin/compose-switch
+  625  sudo chmod +x /usr/local/bin/compose-switch
+  626  clear
+  627  docker compose version
+  628  clear
+  629  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && docker compose up
+  630  cd openrouteservice/
+  631  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && docker compose up
+  632  sudo cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && docker compose up
+  633  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && sudo docker compose up
+  634  cd ..
+  635  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && sudo docker compose up
+  636  ls
+  637  sudo rm -r graphs/
+  638  ls
+  639  cd logs/
+  640  ls
+  641  cd ors/
+  642  ls
+  643  cat ors.log 
+  644  nano ors.log 
+  645  sudo nano ors.log 
+  646  cd ..
+  647  ls
+  648  sudo rm -r graphs/
+  649  sudo rm -r logs/
+  650  ls
+  651  cd logs/
+  652  ls
+  653  cd ors/
+  654  ls
+  655  sudo nano ors.log 
+  656  cd ..
+  657  cd
+  658  mv openrouteservice/docker/data/spain-latest.osm.pbf .
+  659  ls
+  660  clear
+  661  htop
+  662  clear
+  663  cd openrouteservice/docker/
+  664  ls
+  665  cd logs/
+  666  ls
+  667  cd ors/
+  668  sudo nano ors.log 
+  669  cd
+  670  ls
+  671  socker ls
+  672  docker ls
+  673  docker container ls 
+  674  sudo docker container ls 
+  675  sudo docker container stop 0c6048e19584
+  676  cd openrouteservice/docker/
+  677  ls
+  678  nano docker-compose.yml 
+  679  clear
+  680  ls
+  681  cd conf/
+  682  ls
+  683  sudo nano ors-config.json 
+  684  cd ..
+  685  nano docker-compose.yml 
+  686  cd ..
+  687  sudo rm -r openrouteservice/
+  688  sudo docker system prune
+  689  clear
+  690  ls
+  691  git clone https://github.com/GIScience/openrouteservice
+  692  clear
+  693  cd openrouteservice/
+  694  cd ..
+  695  cp spain-latest.osm.pbf openrouteservice/docker/data/
+  696  cd openrouteservice/docker/
+  697  ls
+  698  nano docker-compose.yml 
+  699  cd ..
+  700  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && docker compose up
+  701  cd ..
+  702  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && sudo docker-compose up
+  703  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && sudo docker compose up
+  704  cd ..
+  705  cd docker && mkdir -p conf elevation_cache graphs logs/ors logs/tomcat && sudo docker compose up
+  706  lsb_release -a
+  707  clear
+  708  sudo apt update
+  709  sudo apt install apt-transport-https ca-certificates curl software-properties-common
+  710  clear
+  711  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  712  sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+  713  sudo apt install docker-ce
+  714  clear
+  715  udo systemctl status docker
+  716  sudo systemctl status docker
+  717  clear
+  718  sudo usermod -aG docker ${USER}
+  719  su - ${USER}
+  720  ls
+  721  ps aux
+  722  w
+  723  docker container ls
+  724  sudo docker container ls
+  725  docker container ls
+  726  clear
+  727  cd ..
+  728  ls
+  729  clear
+  730  sudo docker container start 3998e8a24619
+  731  docker container ls
+  732  ls
+  733  clear
+  734  ls
+  735  sudo systemctl status apache2.service 
+  736  clear
+  737  sudo systemctl status apache2.service 
+  738  clear
+  739  ls /var/www/html/
+  740  clear
+  741  sudo systemctl status apache2.service 
+  742  clear
+  743  ls
+  744  cd ireves-map-server/
+  745  ls
+  746  . venv/bin/activate
+  747  clear
+  748  export FLASK_ENV=development
+  749  clear
+  750  git branch
+  751  clear
+  752  flask run
+  753  clear
+  754  flask run
+  755  clear
+  756  flask run
+  757  clear
+  758  flask run
+  759  git branch
+  760  git checkout master 
+  761  clear
+  762  flask run
+  763  clear
+  764  flask run --host=0.0.0.0
+  765  clear
+  766  ls
+  767  git branch
+  768  nano app.py 
+  769  clear
+  770  flask run --host=0.0.0.0
+  771  nano app.py 
+  772  clear
+  773  flask run --host=0.0.0.0
+  774  clear
+  775  git checkout develop 
+  776  git commit -m 'Type your commit message here'
+  777  git commit -a -m 'DON'T PUSH API KEY'
+  778  clear
+  779  git commit -a -m 'DONT PUSH API KEY'
+  780  clear
+  781  git checkout develop 
+  782  cleare
+  783  clear
+  784  flask run --host=0.0.0.0
+  785  clear
+  786  git checkout develop 
+  787  flask run --host=0.0.0.0
+  788  ifconfig 
+  789  ls
+  790  mkdir sentiment-test
+  791  cd sentiment-test/
+  792  clear
+  793  touch main.oy
+  794  touch main.py
+  795  rm main.oy 
+  796  clear
+  797  python --version
+  798  python3
+  799  python3 --version
+  800  clear
+  801  python3 -m venv ./venv
+  802  source ./venv/bin/activate
+  803  clear
+  804  pip install torch
+  805  clear
+  806  pip install datasets
+  807  python3 -m pip install multidict
+  808  pip install datasets
+  809  pip install attr
+  810  pip install datasets
+  811  pip install yarl
+  812  pip install datasets
+  813  pip install CYTHON
+  814  pip install datasets
+  815  pip install async_timeout
+  816  pip install datasets
+  817  pip install idna_ssl
+  818  pip install datasets
+  819  deactivate
+  820  clear
+  821  rm venv/
+  822  rm -r venv/
+  823  clear
+  824  python3.7 -m venv ./venv
+  825  clear
+  826  source ./venv/bin/activate
+  827  clear
+  828  pip install datasets
+  829  pip install numpy
+  830  pip install datasets
+  831  pip install multidict
+  832  pip install numpy
+  833  pip install statsmodels
+  834  pip install numpy
+  835  deactivate
+  836  rm -r venv/
+  837  clear
+  838  python3.8 -m venv ./venv
+  839  source ./venv/bin/activate
+  840  pip install numpy
+  841  pip install cython
+  842  pip --version
+  843  clear
+  844  deactivate
+  845  clear
+  846  rm -r venv/
+  847  clear
+  848  python3.7 -m venv ./venv
+  849  source ./venv/bin/activate
+  850  pip3 install transformers
+  851  deactivate
+  852  rm -r venv/
+  853  python3.7 -m venv ./venv
+  854  source ./venv/bin/activate
+  855  pip3.7 install datasets
+  856  pip3.7 install numpy
+  857  clear
+  858  deactivate+
+  859  deactivate
+  860  rm -r venv/
+  861  lsb_release -a
+  862  sudo add-apt-repository ppa:deadsnakes/ppa
+  863  clear
+  864  sudo apt install python3.10
+  865  clear
+  866  python3.10 -m venv ./venv
+  867  python3.10
+  868  python3.10 -m venv ./venv
+  869  clear
+  870  cd ..
+  871  rm -r sentiment-test/
+  872  source /home/gti/ireves-map-server/venv/bin/activate
+  873  /home/gti/ireves-map-server/venv/bin/python -m pip install -U autopep8
+  874  mkdir revision_neuro
+  875  cd revision_neuro/
+  876  git clone https://github.com/joancipria/sentiment-analysis.git
+  877  clear
+  878  git clone https://huggingface.co/decapoda-research/llama-7b-hf
+  879  rm -r llama-7b-hf/
+  880  sudo rm -r llama-7b-hf/
+  881  clear
+  882  cd sentiment-analysis/
+  883  git clone https://huggingface.co/decapoda-research/llama-7b-hf
+  884  python -m venv ./venv && source ./venv/bin/activate
+  885  python3 -m venv ./venv && source ./venv/bin/activate
+  886  clear
+  887  pip install transformers
+  888  pip install -r requirements.txt
+  889  python3 --version
+  890  deactivate
+  891  sudo rm -r venv/
+  892  clear
+  893  python3.8 -m venv ./venv && source ./venv/bin/activate
+  894  pip --version
+  895  clear
+  896  pip install transformers
+  897  deactivate
+  898  clear
+  899  sudo rm -r venv/
+  900  clear
+  901  sudo python3 -m pip install -U pip
+  902  sudo python3 -m pip install -U setuptools
+  903  pip3 install -U pip
+  904  pip3 install -U setuptools
+  905  clear
+  906  python3 --version
+  907  clear
+  908  sudo python3.8 -m pip install -U pip
+  909  sudo python3.8 -m pip install -U setuptools
+  910  clear
+  911  python3.8 -m venv ./venv && source ./venv/bin/activate
+  912  pip3.8 --version
+  913  pip3 --version
+  914  pip --version
+  915  pip install transformers
+  916  clear
+  917  pip install transformers
+  918  pip install --upgrade pip
+  919  pip install transformers
+  920  clear
+  921  python --version
+  922  clear
+  923  python train.py 
+  924  pip install datasets
+  925  python train.py 
+  926  pip install tokenizers
+  927  python train.py 
+  928  pip install sentencepiece
+  929  python train.py 
+  930  clear
+  931  pip install -r requirements.txt
+  932  clear
+  933  pip install -r requirements.txt
+  934  pip install transformers
+  935  clear
+  936  pip install -r requirements.txt
+  937  clear
+  938  python train.py 
+  939  pip install transformers
+  940  pip install -U transformers
+  941  clear
+  942  pip install -U transformers
+  943  clear
+  944  python train.py 
+  945  pip install tokenizers==0.13.3
+  946  python train.py 
+  947  pip install sentencepiece==0.1.97
+  948  python train.py 
+  949  deactivate
+  950  sudo rm -r venv/
+  951  python3.8 -m venv ./venv && source ./venv/bin/activate
+  952  pip install --upgrade pip
+  953  pip install -r requirements.txt
+  954  clear
+  955  python train.py 
+  956  pip install -U transformers
+  957  python train.py 
+  958  pip install tokenizers==0.13.3
+  959  python train.py 
+  960  pip install -U sentencepiece
+  961  python train.py 
+  962  python --version
+  963  deactivate
+  964  sudo apt install python3.8
+  965  sudo apt update
+  966  sudo apt install python3.8
+  967  sudo apt install python3.8.10
+  968  uname -a
+  969  lsb_release -a
+  970  sudo apt install python3.8
+  971  sudo apt upgrade python3.8
+  972  clear
+  973  python3.8 --version
+  974  python3.10 -m venv ./venv && source ./venv/bin/activate
+  975  pip --version
+  976  clear
+  977  python --version
+  978  python3 --version
+  979  pip --version
+  980  pip install -r requirements.txt
+  981  pip install -U transformers
+  982  python3.10 train.py 
+  983  pip install tokenizers==0.13.3
+  984  python3.10 train.py 
+  985  pip install sentencepiece
+  986  python3.10 train.py 
+  987  pip removwe sentencepiece
+  988  pip remove sentencepiece
+  989  python3.10 train.py 
+  990  pip remove sentencepiece
+  991  pip uninstall sentencepiece
+  992  python3.10 train.py 
+  993  pip install transformers[sentencepiece]
+  994  python3.10 train.py 
+  995  clear
+  996  python3.10 train.py 
+  997  clear
+  998  python3.10 train.py 
+  999  clear
+ 1000  ls
+ 1001  sudo rm -r llama-7b-hf/
+ 1002  clear
+ 1003  git lfs install
+ 1004  clear
+ 1005  git clone https://huggingface.co/decapoda-research/llama-7b-hf
+ 1006  python3.10 train.py 
+ 1007  clear
+ 1008  python3.10 train.py 
+ 1009  source /home/gti/ireves-map-server/venv/bin/activate
+ 1010  cd
+ 1011  ls
+ 1012  cd openrouteservice/
+ 1013  ls
+ 1014  sudo docker container start 3998e8a24619
+ 1015  history
+ 1016  history 100
+ 1017  history 200
+ 1018  history | grep silhouette
+ 1019  history | grep openroute
+ 1020  clear
+ 1021  history | grep docker
+ 1022  cd
+ 1023  clear
+ 1024  cd ireves-map
+ 1025  git log --pretty=format:'%h' -n 1
+ 1026  git branch
+ 1027  git fetch
+ 1028  ls
+ 1029  cd src/
+ 1030  cat config.ts 
+ 1031  cd
+ 1032  clear
+ 1033  cd ireves-map
+ 1034  git pull
+ 1035  npm run build
+ 1036  cp -r dist/* /var/www/html
+ 1037  git pull
+ 1038  npm run build
+ 1039  cp -r dist/* /var/www/html
+ 1040  ls
+ 1041  cd ireves-map
+ 1042  cd ..
+ 1043  cd ireves-map-server/
+ 1044  ls
+ 1045  . venv/bin/activate
+ 1046  export FLASK_ENV=development
+ 1047  flask run --host=0.0.0.0
+ 1048  exit
+ 1049  cd ireves-map-server
+ 1050  . venv/bin/activate
+ 1051  export FLASK_ENV=development
+ 1052  flask run --host=0.0.0.0
+ 1053  clear
+ 1054  flask run --host=0.0.0.0
+ 1055  grep -R "de las funcionalidades de " ./*
+ 1056  ls
+ 1057  cd ..
+ 1058  ls
+ 1059  cd ireves-map
+ 1060  grep -R "de las funcionalidades de " ./*
+ 1061  cd ..
+ 1062  cd ireves-map-server/
+ 1063  ls
+ 1064  history | grep docker
+ 1065  history
+ 1066  cd ..
+ 1067  cd ireves-map
+ 1068  ls
+ 1069  grep -R "de las funcionalidades de " ./src/
+ 1070  nano src/i18n/es-ES.json 
+ 1071  grep -R "GENERIC_NETWORK_ERROR" ./src/
+ 1072  nano src/core/Query.ts 
+ 1073  cd ..
+ 1074  cd ireves-map-server/
+ 1075  history
+ 1076  flask run --host=0.0.0.0
+ 1077  sudo docker container start 3998e8a24619
+ 1078  flask run --host=0.0.0.0
+ 1079  cd ..
+ 1080  exit
+ 1081  docker ps -a
+ 1082  docker start 3998e8a24619
+ 1083  docker ps -a
+ 1084  exit
+ 1085  ls
+ 1086  history > history-13-03-26.txt
+ 1087  cat history-13-03-26.txt 
+ 1088  exit
+ 1089  ls
+ 1090  exit
+ 1091  ls
+ 1092  exit
+ 1093  ls
+ 1094  history
+ 1095  exit
+ 1096  history > ~/history_ireves.txt 
