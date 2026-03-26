@@ -645,21 +645,8 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
         setCoachStep('waiting-devCards')
         break
       }
-      case 'move-robber': {
-        const msg: import('@/src/domain/entities').Message = {
-          id: `robber-prompt-${Date.now()}`, role: 'assistant',
-          content: 'Abre el tablero (icono del hexágono en la esquina superior) y arrastra el ladrón al nuevo hex. Cuando confirmes, actualizaré el estado.',
-          timestamp: Date.now(),
-        }
-        setSession(s => ({ ...s, messages: [...s.messages, msg] }))
-        setShowBoard(true)
-        break
-      }
       case 'update-board':
         setShowBoard(true)
-        break
-      case 'next-turn':
-        setCoachStep('waiting-dice')
         break
     }
   }, [])
@@ -818,6 +805,25 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                     ...prev,
                     [key]: { type: rec.type === 'road' ? 'road' : rec.type === 'settlement' ? 'settlement' : 'city', color: myColor }
                   }))
+
+                  // Descontar recursos del coste de construcción
+                  const BUILD_COSTS: Record<string, Record<string, number>> = {
+                    road:       { wood: 1, clay: 1 },
+                    settlement: { wood: 1, clay: 1, wool: 1, cereal: 1 },
+                    city:       { mineral: 3, cereal: 2 },
+                  }
+                  const cost = BUILD_COSTS[rec.type]
+                  if (cost) {
+                    setSavedResources(prev => {
+                      if (!prev) return prev
+                      const updated = { ...prev }
+                      for (const [resource, amount] of Object.entries(cost)) {
+                        updated[resource] = Math.max(0, (updated[resource] ?? 0) - amount)
+                      }
+                      return updated
+                    })
+                  }
+
                   const confirmMsg: import('@/src/domain/entities').Message = {
                     id: `confirm-rec-${Date.now()}`, role: 'user',
                     content: `Jugada realizada: ${rec.type === 'road' ? 'Camino' : rec.type === 'settlement' ? 'Poblado' : 'Ciudad'} en ${rec.label}`,

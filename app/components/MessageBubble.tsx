@@ -68,21 +68,25 @@ export function MessageBubble({ message, isStreaming, onShowRecommendation }: Pr
           <div className="mt-3 pt-2.5 border-t border-stone-600">
             <button
               onClick={() => onShowRecommendation(rec)}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-xl
+              className="w-full px-3 py-2 rounded-xl
                 bg-amber-700/40 hover:bg-amber-700/60 border border-amber-600/50
                 hover:border-amber-500 text-amber-300 hover:text-amber-200
                 text-xs font-semibold transition-colors group"
             >
-              <span className="text-amber-400 shrink-0">{PIECE_ICON[rec.type]}</span>
-              <span className="flex-1 text-left">
-                Ver {PIECE_LABEL[rec.type]} recomendado en tablero
+              <span className="flex items-center gap-2">
+                <span className="text-amber-400 shrink-0">{PIECE_ICON[rec.type]}</span>
+                <span className="flex-1 text-left">
+                  Ver {PIECE_LABEL[rec.type]} recomendado en tablero
+                </span>
+                <svg className="w-4 h-4 shrink-0 text-stone-400 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
               </span>
-              <span className="text-stone-400 group-hover:text-amber-400 shrink-0">
-                {rec.label}
-              </span>
-              <svg className="w-4 h-4 shrink-0 text-stone-400 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-              </svg>
+              {rec.label && (
+                <span className="block text-stone-400 group-hover:text-amber-400 text-[10px] mt-1 truncate text-left">
+                  {rec.label}
+                </span>
+              )}
             </button>
           </div>
         )}
