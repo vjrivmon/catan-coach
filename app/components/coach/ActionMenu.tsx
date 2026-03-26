@@ -6,6 +6,7 @@ export type GameAction =
   | 'update-resources'
   | 'add-dev-cards'
   | 'update-board'
+  | 'next-turn'
 
 interface ActionMenuProps {
   gameStarted: boolean
@@ -43,6 +44,16 @@ const ALL_ACTIONS: { id: GameAction; label: string; icon: React.ReactNode; showW
       </svg>
     ),
     showWhen: (gs, bc) => bc,
+  },
+  {
+    id: 'next-turn',
+    label: 'Siguiente turno',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+      </svg>
+    ),
+    showWhen: (gs, bc) => gs && bc,
   },
 ]
 

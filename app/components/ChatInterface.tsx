@@ -648,6 +648,9 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
       case 'update-board':
         setShowBoard(true)
         break
+      case 'next-turn':
+        setCoachStep('waiting-dice')
+        break
     }
   }, [])
 
