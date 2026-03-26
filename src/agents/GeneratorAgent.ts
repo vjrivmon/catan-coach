@@ -313,10 +313,11 @@ ${levelLabel === 'principiante'
    - Máximo 3 frases. No más.
    - Da UNA sola recomendación. Sin alternativas.
    - NUNCA uses IDs de vértice (v15, e12_34...). Usa siempre descripción de terrenos: "el hexágono de mineral(8)", "hacia el bosque del 6 y el trigo del 9".
-   - Frase 1: di QUÉ construir y QUÉ recursos necesita. Ejemplo: "Construye un camino (1 madera + 1 arcilla)."
-   - Frase 2: di HACIA DÓNDE expandirte con terrenos concretos. Ejemplo: "Dirígete hacia el hexágono de mineral(8) y trigo(5)."
-   - Frase 3 (opcional): justifica brevemente con la regla relevante. Ejemplo: "Los hexágonos con números 6 y 8 producen con más frecuencia, por eso es la mejor ubicación."
-   - NO termines con una pregunta abierta.`
+   - SIEMPRE 3 frases. Obligatorio.
+   - Frase 1: QUÉ construir y QUÉ recursos necesita exactamente. Ejemplo: "Construye un camino (1 madera + 1 arcilla)."
+   - Frase 2: HACIA DÓNDE expandirte con terrenos concretos del tablero. Ejemplo: "Dirígete hacia el hexágono de mineral(8) y trigo(5) para diversificar tu producción."
+   - Frase 3: UNA razón estratégica o regla de Catan que justifique la decisión. Ejemplo: "El hexágono con número 8 produce con frecuencia (5 de 36 tiradas), es la mejor expansión disponible."
+   - NO termines con pregunta. NO uses IDs de vértice.`
   : levelLabel === 'intermedio'
   ? `8. NIVEL INTERMEDIO — REGLAS DE RESPUESTA:
    - Máximo 4 frases. Sé directo.
@@ -385,9 +386,7 @@ function buildUserPrompt(message: string, context: string, history: Message[], h
   if (context) prompt += `Contexto relevante del reglamento/estrategia:\n${context}\n\n`
 
   // When coach state is present, inject minimal reminder to use context data
-  if (hasCoachState) {
-    prompt += `[USA LOS DATOS DEL TABLERO ARRIBA. NO PIDAS INFORMACIÓN ADICIONAL.]\n\n`
-  }
+  // No extra reminder — it gets echoed by the LLM
 
   prompt += `Pregunta actual: ${message}`
 
