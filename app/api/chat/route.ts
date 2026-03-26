@@ -9,6 +9,18 @@ import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
 import type { Message, UserLevel } from '@/src/domain/entities'
 
+/** Get relevant rule text for the genetic agent's recommended action */
+function getRuleContext(action: string): string {
+  const rules: Record<string, string> = {
+    build_road:       'REGLA — Camino: cuesta 1 Madera + 1 Arcilla. Los caminos conectan tus asentamientos y permiten expandirte. El jugador con el camino más largo (≥5 segmentos) gana 2 PV extra.',
+    build_settlement: 'REGLA — Poblado: cuesta 1 Madera + 1 Arcilla + 1 Lana + 1 Trigo. Debe colocarse en un vértice libre respetando la regla de distancia (mínimo 2 aristas de otro asentamiento). Vale 1 PV y produce 1 recurso por hexágono adyacente.',
+    build_city:       'REGLA — Ciudad: cuesta 3 Mineral + 2 Trigo. Reemplaza un poblado existente. Vale 2 PV y produce 2 recursos por hexágono adyacente en lugar de 1.',
+    buy_dev_card:     'REGLA — Carta de desarrollo: cuesta 1 Mineral + 1 Lana + 1 Trigo. Puede ser Caballero, Progreso (Monopolio/Año de la Abundancia/Caminos) o Punto de Victoria.',
+    pass:             'REGLA — Pasar turno: cuando no puedes construir ni comprar con los recursos actuales, es mejor guardar recursos para el siguiente turno.',
+  }
+  return rules[action] ?? ''
+}
+
 /** Detect if a message is asking about turn count / resource accumulation */
 function isTurnsQuestion(msg: string): boolean {
   const lower = msg.toLowerCase()
@@ -136,7 +148,9 @@ export async function POST(req: NextRequest) {
 
           // Stream LLM tokens — buffer full response for post-processing
           // Build final context with any pre-computed corrections
-          const finalContext = [resourceCorrection, turnsContext, context].filter(Boolean).join('\n')
+          const geneticAction: string = (activeCoachState as any)?.geneticRecommendation?.action ?? ''
+          const ruleContext = geneticAction ? getRuleContext(geneticAction) : ''
+          const finalContext = [resourceCorrection, turnsContext, ruleContext, context].filter(Boolean).join('\n')
 
           for await (const token of generator.generateStream(
             message,
@@ -167,9 +181,34 @@ export async function POST(req: NextRequest) {
 
           // Parse RECOMMENDATION_JSON from full response
           const { cleanText, recommendation } = extractRecommendation(stripNonLatinArtifacts(fullResponse))
-          // If we were mid-suppression, make sure the clean final text was sent
-          // (edge case: marker arrived in last token — already handled above)
-          void cleanText  // used only for recommendation extraction; client built from tokens
+          void cleanText
+
+          // Fallback: if LLM didn't emit RECOMMENDATION_JSON but GeneticAgent recommended
+          // a physical build action, generate boardRecommendation from positionContext
+          let finalRecommendation = recommendation
+          if (!finalRecommendation && activeCoachState) {
+            const gr = (activeCoachState as any).geneticRecommendation
+            const pc = gr?.positionContext as { frontier?: string[] } | undefined
+            const action: string = gr?.action ?? ''
+            const BUILD_ACTIONS: Record<string, 'road' | 'settlement' | 'city'> = {
+              build_road: 'road',
+              build_settlement: 'settlement',
+              build_city: 'city',
+            }
+            const buildType = BUILD_ACTIONS[action]
+            if (buildType && pc?.frontier && pc.frontier.length > 0) {
+              // Pick best frontier position: first entry (GeneticAgent orders by score)
+              const firstFrontier = pc.frontier[0]
+              const posMatch = firstFrontier.match(/^(v\d+|e\d+_\d+)/)
+              if (posMatch) {
+                finalRecommendation = {
+                  type: buildType,
+                  position: posMatch[1],
+                  label: firstFrontier.replace(/^(v\d+|e\d+_\d+)\s*/, '').slice(0, 60),
+                }
+              }
+            }
+          }
 
           // Send suggestions, metadata, and optional board recommendation
           controller.enqueue(
@@ -177,7 +216,7 @@ export async function POST(req: NextRequest) {
               type: 'done',
               suggestedQuestions,
               agentUsed: route,
-              ...(recommendation ? { boardRecommendation: recommendation } : {}),
+              ...(finalRecommendation ? { boardRecommendation: finalRecommendation } : {}),
             })}\n\n`)
           )
         } catch (err) {
