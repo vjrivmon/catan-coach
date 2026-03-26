@@ -467,10 +467,13 @@ export class GeneratorAgent {
     debugLog.llmStart(config.ollama.mainModel)
     const userPrompt = buildUserPrompt(message, context, history, !!coachState)
 
-    const ollamaUrl = `${config.ollama.baseUrl}/api/generate`
+    const ollamaUrl = `${config.ollama.baseUrl}/api/chat`
     const body = JSON.stringify({
       model: config.ollama.mainModel,
-      prompt: `${systemPrompt}\n\n${userPrompt}`,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userPrompt },
+      ],
       stream: true,
     })
 
@@ -495,7 +498,7 @@ export class GeneratorAgent {
       for (const line of lines) {
         try {
           const parsed = JSON.parse(line)
-          if (parsed.response) yield parsed.response
+          if (parsed.message?.content) yield parsed.message.content
           if (parsed.done) return
         } catch { /* ignore parse errors */ }
       }

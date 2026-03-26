@@ -57,12 +57,15 @@ Devuelve SOLO un array JSON válido: ["pregunta1", "pregunta2", "pregunta3"]
 Sin explicaciones adicionales, solo el array JSON.`
 
     try {
-      const response = await fetch(`${config.ollama.baseUrl}/api/generate`, {
+      const response = await fetch(`${config.ollama.baseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: config.ollama.suggestionModel,
-          prompt,
+          messages: [
+            { role: 'system', content: 'Genera sugerencias de preguntas sobre Catan en español. Responde SOLO con un array JSON.' },
+            { role: 'user',   content: prompt },
+          ],
           stream: false,
         }),
       })
@@ -70,7 +73,7 @@ Sin explicaciones adicionales, solo el array JSON.`
       if (!response.ok) return this.fallbackSuggestions(level)
 
       const data = await response.json()
-      const text: string = data.response || ''
+      const text: string = data.message?.content || ''
 
       // Extract JSON array from response
       const match = text.match(/\[[\s\S]*?\]/)
