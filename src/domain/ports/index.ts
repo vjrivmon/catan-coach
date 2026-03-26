@@ -1,8 +1,11 @@
 import type { Message, Session, UserLevel } from '../entities'
 
 export interface LLMPort {
-  generate(prompt: string, systemPrompt: string, stream?: boolean): Promise<string>
+  generate(prompt: string, systemPrompt: string): Promise<string>
   generateStream(prompt: string, systemPrompt: string): AsyncIterable<string>
+}
+
+export interface EmbeddingPort {
   embed(text: string): Promise<number[]>
 }
 

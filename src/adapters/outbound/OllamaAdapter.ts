@@ -1,14 +1,15 @@
-import type { LLMPort } from '../../domain/ports'
+import type { LLMPort, EmbeddingPort } from '../../domain/ports'
 import { config } from '../../config'
 
-export class OllamaAdapter implements LLMPort {
+export class OllamaAdapter implements LLMPort, EmbeddingPort {
+  constructor(private model: string = config.ollama.mainModel) {}
+
   async generate(prompt: string, systemPrompt: string): Promise<string> {
-    // Use /api/chat with roles so the model treats systemPrompt as a real system instruction
     const response = await fetch(`${config.ollama.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: config.ollama.mainModel,
+        model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: prompt },
@@ -22,13 +23,11 @@ export class OllamaAdapter implements LLMPort {
   }
 
   async *generateStream(prompt: string, systemPrompt: string): AsyncIterable<string> {
-    // Use /api/chat with roles — critical for models like llama3.3:70b that ignore
-    // system instructions when they arrive as plain text via /api/generate
     const response = await fetch(`${config.ollama.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: config.ollama.mainModel,
+        model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: prompt },
@@ -48,7 +47,6 @@ export class OllamaAdapter implements LLMPort {
       for (const line of lines) {
         try {
           const parsed = JSON.parse(line)
-          // /api/chat stream: delta is in message.content
           if (parsed.message?.content) yield parsed.message.content
         } catch { /* ignore malformed lines */ }
       }

@@ -1,15 +1,15 @@
-import type { VectorStorePort, LLMPort } from '../domain/ports'
+import type { VectorStorePort, EmbeddingPort } from '../domain/ports'
 import { config } from '../config'
 
 export class RulesAgent {
   constructor(
     private vectorStore: VectorStorePort,
-    private llm: LLMPort
+    private embedder: EmbeddingPort
   ) {}
 
   async retrieve(query: string): Promise<string> {
     try {
-      const embedding = await this.llm.embed(query)
+      const embedding = await this.embedder.embed(query)
       const chunks = await this.vectorStore.query(
         config.chroma.rulesCollection,
         embedding,

@@ -10,6 +10,7 @@ import { NarratorAgent } from '@/src/agents/NarratorAgent'
 import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
 import type { Message, UserLevel } from '@/src/domain/entities'
+import { config } from '@/src/config'
 
 /** Detect if a message is asking about turn count / resource accumulation */
 function isTurnsQuestion(msg: string): boolean {
@@ -53,12 +54,13 @@ function detectResourceContradiction(
 }
 
 const router = new RouterAgent()
-const ollamaAdapter = new OllamaAdapter()
+const mainAdapter = new OllamaAdapter(config.ollama.mainModel)
+const suggestionAdapter = new OllamaAdapter(config.ollama.suggestionModel)
 const chromaAdapter = new ChromaAdapter()
-const rulesAgent = new RulesAgent(chromaAdapter, ollamaAdapter)
-const strategyAgent = new StrategyAgent(chromaAdapter, ollamaAdapter)
-const narrator = new NarratorAgent(ollamaAdapter)
-const suggestionAgent = new SuggestionAgent()
+const rulesAgent = new RulesAgent(chromaAdapter, mainAdapter)
+const strategyAgent = new StrategyAgent(chromaAdapter, mainAdapter)
+const narrator = new NarratorAgent(mainAdapter)
+const suggestionAgent = new SuggestionAgent(suggestionAdapter)
 
 export async function POST(req: NextRequest) {
   try {

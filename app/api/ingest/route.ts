@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
+import type { VectorStorePort, EmbeddingPort } from '@/src/domain/ports'
 import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
 import { config } from '@/src/config'
@@ -20,8 +21,8 @@ async function ingestFolder(
   collectionName: string,
   chunkSize: number,
   overlap: number,
-  chroma: ChromaAdapter,
-  ollama: OllamaAdapter
+  chroma: VectorStorePort,
+  embedder: EmbeddingPort
 ) {
   const files = readdirSync(folderPath).filter(f => f.endsWith('.txt'))
   const allChunks: string[] = []
@@ -38,7 +39,7 @@ async function ingestFolder(
 
   const embeddings: number[][] = []
   for (const chunk of allChunks) {
-    embeddings.push(await ollama.embed(chunk))
+    embeddings.push(await embedder.embed(chunk))
   }
 
   await chroma.add(collectionName, allChunks, embeddings, allIds)

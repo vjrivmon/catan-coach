@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
+import type { EmbeddingPort } from '../src/domain/ports'
 import { ChromaAdapter } from '../src/adapters/outbound/ChromaAdapter'
 import { OllamaAdapter } from '../src/adapters/outbound/OllamaAdapter'
 import { config } from '../src/config'
@@ -22,7 +23,7 @@ async function ingestFolder(
   chunkSize: number,
   overlap: number,
   chroma: ChromaAdapter,
-  ollama: OllamaAdapter
+  embedder: EmbeddingPort
 ) {
   console.log(`\nIngesting ${folderPath} → ${collectionName}`)
 
@@ -46,7 +47,7 @@ async function ingestFolder(
 
   for (let i = 0; i < allChunks.length; i++) {
     if (i % 10 === 0) console.log(`  Progress: ${i}/${allChunks.length}`)
-    const embedding = await ollama.embed(allChunks[i])
+    const embedding = await embedder.embed(allChunks[i])
     embeddings.push(embedding)
   }
 
