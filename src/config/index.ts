@@ -2,6 +2,7 @@ export const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
     mainModel: process.env.MAIN_MODEL || 'gemma3:27b',
+    coachModel: process.env.COACH_MODEL || process.env.SUGGESTION_MODEL || 'qwen3:8b',
     suggestionModel: process.env.SUGGESTION_MODEL || 'qwen3:8b',
     embeddingModel: process.env.EMBEDDING_MODEL || 'nomic-embed-text',
   },

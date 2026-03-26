@@ -18,6 +18,11 @@ export interface CoachState {
   } | null
   turn?: number | null
   devCards?: Record<string, number> | null
+  // Contexto enriquecido del tablero (BoardStateAgent)
+  productionTable?: string
+  vpSummary?: string
+  actions?: string
+  ports?: string[]
 }
 
 const SYSTEM_PROMPT = 'Genera sugerencias de preguntas sobre Catan en español. Responde SOLO con un array JSON.'
@@ -38,16 +43,24 @@ export class SuggestionAgent {
 
     const isCoach = !!coachState?.boardSummary
 
+    const portsInfo = coachState?.ports?.length
+      ? `Puertos del jugador: ${coachState.ports.join(', ')}`
+      : 'Sin acceso a puertos'
+
     const prompt = isCoach
       ? `Eres un asistente de Catan en modo Coach en partida.
 
-Estado actual del tablero: ${coachState!.boardSummary}
-${coachState!.resources ? `Recursos del jugador: ${Object.entries(coachState!.resources).filter(([,v])=>v>0).map(([k,v])=>`${k}x${v}`).join(', ') || 'ninguno'}` : ''}
+Estado del tablero: ${coachState!.boardSummary}
+${coachState!.resources ? `Recursos en mano: ${Object.entries(coachState!.resources).filter(([,v])=>v>0).map(([k,v])=>`${k}x${v}`).join(', ') || 'ninguno'}` : ''}
+${coachState!.productionTable ? `Produccion: ${coachState!.productionTable}` : ''}
+${coachState!.vpSummary ? `Puntos de victoria: ${coachState!.vpSummary}` : ''}
+${coachState!.actions ? `Acciones posibles: ${coachState!.actions}` : ''}
+${portsInfo}
 
 Ultima interaccion: ${message || 'El jugador acaba de configurar su tablero'}
 
-Genera exactamente 3 preguntas/acciones que el jugador podria querer consultar ahora.
-Deben ser CONCRETAS al estado del tablero: posibles jugadas, calculo de probabilidades, uso de puertos, expansion, bloqueo, intercambio.
+Genera exactamente 3 preguntas que el jugador podria querer consultar ahora.
+IMPORTANTE: las preguntas deben ser COHERENTES con el estado real del tablero. NO menciones puertos que el jugador no tiene. NO sugieras acciones imposibles con los recursos actuales.
 Devuelve SOLO un array JSON valido: ["pregunta1", "pregunta2", "pregunta3"]
 Sin explicaciones, solo el array JSON.`
       : `Historial reciente sobre Catan:

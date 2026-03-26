@@ -55,11 +55,13 @@ function detectResourceContradiction(
 
 const router = new RouterAgent()
 const mainAdapter = new OllamaAdapter(config.ollama.mainModel)
+const coachAdapter = new OllamaAdapter(config.ollama.coachModel)
 const suggestionAdapter = new OllamaAdapter(config.ollama.suggestionModel)
 const chromaAdapter = new ChromaAdapter()
 const rulesAgent = new RulesAgent(chromaAdapter, mainAdapter)
 const strategyAgent = new StrategyAgent(chromaAdapter, mainAdapter)
-const narrator = new NarratorAgent(mainAdapter)
+const aprendeNarrator = new NarratorAgent(mainAdapter)
+const coachNarrator = new NarratorAgent(coachAdapter)
 const suggestionAgent = new SuggestionAgent(suggestionAdapter)
 
 export async function POST(req: NextRequest) {
@@ -99,22 +101,31 @@ export async function POST(req: NextRequest) {
     // 1. Route the question
     const route = router.classify(message)
 
-    // 2. Retrieve context (RAG) + start suggestions in parallel
+    // 2. Compute board context FIRST (PURE CODE, 0 LLM, instant)
+    const boardContext = computeBoardContext(activeCoachState)
+
+    // 3. Retrieve context (RAG) + start suggestions in parallel
     const [context, suggestedQuestions] = await Promise.all([
       route === 'rules'
         ? rulesAgent.retrieve(message)
         : route === 'strategy'
           ? strategyAgent.retrieve(message)
           : Promise.resolve(''),
-      suggestionAgent.suggest(message, cleanHistory, userLevel, activeCoachState),
+      suggestionAgent.suggest(message, cleanHistory, userLevel,
+        activeCoachState ? {
+          ...activeCoachState,
+          ...(boardContext ? {
+            productionTable: boardContext.productionTable,
+            vpSummary: boardContext.vpSummary,
+            actions: boardContext.actions,
+          } : {}),
+        } : undefined
+      ),
     ])
 
     // ================================================================
-    // NEW PIPELINE: BoardStateAgent → BoardRecommendationBuilder → NarratorAgent
+    // BoardRecommendationBuilder → NarratorAgent
     // ================================================================
-
-    // 3. Compute board context (PURE CODE, 0 LLM)
-    const boardContext = computeBoardContext(activeCoachState)
 
     // 4. Build recommendation from genetic result (PURE CODE, 0 LLM)
     const geneticResult = activeCoachState?.geneticRecommendation as GeneticResult | null | undefined
@@ -148,7 +159,7 @@ export async function POST(req: NextRequest) {
               ? { ...builderResult, reason: `${extraContext}${builderResult.reason}` }
               : builderResult
 
-            for await (const token of narrator.narrateCoach(
+            for await (const token of coachNarrator.narrateCoach(
               message,
               augmentedBuilder,
               boardContext,
@@ -165,7 +176,7 @@ export async function POST(req: NextRequest) {
               context,
             ].filter(Boolean).join('\n')
 
-            for await (const token of narrator.narrateSimple(
+            for await (const token of aprendeNarrator.narrateSimple(
               message,
               finalContext,
               userLevel,
