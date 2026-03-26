@@ -148,9 +148,7 @@ export async function POST(req: NextRequest) {
 
           // Stream LLM tokens — buffer full response for post-processing
           // Build final context with any pre-computed corrections
-          const geneticAction: string = (activeCoachState as any)?.geneticRecommendation?.action ?? ''
-          const ruleContext = geneticAction ? getRuleContext(geneticAction) : ''
-          const finalContext = [resourceCorrection, turnsContext, ruleContext, context].filter(Boolean).join('\n')
+          const finalContext = [resourceCorrection, turnsContext, context].filter(Boolean).join('\n')
 
           for await (const token of generator.generateStream(
             message,
