@@ -104,24 +104,23 @@ export async function POST(req: NextRequest) {
     // 2. Compute board context FIRST (PURE CODE, 0 LLM, instant)
     const boardContext = computeBoardContext(activeCoachState)
 
-    // 3. Retrieve context (RAG) + start suggestions in parallel
-    const [context, suggestedQuestions] = await Promise.all([
-      route === 'rules'
-        ? rulesAgent.retrieve(message)
-        : route === 'strategy'
-          ? strategyAgent.retrieve(message)
-          : Promise.resolve(''),
-      suggestionAgent.suggest(message, cleanHistory, userLevel,
-        activeCoachState ? {
-          ...activeCoachState,
-          ...(boardContext ? {
-            productionTable: boardContext.productionTable,
-            vpSummary: boardContext.vpSummary,
-            actions: boardContext.actions,
-          } : {}),
-        } : undefined
-      ),
-    ])
+    // 3. Retrieve RAG context (only if needed — instant for 'direct')
+    const context = route === 'rules'
+      ? await rulesAgent.retrieve(message)
+      : route === 'strategy'
+        ? await strategyAgent.retrieve(message)
+        : ''
+
+    // Suggestions are generated LAZILY inside the stream (after narration completes)
+    // to avoid GPU contention that was adding ~12s of overhead
+    const enrichedCoachState = activeCoachState ? {
+      ...activeCoachState,
+      ...(boardContext ? {
+        productionTable: boardContext.productionTable,
+        vpSummary: boardContext.vpSummary,
+        actions: boardContext.actions,
+      } : {}),
+    } : undefined
 
     // ================================================================
     // BoardRecommendationBuilder → NarratorAgent
@@ -201,7 +200,11 @@ export async function POST(req: NextRequest) {
           // Board recommendation only for recommendation questions
           const finalRecommendation = isRecommendationQ ? (builderResult?.boardRecommendation ?? null) : null
 
-          // Send suggestions, metadata, and optional board recommendation
+          // Generate suggestions AFTER narration (lazy — avoids GPU contention)
+          const suggestedQuestions = await suggestionAgent.suggest(
+            message, cleanHistory, userLevel, enrichedCoachState
+          )
+
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({
               type: 'done',
