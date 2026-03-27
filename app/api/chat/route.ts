@@ -201,7 +201,6 @@ export async function POST(req: NextRequest) {
           const finalRecommendation = isRecommendationQ ? (builderResult?.boardRecommendation ?? null) : null
 
           // Generate suggestions AFTER narration (lazy — avoids GPU contention)
-          // Timeout + fallback to prevent blocking the done event
           let suggestedQuestions: string[] = []
           try {
             const suggestPromise = suggestionAgent.suggest(
@@ -212,11 +211,8 @@ export async function POST(req: NextRequest) {
             )
             suggestedQuestions = await Promise.race([suggestPromise, timeoutPromise])
           } catch {
-            suggestedQuestions = [
-              '¿Cual es mi mejor jugada ahora?',
-              '¿Como puedo mejorar mi produccion?',
-              '¿Que deberia construir primero?',
-            ]
+            // Si falla o timeout, enviar array vacío — no bloquear el done event
+            suggestedQuestions = []
           }
 
           controller.enqueue(
