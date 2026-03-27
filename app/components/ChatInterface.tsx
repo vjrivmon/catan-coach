@@ -591,17 +591,6 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
               agentUsed = event.agentUsed || 'direct'
               if (event.boardRecommendation) boardRecommendation = event.boardRecommendation
             }
-            else if (event.type === 'suggestions') {
-              // Sugerencias llegan después del done — actualizar el último mensaje
-              suggestions = event.suggestedQuestions || []
-              setSession(prev => {
-                const msgs = [...prev.messages]
-                const lastAssistant = [...msgs].reverse().find(m => m.role === 'assistant')
-                if (lastAssistant) lastAssistant.suggestedQuestions = suggestions
-                return { ...prev, messages: msgs }
-              })
-              setLastSuggestions(suggestions)
-            }
           } catch { /* ignore */ }
         }
       }

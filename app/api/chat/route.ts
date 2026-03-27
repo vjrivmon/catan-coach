@@ -148,6 +148,11 @@ export async function POST(req: NextRequest) {
         try {
           let fullResponse = ''
 
+          // Start suggestions IN PARALLEL (non-blocking — generates while tokens stream)
+          const suggestionsPromise = suggestionAgent.suggest(
+            message, cleanHistory, userLevel, enrichedCoachState
+          ).catch(() => [] as string[])
+
           if (boardContext && builderResult && isRecommendationQ) {
             // ── COACH: pregunta de recomendación → narrar la jugada ──
             let extraContext = ''
@@ -174,7 +179,6 @@ export async function POST(req: NextRequest) {
             }
           } else {
             // ── Pregunta libre (aprende, reglas, estrategia, o coach sin recomendación) ──
-            // Si estamos en coach mode, inyectar contexto del tablero como background
             const boardBackground = boardContext
               ? `Estado actual del tablero:\n${boardContext.resourceLine}\n${boardContext.vpSummary}\n${boardContext.productionTable}\nAcciones posibles: ${boardContext.actions}\n`
               : ''
@@ -184,7 +188,6 @@ export async function POST(req: NextRequest) {
               context,
             ].filter(Boolean).join('\n')
 
-            // En coach mode usa el modelo rápido, en aprende el de calidad
             const narrator = activeCoachState ? coachNarrator : aprendeNarrator
             for await (const token of narrator.narrateSimple(
               message,
@@ -197,37 +200,19 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // Board recommendation only for recommendation questions
+          // Narration done — collect suggestions (already generating in parallel)
+          const suggestedQuestions = await suggestionsPromise
           const finalRecommendation = isRecommendationQ ? (builderResult?.boardRecommendation ?? null) : null
 
-          // Send 'done' IMMEDIATELY — stops the cursor for the user
+          // Single done event with everything — cursor stops here
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({
               type: 'done',
-              suggestedQuestions: [],
+              suggestedQuestions,
               agentUsed: route,
               ...(finalRecommendation ? { boardRecommendation: finalRecommendation } : {}),
             })}\n\n`)
           )
-
-          // Generate suggestions AFTER done (user already sees the response)
-          try {
-            const suggestPromise = suggestionAgent.suggest(
-              message, cleanHistory, userLevel, enrichedCoachState
-            )
-            const timeoutPromise = new Promise<string[]>((_, reject) =>
-              setTimeout(() => reject(new Error('suggestions timeout')), 15_000)
-            )
-            const suggestedQuestions = await Promise.race([suggestPromise, timeoutPromise])
-            if (suggestedQuestions.length > 0) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({
-                  type: 'suggestions',
-                  suggestedQuestions,
-                })}\n\n`)
-              )
-            }
-          } catch { /* suggestions failed — no chips, no problem */ }
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
           controller.enqueue(
