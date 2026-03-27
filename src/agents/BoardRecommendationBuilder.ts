@@ -125,11 +125,25 @@ export function buildRecommendation(
     if (posMatch) {
       const label = firstFrontier.replace(/^(v\d+|e\d+_\d+)\s*/, '').slice(0, 60)
       positionDescription = label || firstFrontier
-      boardRecommendation = {
-        type: effectiveBuildType,
-        position: posMatch[1],
-        label,
+
+      const posId = posMatch[1]
+      const isEdge = posId.startsWith('e')
+      const isVertex = posId.startsWith('v')
+
+      // Solo crear boardRecommendation si el tipo y la posición son coherentes:
+      // - settlement/city necesitan un vértice (v{id})
+      // - road necesita una arista (e{from}_{to})
+      if (
+        (effectiveBuildType === 'road' && isEdge) ||
+        (effectiveBuildType !== 'road' && isVertex)
+      ) {
+        boardRecommendation = {
+          type: effectiveBuildType,
+          position: posId,
+          label,
+        }
       }
+      // Si road pero solo hay vértice, mostramos la dirección sin aura en el tablero
     }
   } else if (effectiveAction === 'build_city' && pc?.mySettlements && pc.mySettlements.length > 0) {
     // For cities, the position is an existing settlement
