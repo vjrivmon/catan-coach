@@ -200,8 +200,17 @@ export async function POST(req: NextRequest) {
           // Board recommendation only for recommendation questions
           const finalRecommendation = isRecommendationQ ? (builderResult?.boardRecommendation ?? null) : null
 
-          // Generate suggestions AFTER narration (lazy — avoids GPU contention)
-          let suggestedQuestions: string[] = []
+          // Send 'done' IMMEDIATELY — stops the cursor for the user
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({
+              type: 'done',
+              suggestedQuestions: [],
+              agentUsed: route,
+              ...(finalRecommendation ? { boardRecommendation: finalRecommendation } : {}),
+            })}\n\n`)
+          )
+
+          // Generate suggestions AFTER done (user already sees the response)
           try {
             const suggestPromise = suggestionAgent.suggest(
               message, cleanHistory, userLevel, enrichedCoachState
@@ -209,20 +218,16 @@ export async function POST(req: NextRequest) {
             const timeoutPromise = new Promise<string[]>((_, reject) =>
               setTimeout(() => reject(new Error('suggestions timeout')), 15_000)
             )
-            suggestedQuestions = await Promise.race([suggestPromise, timeoutPromise])
-          } catch {
-            // Si falla o timeout, enviar array vacío — no bloquear el done event
-            suggestedQuestions = []
-          }
-
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({
-              type: 'done',
-              suggestedQuestions,
-              agentUsed: route,
-              ...(finalRecommendation ? { boardRecommendation: finalRecommendation } : {}),
-            })}\n\n`)
-          )
+            const suggestedQuestions = await Promise.race([suggestPromise, timeoutPromise])
+            if (suggestedQuestions.length > 0) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({
+                  type: 'suggestions',
+                  suggestedQuestions,
+                })}\n\n`)
+              )
+            }
+          } catch { /* suggestions failed — no chips, no problem */ }
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
           controller.enqueue(
