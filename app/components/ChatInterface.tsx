@@ -576,11 +576,15 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
+      let buffer = ''
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        const lines = decoder.decode(value, { stream: true }).split('\n')
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        // Keep last (potentially incomplete) line in buffer
+        buffer = lines.pop() ?? ''
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue
           try {
