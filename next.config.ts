@@ -8,6 +8,11 @@ if (process.env.OLLAMA_INSECURE === 'true') {
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['catan-coach.loca.lt'],
   serverExternalPackages: ['chromadb', '@chroma-core/default-embed', '@chroma-core/ai-embeddings-common'],
+  experimental: {
+    turbo: {
+      rules: {}
+    }
+  }
 };
 
 export default nextConfig;
