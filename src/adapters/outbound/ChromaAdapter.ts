@@ -74,4 +74,11 @@ export class ChromaAdapter implements VectorStorePort {
   async createCollection(collectionName: string): Promise<void> {
     await this.getOrCreateCollectionId(collectionName)
   }
+
+  async deleteCollection(collectionName: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/v1/collections/${collectionName}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok && res.status !== 404) throw new Error(`ChromaDB delete error: ${res.status}`)
+  }
 }
