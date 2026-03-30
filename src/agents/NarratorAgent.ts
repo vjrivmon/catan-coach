@@ -14,7 +14,8 @@ import type { BuilderResult } from './BoardRecommendationBuilder'
 import { debugLog } from '../lib/debugLog'
 import { config } from '../config'
 
-const LEVEL_INSTRUCTIONS: Record<UserLevel, string> = {
+// Instrucciones para modo COACH (con tablero y recomendación genética)
+const COACH_LEVEL_INSTRUCTIONS: Record<UserLevel, string> = {
   beginner: `Nivel principiante. Responde en EXACTAMENTE 3 frases simples.
 Frase 1: QUE construir y su coste exacto.
 Frase 2: HACIA DONDE expandirte con terrenos concretos.
@@ -29,6 +30,22 @@ Da la mejor jugada con coste y una alternativa si existe.`,
 Puedes usar IDs de vertice si los acompañas de la descripcion del terreno.
 Incluye alternativas y razonamiento de probabilidades.`,
 }
+
+// Instrucciones para modo APRENDE (preguntas libres sobre reglas/estrategia)
+const SIMPLE_LEVEL_INSTRUCTIONS: Record<UserLevel, string> = {
+  beginner: `Nivel principiante. Responde de forma clara y explicativa, usando lenguaje sencillo.
+Evita tecnicismos innecesarios. Puedes usar listas o pasos si ayuda a la claridad.
+NO uses el formato "Frase 1/Frase 2/Frase 3". Responde de forma natural.`,
+
+  intermediate: `Nivel intermedio. Responde de forma directa y completa.
+Puedes incluir matices estratégicos y referencias a mecánicas específicas del juego.`,
+
+  advanced: `Nivel avanzado. Responde con profundidad estratégica y análisis detallado.
+Incluye probabilidades, alternativas y razonamiento táctico cuando sea relevante.`,
+}
+
+// Alias para compatibilidad con narrateCoach
+const LEVEL_INSTRUCTIONS = COACH_LEVEL_INSTRUCTIONS
 
 const SYSTEM_PROMPT = `Eres Catan Coach. Explica la siguiente recomendacion en español de forma natural y directa.
 El juego se llama CATAN. Nunca uses "El Colonizador" ni "Los Colonos de Catan".
@@ -88,7 +105,7 @@ function buildSimpleNarratorPrompt(
     `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${m.content}`
   ).join('\n')
 
-  return `${LEVEL_INSTRUCTIONS[level]}
+  return `${SIMPLE_LEVEL_INSTRUCTIONS[level]}
 
 ${context ? `Contexto relevante del reglamento/estrategia:\n${context}\n\n` : ''}${historyText ? `Historial reciente:\n${historyText}\n\n` : ''}Pregunta actual: ${message}`
 }
