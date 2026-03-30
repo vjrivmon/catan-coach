@@ -52,8 +52,9 @@ async function ingestFolder(
   }
 
   // Delete and recreate collection for clean ingestion
+  const client = chroma['client']
   try {
-    await chroma.deleteCollection(collectionName)
+    await client.deleteCollection({ name: collectionName })
   } catch { /* doesn't exist yet */ }
 
   await chroma.add(collectionName, allChunks, embeddings, allIds)
