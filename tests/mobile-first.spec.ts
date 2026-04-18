@@ -12,34 +12,13 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
-
-const BASE = 'http://localhost:3000'
+import { initApp, setupColors2Players } from './helpers'
 
 // Viewports clave
 const IPHONE_SE   = { width: 320, height: 568 }
 const IPHONE_14   = { width: 390, height: 844 }
 const IPHONE_LAND = { width: 844, height: 390 }
 const IPAD_MINI   = { width: 768, height: 1024 }
-
-async function initApp(page: Page) {
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' })
-  await page.evaluate(() => {
-    localStorage.clear()
-    localStorage.setItem('catan-onboarding-done', '1')
-  })
-  await page.reload({ waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('header', { timeout: 10_000 })
-  await page.waitForTimeout(500)
-}
-
-async function setupColors2Players(page: Page) {
-  const colorCircles = page.locator('[data-tour="color-picker"] button.rounded-full')
-  await expect(colorCircles.first()).toBeVisible({ timeout: 5000 })
-  await colorCircles.first().click()
-  await page.waitForTimeout(300)
-  await page.getByText('No hay J3 ni J4 (somos 2)').click()
-  await page.waitForTimeout(500)
-}
 
 /** Get all visible interactive elements with their bounding boxes */
 async function getInteractiveElements(page: Page) {

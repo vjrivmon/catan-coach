@@ -11,64 +11,17 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
+import {
+  BASE,
+  initApp,
+  setupColors2Players,
+  placeSettlement,
+  placeRoad,
+  waitForLLM,
+} from './helpers'
 
-const BASE = 'http://localhost:3000'
-
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-
-async function initApp(page: Page) {
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' })
-  await page.evaluate(() => {
-    localStorage.clear()
-    localStorage.setItem('catan-onboarding-done', '1')
-  })
-  await page.reload({ waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('header', { timeout: 10_000 })
-  await page.waitForTimeout(500)
-}
-
-async function setupColors2Players(page: Page) {
-  const colorCircles = page.locator('[data-tour="color-picker"] button.rounded-full')
-  await expect(colorCircles.first()).toBeVisible({ timeout: 5000 })
-  await colorCircles.first().click()
-  await page.waitForTimeout(300)
-  await page.getByText('No hay J3 ni J4 (somos 2)').click()
-  await page.waitForTimeout(500)
-}
-
-async function placeSettlement(page: Page, vertexId: number) {
-  const puebloBtn = page.locator('button').filter({ hasText: /Pueblo/ })
-  if (await puebloBtn.count() > 0 && await puebloBtn.first().isVisible()) {
-    await puebloBtn.first().click()
-    await page.waitForTimeout(200)
-  }
-  await page.evaluate((id) => {
-    const g = document.querySelector(`g[data-vertex-id="${id}"]`)
-    if (g) g.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-  }, vertexId)
-  await page.waitForTimeout(300)
-}
-
-async function placeRoad(page: Page, edgeId: string) {
-  const caminoBtn = page.locator('button').filter({ hasText: /Camino/ })
-  if (await caminoBtn.count() > 0 && await caminoBtn.first().isVisible()) {
-    await caminoBtn.first().click()
-    await page.waitForTimeout(200)
-  }
-  await page.evaluate((id) => {
-    const g = document.querySelector(`g[data-edge-id="${id}"]`)
-    if (g) g.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-  }, edgeId)
-  await page.waitForTimeout(300)
-}
-
-async function waitForLLM(page: Page, timeoutMs = 150_000) {
-  try {
-    await page.locator('span.animate-bounce').first().waitFor({ state: 'visible', timeout: 15_000 })
-  } catch { /* fast response or already streaming */ }
-  await page.locator('span.animate-bounce').first().waitFor({ state: 'hidden', timeout: timeoutMs })
-  await page.waitForTimeout(2000)
-}
+// Helpers base re-exportados desde tests/helpers.ts — este spec añade sólo
+// los helpers específicos de la suite master-audit.
 
 async function setupFullBoard(page: Page) {
   await page.getByText('Tablero interactivo').click()

@@ -12,81 +12,16 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
-
-const BASE = 'http://localhost:3000'
+import {
+  waitForApp,
+  setupColorsSimple,
+  placeSettlement,
+  placeRoad,
+  waitForLLMResponse,
+} from './helpers'
 
 // LLM responses can take time
 test.setTimeout(120_000)
-
-async function waitForApp(page: Page) {
-  // Skip onboarding tour
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' })
-  await page.evaluate(() => localStorage.setItem('catan-onboarding-done', '1'))
-  await page.reload({ waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('header', { timeout: 10_000 })
-  await page.waitForTimeout(500)
-}
-
-/**
- * Color assignment: Tú=red, skip J2+ (somos 2 — only Tú places pieces)
- */
-async function setupColorsSimple(page: Page) {
-  const colorCircles = page.locator('[data-tour="color-picker"] button.rounded-full')
-  await expect(colorCircles.first()).toBeVisible({ timeout: 5000 })
-  await colorCircles.first().click()
-  await page.waitForTimeout(300)
-
-  // At J2 step, click "somos 2" to skip
-  await page.getByText('No hay J3 ni J4 (somos 2)').click()
-  await page.waitForTimeout(500)
-}
-
-/** Place a settlement on a vertex via dispatchEvent (SVG hint circles block normal clicks) */
-async function placeSettlement(page: Page, vertexId: number) {
-  const puebloBtn = page.locator('button').filter({ hasText: /Pueblo/ })
-  if (await puebloBtn.count() > 0 && await puebloBtn.first().isVisible()) {
-    await puebloBtn.first().click()
-    await page.waitForTimeout(200)
-  }
-  await page.evaluate((id) => {
-    const g = document.querySelector(`g[data-vertex-id="${id}"]`)
-    if (g) g.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-  }, vertexId)
-  await page.waitForTimeout(300)
-}
-
-/** Place a road on an edge via dispatchEvent */
-async function placeRoad(page: Page, edgeId: string) {
-  const caminoBtn = page.locator('button').filter({ hasText: /Camino/ })
-  if (await caminoBtn.count() > 0 && await caminoBtn.first().isVisible()) {
-    await caminoBtn.first().click()
-    await page.waitForTimeout(200)
-  }
-  await page.evaluate((id) => {
-    const g = document.querySelector(`g[data-edge-id="${id}"]`)
-    if (g) g.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-  }, edgeId)
-  await page.waitForTimeout(300)
-}
-
-/**
- * Wait for the LLM streaming to complete.
- * Phase 1: Wait for typing indicator to appear (loading started).
- * Phase 2: Wait for typing indicator to disappear (streaming finished).
- */
-async function waitForLLMResponse(page: Page, timeoutMs = 150_000) {
-  // Phase 1: Wait for typing dots or streaming content to appear
-  try {
-    await page.locator('span.animate-bounce').first().waitFor({ state: 'visible', timeout: 15_000 })
-  } catch {
-    // Dots might have already appeared and disappeared (fast response), or streaming started directly
-    await page.waitForTimeout(2000)
-  }
-
-  // Phase 2: Wait for typing dots to disappear (streaming complete)
-  await page.locator('span.animate-bounce').first().waitFor({ state: 'hidden', timeout: timeoutMs })
-  await page.waitForTimeout(2000)
-}
 
 /**
  * Full board setup helper: open board, set colors, place Tú's 2 settlements + 2 roads

@@ -14,6 +14,8 @@ import { computeResourcesFromDice, type ResourceCounts } from '@/src/lib/dicePro
 import type { BoardRecommendation, BoardState as ConvBoardState } from '@/src/domain/entities'
 import type { BoardRecommendationPreview } from './coach/BoardOverlay'
 import { buildBoardSummary as geoBuildBoardSummary } from '@/src/lib/boardGeometry'
+import { parseSSEStream } from '@/src/lib/sse'
+import { useSyncedRef } from '@/src/lib/useSyncedRef'
 import { MessageBubble } from './MessageBubble'
 import { SuggestionChips } from './SuggestionChips'
 import { VoiceInput } from './VoiceInput'
@@ -208,43 +210,28 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
   const [savedLongestRoad, setSavedLongestRoad]     = useState<boolean>(false)
   const [savedLargestArmy, setSavedLargestArmy]     = useState<boolean>(false)
 
-  // ── Live refs para sendMessage (evita stale closures) ─────────────────────
-  const coachModeRef          = useRef(false)
-  const boardConfiguredRef    = useRef(false)
-  const savedResourcesRef     = useRef<Record<string,number> | null>(null)
-  const savedGeneticRecRef    = useRef<typeof savedGeneticRec>(null)
-  const savedPiecesRef        = useRef<typeof savedPieces>({})
-  const savedMyColorRef       = useRef('red')
-  const savedAssignmentsRef   = useRef<string[]>([])
-  const savedRobberHexRef     = useRef(9)
-  const savedPortsRef         = useRef<string[]>([])
-  const savedDevCardsRef      = useRef<Record<string,number> | null>(null)
-  const gameStartedRef        = useRef(false)
-  const currentTurnRef        = useRef(1)
-  const savedLongestRoadRef   = useRef(false)
-  const savedLargestArmyRef   = useRef(false)
-  const savedKnightsPlayedRef = useRef(0)
-
   // Fases 2-4 — board recommendation preview
   const [pendingRecommendation, setPendingRecommendation] = useState<BoardRecommendationPreview | null>(null)
   const boardConfigured = Object.keys(savedPieces).length > 0
 
-  // Sync live refs on every render (evita stale closures en sendMessage)
-  coachModeRef.current          = coachMode
-  boardConfiguredRef.current    = boardConfigured
-  savedResourcesRef.current     = savedResources
-  savedGeneticRecRef.current    = savedGeneticRec
-  savedPiecesRef.current        = savedPieces
-  savedMyColorRef.current       = savedMyColor
-  savedAssignmentsRef.current   = savedAssignments
-  savedRobberHexRef.current     = savedRobberHex
-  savedPortsRef.current         = savedPorts
-  savedDevCardsRef.current      = savedDevCards
-  gameStartedRef.current        = gameStarted
-  currentTurnRef.current        = currentTurn
-  savedLongestRoadRef.current   = savedLongestRoad
-  savedLargestArmyRef.current   = savedLargestArmy
-  savedKnightsPlayedRef.current = savedKnightsPlayed
+  // ── Live refs para sendMessage (evita stale closures) ─────────────────────
+  // useSyncedRef actualiza ref.current en cada render → callbacks async
+  // (dice handler, stream parser) leen siempre el valor más reciente.
+  const coachModeRef          = useSyncedRef(coachMode)
+  const boardConfiguredRef    = useSyncedRef(boardConfigured)
+  const savedResourcesRef     = useSyncedRef(savedResources)
+  const savedGeneticRecRef    = useSyncedRef(savedGeneticRec)
+  const savedPiecesRef        = useSyncedRef(savedPieces)
+  const savedMyColorRef       = useSyncedRef(savedMyColor)
+  const savedAssignmentsRef   = useSyncedRef(savedAssignments)
+  const savedRobberHexRef     = useSyncedRef(savedRobberHex)
+  const savedPortsRef         = useSyncedRef(savedPorts)
+  const savedDevCardsRef      = useSyncedRef(savedDevCards)
+  const gameStartedRef        = useSyncedRef(gameStarted)
+  const currentTurnRef        = useSyncedRef(currentTurn)
+  const savedLongestRoadRef   = useSyncedRef(savedLongestRoad)
+  const savedLargestArmyRef   = useSyncedRef(savedLargestArmy)
+  const savedKnightsPlayedRef = useSyncedRef(savedKnightsPlayed)
 
   /**
    * buildBoardSummary — delega en boardGeometry.buildBoardSummary
@@ -574,28 +561,14 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
       if (!response.ok || !response.body) throw new Error('Error de conexión')
 
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        // Keep last (potentially incomplete) line in buffer
-        buffer = lines.pop() ?? ''
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          try {
-            const event = JSON.parse(line.slice(6))
-            if (event.type === 'token') { fullResponse += event.token; setStreamingContent(fullResponse) }
-            else if (event.type === 'done') {
-              suggestions = event.suggestedQuestions || []
-              agentUsed = event.agentUsed || 'direct'
-              if (event.boardRecommendation) boardRecommendation = event.boardRecommendation
-            }
-          } catch { /* ignore */ }
+      for await (const event of parseSSEStream(response)) {
+        if (event.type === 'token') {
+          fullResponse += event.token as string
+          setStreamingContent(fullResponse)
+        } else if (event.type === 'done') {
+          suggestions = (event.suggestedQuestions as string[]) || []
+          agentUsed = (event.agentUsed as string) || 'direct'
+          if (event.boardRecommendation) boardRecommendation = event.boardRecommendation as typeof boardRecommendation
         }
       }
     } catch (err) {

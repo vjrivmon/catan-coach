@@ -11,6 +11,7 @@ import { OllamaAdapter } from '@/src/adapters/outbound/OllamaAdapter'
 import { ChromaAdapter } from '@/src/adapters/outbound/ChromaAdapter'
 import type { Message, UserLevel } from '@/src/domain/entities'
 import { config } from '@/src/config'
+import { createSSEStream } from '@/src/lib/sse'
 
 /** Detect if a message is asking about turn count / resource accumulation */
 function isTurnsQuestion(msg: string): boolean {
@@ -140,88 +141,69 @@ export async function POST(req: NextRequest) {
       return /mejor jugada|qué construir|qu[eé] deber[ií]a|qu[eé] hago|qu[eé] puedo hacer|mejor opci[oó]n|recomend/i.test(lower)
     })()
 
-    // 6. Stream the response
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder()
+    // 6. Stream the response — createSSEStream encapsula try/catch/finally y el encode.
+    const stream = createSSEStream(async (send) => {
+      // Start suggestions IN PARALLEL (non-blocking — generates while tokens stream)
+      const suggestionsPromise = suggestionAgent.suggest(
+        message, cleanHistory, userLevel, enrichedCoachState
+      ).catch(() => [] as string[])
 
-        try {
-          let fullResponse = ''
+      if (boardContext && builderResult && isRecommendationQ) {
+        // ── COACH: pregunta de recomendación → narrar la jugada ──
+        let extraContext = ''
+        if (isTurnsQuestion(message) && activeCoachState?.boardSummary) {
+          const estimate = computeTurnsEstimate(activeCoachState.boardSummary, activeCoachState.resources ?? null)
+          if (estimate) extraContext += `RESPUESTA PRE-CALCULADA:\n${estimate}\n`
+        }
+        const resourceCorrection = detectResourceContradiction(message, activeCoachState?.resources)
+        if (resourceCorrection) extraContext += resourceCorrection + '\n'
 
-          // Start suggestions IN PARALLEL (non-blocking — generates while tokens stream)
-          const suggestionsPromise = suggestionAgent.suggest(
-            message, cleanHistory, userLevel, enrichedCoachState
-          ).catch(() => [] as string[])
+        const augmentedBuilder = extraContext
+          ? { ...builderResult, reason: `${extraContext}${builderResult.reason}` }
+          : builderResult
 
-          if (boardContext && builderResult && isRecommendationQ) {
-            // ── COACH: pregunta de recomendación → narrar la jugada ──
-            let extraContext = ''
-            if (isTurnsQuestion(message) && activeCoachState?.boardSummary) {
-              const estimate = computeTurnsEstimate(activeCoachState.boardSummary, activeCoachState.resources ?? null)
-              if (estimate) extraContext += `RESPUESTA PRE-CALCULADA:\n${estimate}\n`
-            }
-            const resourceCorrection = detectResourceContradiction(message, activeCoachState?.resources)
-            if (resourceCorrection) extraContext += resourceCorrection + '\n'
+        for await (const token of coachNarrator.narrateCoach(
+          message,
+          augmentedBuilder,
+          boardContext,
+          userLevel,
+          cleanHistory,
+        )) {
+          send({ type: 'token', token })
+        }
+      } else {
+        // ── Pregunta libre (aprende, reglas, estrategia, o coach sin recomendación) ──
+        const boardBackground = boardContext
+          ? `Estado actual del tablero:\n${boardContext.resourceLine}\n${boardContext.vpSummary}\n${boardContext.productionTable}\nAcciones posibles: ${boardContext.actions}\n`
+          : ''
+        const finalContext = [
+          detectResourceContradiction(message, activeCoachState?.resources),
+          boardBackground,
+          context,
+        ].filter(Boolean).join('\n')
 
-            const augmentedBuilder = extraContext
-              ? { ...builderResult, reason: `${extraContext}${builderResult.reason}` }
-              : builderResult
-
-            for await (const token of coachNarrator.narrateCoach(
-              message,
-              augmentedBuilder,
-              boardContext,
-              userLevel,
-              cleanHistory,
-            )) {
-              fullResponse += token
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
-            }
-          } else {
-            // ── Pregunta libre (aprende, reglas, estrategia, o coach sin recomendación) ──
-            const boardBackground = boardContext
-              ? `Estado actual del tablero:\n${boardContext.resourceLine}\n${boardContext.vpSummary}\n${boardContext.productionTable}\nAcciones posibles: ${boardContext.actions}\n`
-              : ''
-            const finalContext = [
-              detectResourceContradiction(message, activeCoachState?.resources),
-              boardBackground,
-              context,
-            ].filter(Boolean).join('\n')
-
-            const narrator = activeCoachState ? coachNarrator : aprendeNarrator
-            for await (const token of narrator.narrateSimple(
-              message,
-              finalContext,
-              userLevel,
-              cleanHistory,
-            )) {
-              fullResponse += token
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', token })}\n\n`))
-            }
-          }
-
-          // Narration done — collect suggestions (already generating in parallel)
-          const suggestedQuestions = await suggestionsPromise
-          const finalRecommendation = isRecommendationQ ? (builderResult?.boardRecommendation ?? null) : null
-
-          // Single done event with everything — cursor stops here
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({
-              type: 'done',
-              suggestedQuestions,
-              agentUsed: route,
-              ...(finalRecommendation ? { boardRecommendation: finalRecommendation } : {}),
-            })}\n\n`)
-          )
-        } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'error', message: errorMsg })}\n\n`)
-          )
-        } finally {
-          controller.close()
+        const narrator = activeCoachState ? coachNarrator : aprendeNarrator
+        for await (const token of narrator.narrateSimple(
+          message,
+          finalContext,
+          userLevel,
+          cleanHistory,
+        )) {
+          send({ type: 'token', token })
         }
       }
+
+      // Narration done — collect suggestions (already generating in parallel)
+      const suggestedQuestions = await suggestionsPromise
+      const finalRecommendation = isRecommendationQ ? (builderResult?.boardRecommendation ?? null) : null
+
+      // Single done event with everything — cursor stops here
+      send({
+        type: 'done',
+        suggestedQuestions,
+        agentUsed: route,
+        ...(finalRecommendation ? { boardRecommendation: finalRecommendation } : {}),
+      })
     })
 
     return new Response(stream, {
