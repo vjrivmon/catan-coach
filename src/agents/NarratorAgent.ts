@@ -14,34 +14,46 @@ import type { BuilderResult } from './BoardRecommendationBuilder'
 import { debugLog } from '../lib/debugLog'
 import { config } from '../config'
 
+// Formato mobile-first común a todos los niveles: el usuario lee en 20s con una
+// sola mano. Usamos markdown ligero (**negritas** en la acción clave) que ya
+// renderiza MessageBubble vía react-markdown.
+const MOBILE_FORMAT_HINT = 'Formato: escribe la ACCION clave (qué construir) en **negrita**. No uses títulos. No uses emojis.'
+
 // Instrucciones para modo COACH (con tablero y recomendación genética)
 const COACH_LEVEL_INSTRUCTIONS: Record<UserLevel, string> = {
   beginner: `Nivel principiante. Responde en EXACTAMENTE 3 frases simples.
 Frase 1: QUE construir y su coste exacto.
 Frase 2: HACIA DONDE expandirte con terrenos concretos.
 Frase 3: UNA razon estrategica.
-NO uses IDs de vertice (v15, e12_34). Usa nombres de terrenos. NO termines con pregunta.`,
+NO uses IDs de vertice (v15, e12_34). Usa nombres de terrenos. NO termines con pregunta.
+${MOBILE_FORMAT_HINT}`,
 
   intermediate: `Nivel intermedio. Maximo 4 frases directas.
 No uses IDs de vertice. Usa descripcion de terrenos.
-Da la mejor jugada con coste y una alternativa si existe.`,
+Da la mejor jugada con coste y una alternativa si existe.
+${MOBILE_FORMAT_HINT}`,
 
   advanced: `Nivel avanzado. Maximo 6-8 frases con analisis estrategico denso.
 Puedes usar IDs de vertice si los acompañas de la descripcion del terreno.
-Incluye alternativas y razonamiento de probabilidades.`,
+Incluye alternativas y razonamiento de probabilidades.
+${MOBILE_FORMAT_HINT}
+Si enumeras varias opciones, usa bullets con "-" para que sean fáciles de escanear en móvil.`,
 }
 
 // Instrucciones para modo APRENDE (preguntas libres sobre reglas/estrategia)
 const SIMPLE_LEVEL_INSTRUCTIONS: Record<UserLevel, string> = {
   beginner: `Nivel principiante. Responde de forma clara y explicativa, usando lenguaje sencillo.
 Evita tecnicismos innecesarios. Puedes usar listas o pasos si ayuda a la claridad.
-NO uses el formato "Frase 1/Frase 2/Frase 3". Responde de forma natural.`,
+NO uses el formato "Frase 1/Frase 2/Frase 3". Responde de forma natural.
+Si enumeras elementos, usa bullets con "-" y resalta conceptos clave en **negrita**. No emojis.`,
 
   intermediate: `Nivel intermedio. Responde de forma directa y completa.
-Puedes incluir matices estratégicos y referencias a mecánicas específicas del juego.`,
+Puedes incluir matices estratégicos y referencias a mecánicas específicas del juego.
+Usa **negritas** para conceptos clave y bullets "-" para listas de reglas o costes. No emojis.`,
 
   advanced: `Nivel avanzado. Responde con profundidad estratégica y análisis detallado.
-Incluye probabilidades, alternativas y razonamiento táctico cuando sea relevante.`,
+Incluye probabilidades, alternativas y razonamiento táctico cuando sea relevante.
+Usa **negritas** para los términos clave y bullets para enumerar opciones. No emojis.`,
 }
 
 // Alias para compatibilidad con narrateCoach

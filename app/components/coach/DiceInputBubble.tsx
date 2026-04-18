@@ -1,11 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Probabilidades de cada número (dots / 36)
 const DICE_PROBS: Record<number, number> = {
   2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:5, 9:4, 10:3, 11:2, 12:1
 }
+
+// Countdown de auto-confirmación tras seleccionar número.
+// Reduce el flujo a 1 tap efectivo: tocas el número y a los 900ms se envía.
+// Toca otro número para corregir; toca "Cancelar" para abortar.
+const AUTO_CONFIRM_MS = 900
 
 interface DiceInputBubbleProps {
   mode: 'manual' | 'auto'
@@ -16,9 +21,9 @@ export function DiceInputBubble({ mode, onConfirm }: DiceInputBubbleProps) {
   const [selected, setSelected] = useState<number | null>(null)
   // Guard contra double-tap: un solo onConfirm por bubble.
   const [submitted, setSubmitted] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function rollDice(): number {
-    // Weighted random — simulates 2d6
     const d1 = Math.floor(Math.random() * 6) + 1
     const d2 = Math.floor(Math.random() * 6) + 1
     return d1 + d2
@@ -29,6 +34,23 @@ export function DiceInputBubble({ mode, onConfirm }: DiceInputBubbleProps) {
     setSubmitted(true)
     onConfirm(value)
   }
+
+  const cancelAutoConfirm = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
+  const selectNumber = (n: number) => {
+    if (submitted) return
+    setSelected(n)
+    cancelAutoConfirm()
+    timerRef.current = setTimeout(() => handleConfirm(n), AUTO_CONFIRM_MS)
+  }
+
+  // Limpia el timer si el componente se desmonta antes de enviar.
+  useEffect(() => () => cancelAutoConfirm(), [])
 
   const numbers = [2,3,4,5,6,7,8,9,10,11,12]
 
@@ -49,10 +71,12 @@ export function DiceInputBubble({ mode, onConfirm }: DiceInputBubbleProps) {
                 return (
                   <button
                     key={n}
-                    onClick={() => setSelected(n)}
-                    className={`flex flex-col items-center justify-center rounded-lg py-2 px-1 border text-xs font-bold transition-all ${
+                    onClick={() => selectNumber(n)}
+                    aria-label={`Dado ${n}`}
+                    style={{ touchAction: 'manipulation' }}
+                    className={`flex flex-col items-center justify-center rounded-lg py-3 px-1 border text-xs font-bold transition-all min-h-[48px] ${
                       isSelected
-                        ? 'border-amber-500 bg-amber-500/20 text-amber-300'
+                        ? 'border-amber-500 bg-amber-500/20 text-amber-300 scale-105'
                         : isHot
                           ? 'border-red-700 bg-red-950/40 text-red-400 hover:border-red-500'
                           : n === 7
@@ -68,13 +92,24 @@ export function DiceInputBubble({ mode, onConfirm }: DiceInputBubbleProps) {
                 )
               })}
             </div>
-            <button
-              onClick={() => selected !== null && handleConfirm(selected)}
-              disabled={selected === null || submitted}
-              className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition-colors"
-            >
-              {submitted ? 'Enviando…' : selected === null ? 'Selecciona el número' : `Confirmar: ${selected} →`}
-            </button>
+            {/* Estado: pendiente → hint, seleccionado → cancel, enviado → busy */}
+            {submitted ? (
+              <div className="w-full py-2.5 rounded-xl bg-stone-800 text-stone-400 text-sm text-center">
+                Enviando…
+              </div>
+            ) : selected === null ? (
+              <div className="w-full py-2.5 rounded-xl bg-stone-800 text-stone-400 text-sm text-center">
+                Toca el número que ha salido
+              </div>
+            ) : (
+              <button
+                onClick={cancelAutoConfirm}
+                style={{ touchAction: 'manipulation' }}
+                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors animate-pulse"
+              >
+                Confirmando {selected}… (toca para cancelar)
+              </button>
+            )}
           </>
         ) : (
           <button
@@ -85,7 +120,8 @@ export function DiceInputBubble({ mode, onConfirm }: DiceInputBubbleProps) {
               handleConfirm(rolled)
             }}
             disabled={submitted}
-            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition-colors flex items-center justify-center gap-2"
+            style={{ touchAction: 'manipulation' }}
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition-colors flex items-center justify-center gap-2 min-h-[48px]"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <rect x="3" y="3" width="18" height="18" rx="3"/>

@@ -53,7 +53,8 @@ export function ResourceStepperBubble({ onConfirm, initialValues }: ResourceStep
         )}
         {!hasInitial && <div className="mb-3" />}
 
-        {/* Compact inline display: resource chips */}
+        {/* Stepper mobile-first: +/− con tap target ≥32px y touch-action: manipulation
+            para evitar el delay de 300ms del double-tap zoom en iOS. */}
         <div className="grid grid-cols-5 gap-1.5 mb-3">
           {RESOURCES.map(({ key, color, emoji }) => (
             <div key={key} className="flex flex-col items-center gap-1">
@@ -61,17 +62,22 @@ export function ResourceStepperBubble({ onConfirm, initialValues }: ResourceStep
               <div className="flex flex-col items-center gap-0.5 w-full">
                 <button
                   onClick={() => adjust(key, 1)}
-                  className="w-full h-6 flex items-center justify-center bg-stone-600 hover:bg-stone-500 active:bg-stone-400 text-stone-200 text-xs font-bold rounded-t transition-colors"
+                  aria-label={`Añadir ${key}`}
+                  style={{ touchAction: 'manipulation' }}
+                  className="w-full h-9 flex items-center justify-center bg-stone-600 hover:bg-stone-500 active:bg-stone-400 text-stone-200 text-base font-bold rounded-t transition-colors"
                 >+</button>
                 <span
-                  className="w-full h-7 flex items-center justify-center text-sm font-bold text-white rounded-none"
+                  className="w-full h-8 flex items-center justify-center text-base font-bold text-white rounded-none"
                   style={{ background: counts[key] > 0 ? color : '#374151' }}
                 >
                   {counts[key]}
                 </span>
                 <button
                   onClick={() => adjust(key, -1)}
-                  className="w-full h-6 flex items-center justify-center bg-stone-600 hover:bg-stone-500 active:bg-stone-400 text-stone-200 text-xs font-bold rounded-b transition-colors"
+                  aria-label={`Quitar ${key}`}
+                  disabled={counts[key] === 0}
+                  style={{ touchAction: 'manipulation' }}
+                  className="w-full h-9 flex items-center justify-center bg-stone-600 hover:bg-stone-500 active:bg-stone-400 disabled:opacity-40 text-stone-200 text-base font-bold rounded-b transition-colors"
                 >−</button>
               </div>
             </div>
