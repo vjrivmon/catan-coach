@@ -28,12 +28,19 @@ export function ResourceStepperBubble({ onConfirm, initialValues }: ResourceStep
     wool:    initialValues?.wool    ?? 0,
     mineral: initialValues?.mineral ?? 0,
   })
+  // Guard contra double-tap en móvil: bloquea el botón tras el primer onConfirm.
+  const [submitted, setSubmitted] = useState(false)
 
   function adjust(key: ResourceKey, delta: number) {
     setCounts(c => ({ ...c, [key]: Math.max(0, Math.min(19, c[key] + delta)) }))
   }
 
   const total = Object.values(counts).reduce((a, b) => a + b, 0)
+  const handleConfirm = () => {
+    if (submitted || total === 0) return
+    setSubmitted(true)
+    onConfirm(counts)
+  }
 
   return (
     <div className="flex justify-start mb-3">
@@ -72,11 +79,13 @@ export function ResourceStepperBubble({ onConfirm, initialValues }: ResourceStep
         </div>
 
         <button
-          onClick={() => onConfirm(counts)}
-          disabled={total === 0}
+          onClick={handleConfirm}
+          disabled={total === 0 || submitted}
           className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition-colors"
         >
-          {total === 0
+          {submitted
+            ? 'Enviando…'
+            : total === 0
             ? 'Indica tus recursos primero'
             : hasInitial
             ? `Confirmar (${total} cartas) →`

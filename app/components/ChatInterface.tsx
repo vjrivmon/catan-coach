@@ -841,8 +841,20 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                 setPendingRecommendation(null)
               } : undefined}
               onClose={() => {
+                const wasInRobberMode = openBoardInRobberMode
                 setShowBoard(false)
                 setOpenBoardInRobberMode(false)
+                // Aviso: cerró el tablero durante "mover ladrón" sin confirmar.
+                // El ladrón se queda en su posición previa; desbloqueamos el flujo.
+                if (wasInRobberMode) {
+                  const reminderMsg: import('@/src/domain/entities').Message = {
+                    id: `robber-skip-${Date.now()}`, role: 'assistant',
+                    content: 'Cerraste el tablero sin mover el ladrón. Se queda en su posición actual — puedes reabrir el tablero más tarde con el botón "Editar tablero" para moverlo.',
+                    timestamp: Date.now(),
+                  }
+                  setSession(s => ({ ...s, messages: [...s.messages, reminderMsg] }))
+                  setCoachStep(null)  // desbloquear: el usuario puede seguir el turno
+                }
                 // Si había recomendación pendiente (usuario descartó), mostrar recursos actuales
                 if (pendingRecommendation) {
                   const RES_LABELS: Record<string,string> = { wood:'Madera', clay:'Arcilla', cereal:'Trigo', wool:'Oveja', mineral:'Mineral' }
@@ -1211,6 +1223,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
 
                     // Consultar GeneticAgent con los recursos ya actualizados
                     let geneticRec = null
+                    let geneticFailed = false
                     try {
                       const payload = buildGeneticPayload(diceResult.newTotals)
                       const apiRes = await fetch('/api/coach-recommend', {
@@ -1219,7 +1232,19 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
                         body: JSON.stringify(payload),
                       })
                       if (apiRes.ok) { geneticRec = await apiRes.json(); setSavedGeneticRec(geneticRec) }
-                    } catch { /* GeneticAgent optional */ }
+                      else geneticFailed = true
+                    } catch { geneticFailed = true }
+
+                    // Feedback visible si el GeneticAgent cayó: el LLM igual responde,
+                    // pero sin la capa de recomendación del agente genético.
+                    if (geneticFailed) {
+                      const warnMsg: import('@/src/domain/entities').Message = {
+                        id: `genetic-fail-${Date.now()}`, role: 'assistant',
+                        content: '⚠️ El agente genético no respondió a tiempo. Te doy la recomendación con el análisis estándar.',
+                        timestamp: Date.now(),
+                      }
+                      setSession(s => ({ ...s, messages: [...s.messages, warnMsg] }))
+                    }
 
                     // Pedir recomendación al LLM con contexto completo
                     const freshCoachState = {

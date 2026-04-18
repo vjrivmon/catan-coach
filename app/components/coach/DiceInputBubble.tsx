@@ -14,12 +14,20 @@ interface DiceInputBubbleProps {
 
 export function DiceInputBubble({ mode, onConfirm }: DiceInputBubbleProps) {
   const [selected, setSelected] = useState<number | null>(null)
+  // Guard contra double-tap: un solo onConfirm por bubble.
+  const [submitted, setSubmitted] = useState(false)
 
   function rollDice(): number {
     // Weighted random — simulates 2d6
     const d1 = Math.floor(Math.random() * 6) + 1
     const d2 = Math.floor(Math.random() * 6) + 1
     return d1 + d2
+  }
+
+  const handleConfirm = (value: number) => {
+    if (submitted) return
+    setSubmitted(true)
+    onConfirm(value)
   }
 
   const numbers = [2,3,4,5,6,7,8,9,10,11,12]
@@ -61,21 +69,23 @@ export function DiceInputBubble({ mode, onConfirm }: DiceInputBubbleProps) {
               })}
             </div>
             <button
-              onClick={() => selected !== null && onConfirm(selected)}
-              disabled={selected === null}
+              onClick={() => selected !== null && handleConfirm(selected)}
+              disabled={selected === null || submitted}
               className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition-colors"
             >
-              {selected === null ? 'Selecciona el número' : `Confirmar: ${selected} →`}
+              {submitted ? 'Enviando…' : selected === null ? 'Selecciona el número' : `Confirmar: ${selected} →`}
             </button>
           </>
         ) : (
           <button
             onClick={() => {
+              if (submitted) return
               const rolled = rollDice()
               setSelected(rolled)
-              onConfirm(rolled)
+              handleConfirm(rolled)
             }}
-            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors flex items-center justify-center gap-2"
+            disabled={submitted}
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <rect x="3" y="3" width="18" height="18" rx="3"/>
