@@ -1271,7 +1271,7 @@ export function ChatInterface({ backHref }: { backHref?: string } = {}) {
             {gameStarted && coachStep === null && !isLoading && coachMode && (
               <div className="flex items-center gap-2 px-1 mb-1">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-stone-400 text-xs">Turno {currentTurn - 1} — Partida en curso</span>
+                <span className="text-stone-400 text-xs">Turno {currentTurn} — Partida en curso</span>
               </div>
             )}
 

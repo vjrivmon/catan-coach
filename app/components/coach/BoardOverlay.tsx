@@ -104,9 +104,9 @@ function portGeom(def: PortDef) {
 
 // ─── Initial placement limits ─────────────────────────────────────────────────
 const MAX_SETTLEMENTS = 2
-const MAX_ROADS       = 4
-// In Catan initial placement: 2 settlements + 2 roads each → 4 roads total per player
-// Must place ALL before confirming
+const MAX_ROADS       = 2
+// Catán colocación inicial: 2 rondas de (1 poblado + 1 camino) = 2 poblados + 2 caminos por jugador.
+// Alternancia estricta S→R→S→R enforzada en toggleEdge + useEffect.
 const MIN_SETTLEMENTS = MAX_SETTLEMENTS
 const MIN_ROADS       = MAX_ROADS
 
@@ -203,28 +203,32 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
     setTimeout(() => setWarning(null), 2500)
   }, [])
 
-  // Auto-switch lógico al colocar piezas:
-  // 1. Si el jugador tiene 2 poblados pero le faltan caminos → cambiar a camino
-  // 2. Si el jugador está completo (2 poblados + 4 caminos) → pasar al siguiente incompleto
+  // Auto-switch lógico al colocar piezas (alternancia estricta S→R→S→R):
+  // 1. Tras colocar un poblado → forzar 'road' (siguiente acción obligada).
+  // 2. Tras colocar el camino asociado → forzar 'settlement' si quedan poblados.
+  // 3. Si el jugador está completo (2 poblados + 2 caminos) → pasar al siguiente incompleto.
   useEffect(() => {
     if (!colorsConfirmed) return
     const { settlements, roads } = countByPlayer(pieces, selColor)
     const isComplete = settlements >= MAX_SETTLEMENTS && roads >= MAX_ROADS
 
     if (isComplete) {
-      // Buscar el siguiente jugador que aún no esté completo
       const nextIncomplete = assignments.find(color => {
         const { settlements: s, roads: r } = countByPlayer(pieces, color)
         return s < MAX_SETTLEMENTS || r < MAX_ROADS
       })
       if (nextIncomplete) {
         setSelColor(nextIncomplete)
-        const { settlements: ns } = countByPlayer(pieces, nextIncomplete)
-        setSelPiece(ns >= MAX_SETTLEMENTS ? 'road' : 'settlement')
+        const { settlements: ns, roads: nr } = countByPlayer(pieces, nextIncomplete)
+        // Si arranca con poblado pendiente de su camino (ns > nr) → road; si no → settlement.
+        setSelPiece(nr < ns ? 'road' : 'settlement')
       }
-    } else if (selPiece === 'settlement' && settlements >= MAX_SETTLEMENTS) {
-      // Tiene los 2 poblados pero le faltan caminos → cambiar a camino
+    } else if (selPiece === 'settlement' && settlements > roads) {
+      // Acaba de colocar un poblado → siguiente acción obligada: camino
       setSelPiece('road')
+    } else if (selPiece === 'road' && roads >= settlements && settlements < MAX_SETTLEMENTS) {
+      // Acaba de colocar el camino asociado → siguiente acción obligada: poblado
+      setSelPiece('settlement')
     }
   }, [pieces, selColor, selPiece, assignments, colorsConfirmed])
 
@@ -288,8 +292,14 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
         return n
       }
 
-      // Rule: max 4 roads per player in initial phase (skip in game)
-      const { roads } = countByPlayer(p, selColor)
+      // Reglas Catán colocación inicial (skip en partida en curso):
+      // 1. roads ≤ settlements: cada camino debe ir tras su poblado correspondiente.
+      // 2. roads ≤ MAX_ROADS: tope global de 2 caminos por jugador (2 rondas de 1+1).
+      const { settlements, roads } = countByPlayer(p, selColor)
+      if (!gameStarted && roads >= settlements) {
+        showWarning('Primero coloca el poblado; después su camino')
+        return p
+      }
       if (!gameStarted && roads >= MAX_ROADS) {
         showWarning(`Máximo ${MAX_ROADS} caminos por jugador en la colocación inicial`)
         return p
@@ -759,8 +769,8 @@ export function BoardOverlay({ onClose, onConfirm, initialPieces = {}, initialMy
                 onClick={() => toggleVertex(id)}
                 onTouchEnd={(e) => { e.preventDefault(); toggleVertex(id) }}
                 style={{ cursor: isClickable ? 'pointer' : 'default', touchAction: 'none' }}>
-                {/* Hit area — rgba(0,0,0,0.001) instead of transparent (iOS Safari fix) */}
-                <circle cx={x} cy={y} r={14} fill="rgba(0,0,0,0.001)" />
+                {/* Hit area — rgba(0,0,0,0.001) instead of transparent (iOS Safari fix). r=20 ≈ 40px tap target (mobile-first). */}
+                <circle cx={x} cy={y} r={20} fill="rgba(0,0,0,0.001)" />
 
                 {/* Hover hint when in build mode & no piece */}
                 {!piece && selPiece !== 'road' && (

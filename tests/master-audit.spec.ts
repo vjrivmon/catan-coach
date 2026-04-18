@@ -74,12 +74,11 @@ async function setupFullBoard(page: Page) {
   await page.getByText('Tablero interactivo').click()
   await setupColors2Players(page)
   await expect(page.locator('svg').first()).toBeVisible({ timeout: 5000 })
+  // Catán: 2 rondas de (1 poblado + 1 camino) → orden estricto S→R→S→R
   await placeSettlement(page, 15)
-  await placeSettlement(page, 10)
   await placeRoad(page, '14_15')
-  await placeRoad(page, '15_16')
+  await placeSettlement(page, 10)
   await placeRoad(page, '10_11')
-  await placeRoad(page, '10_13')
 }
 
 async function confirmBoard(page: Page) {
@@ -254,10 +253,11 @@ test.describe('CAT2: Board validation', () => {
     await setupColors2Players(page)
     await expect(page.locator('svg').first()).toBeVisible({ timeout: 5000 })
 
-    // Place first settlement at vertex 15
+    // Ronda 1: poblado v15 + su camino (alternancia obligatoria S→R).
     await placeSettlement(page, 15)
+    await placeRoad(page, '14_15')
 
-    // Try to place settlement on adjacent vertex 16 (violates distance rule)
+    // Ronda 2: intentar poblado en v16 (adyacente a v15) → debe rechazarse por regla de distancia.
     await placeSettlement(page, 16)
     await page.waitForTimeout(500)
 
@@ -278,9 +278,11 @@ test.describe('CAT2: Board validation', () => {
     await setupColors2Players(page)
     await expect(page.locator('svg').first()).toBeVisible({ timeout: 5000 })
 
-    // Place 2 settlements
+    // Catán: ronda 1 (S→R) y ronda 2 (S→R) — la alternancia exige el camino entre poblados.
     await placeSettlement(page, 15)
+    await placeRoad(page, '14_15')
     await placeSettlement(page, 10)
+    await placeRoad(page, '10_11')
     await page.waitForTimeout(500)
 
     // Pueblo button should be disabled at 2/2
@@ -289,6 +291,49 @@ test.describe('CAT2: Board validation', () => {
     const btnText = await puebloBtn.innerText()
     expect(isDisabled).toBeTruthy()
     expect(btnText).toContain('2/2')
+  })
+
+  test('board limits roads to 2 per player and enforces S→R alternation', async ({ page }) => {
+    await initApp(page)
+    await page.getByText('Tablero interactivo').click()
+    await setupColors2Players(page)
+    await expect(page.locator('svg').first()).toBeVisible({ timeout: 5000 })
+
+    // 1) Coloca 1 poblado y trata de colocar 2 caminos seguidos sin colocar el 2º poblado.
+    await placeSettlement(page, 15)
+    await placeRoad(page, '14_15')   // OK: roads(1) ≤ settlements(1)
+    // Intento prohibido: roads(1) ≥ settlements(1) → debe rechazarse con warning.
+    await placeRoad(page, '15_16')
+    await page.waitForTimeout(500)
+
+    // Verificar que el segundo camino NO se colocó (warning visible o no hay pieza en e15_16)
+    const warningAlternancia = await page.getByText(/Primero coloca el poblado/i).isVisible().catch(() => false)
+    const secondRoadPlaced = await page.evaluate(() => {
+      const g = document.querySelector('g[data-edge-id="15_16"]')
+      return g?.querySelector('circle[fill]:not([fill="rgba(0,0,0,0.001)"])') !== null
+    })
+    expect(warningAlternancia || !secondRoadPlaced).toBeTruthy()
+
+    // 2) Completa correctamente la 2ª ronda (S→R) y verifica el tope de 2 caminos.
+    await placeSettlement(page, 10)
+    await placeRoad(page, '10_11')
+    await page.waitForTimeout(500)
+
+    // Camino button must show "2/2" and be disabled.
+    const caminoBtn = page.locator('button').filter({ hasText: /Camino/ }).first()
+    const btnText = await caminoBtn.innerText()
+    const isDisabled = await caminoBtn.isDisabled()
+    expect(btnText).toContain('2/2')
+    expect(isDisabled).toBeTruthy()
+
+    // 3) Intento de 3er camino debe rechazarse igualmente.
+    await placeRoad(page, '10_13')
+    await page.waitForTimeout(500)
+    const thirdRoadPlaced = await page.evaluate(() => {
+      const g = document.querySelector('g[data-edge-id="10_13"]')
+      return g?.querySelector('circle[fill]:not([fill="rgba(0,0,0,0.001)"])') !== null
+    })
+    expect(thirdRoadPlaced).toBeFalsy()
   })
 
   test('confirm button disabled until minimum pieces placed', async ({ page }) => {

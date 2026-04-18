@@ -90,6 +90,7 @@ async function waitForLLMResponse(page: Page, timeoutMs = 150_000) {
 
 /**
  * Full board setup helper: open board, set colors, place Tú's 2 settlements + 2 roads
+ * Catán: 2 rondas de (1 poblado + 1 camino) — orden estricto S→R→S→R
  */
 async function setupBoardWithPieces(page: Page) {
   await page.getByText('Tablero interactivo').click()
@@ -98,16 +99,12 @@ async function setupBoardWithPieces(page: Page) {
   // Board SVG should be visible
   await expect(page.locator('svg').first()).toBeVisible({ timeout: 5000 })
 
-  // Place 2 settlements + 4 roads for Tú (only player in "somos 2" mode)
-  // Vertices 15 and 10, with roads connecting to adjacent vertices
+  // Ronda 1: poblado v15 + su camino e14_15
   await placeSettlement(page, 15)
-  await placeSettlement(page, 10)
-  // Roads from settlement 15: 14_15, 15_16
   await placeRoad(page, '14_15')
-  await placeRoad(page, '15_16')
-  // Roads from settlement 10: 10_11, 10_13
+  // Ronda 2: poblado v10 + su camino e10_11
+  await placeSettlement(page, 10)
   await placeRoad(page, '10_11')
-  await placeRoad(page, '10_13')
 }
 
 /**
@@ -268,30 +265,31 @@ test('4 players: full setup and first recommendation', async ({ page }) => {
   await somos4Btn.click()
   await page.waitForTimeout(500)
 
-  // 3. Place pieces for all 4 players (2 settlements + 4 roads each)
+  // 3. Place pieces for all 4 players (Catán: 2 rondas de 1 poblado + 1 camino → 2S+2R total)
   // Non-adjacent vertices: red=[v0,v2], blue=[v4,v6], orange=[v8,v10], white=[v12,v14]
+  // Cada road va emparejado con su settlement (S1→R1, S2→R2)
   const playerPlacements = [
-    // [colorIndex, vert1, vert2, road1, road2, road3, road4]
-    { idx: 0, v1: 0,  v2: 2,  roads: ['0_1', '0_5', '1_2', '2_3'] },
-    { idx: 1, v1: 4,  v2: 6,  roads: ['3_4', '4_5', '6_7', '6_9'] },
-    { idx: 2, v1: 8,  v2: 10, roads: ['5_8', '8_9', '10_11', '10_13'] },
-    { idx: 3, v1: 12, v2: 14, roads: ['9_12', '12_13', '14_15', '1_14'] },
+    { idx: 0, v1: 0,  road1: '0_1',   v2: 2,  road2: '2_3'   },
+    { idx: 1, v1: 4,  road1: '3_4',   v2: 6,  road2: '6_7'   },
+    { idx: 2, v1: 8,  road1: '5_8',   v2: 10, road2: '10_11' },
+    { idx: 3, v1: 12, road1: '12_13', v2: 14, road2: '14_15' },
   ]
 
   // The player selector at top lets us switch who we're placing for
   const playerBtns = page.locator('[data-tour="colors-done"] button')
-  for (const { idx, v1, v2, roads } of playerPlacements) {
+  for (const { idx, v1, road1, v2, road2 } of playerPlacements) {
     // Click the player selector button (in order of assignments)
     if (await playerBtns.nth(idx).isVisible({ timeout: 2000 }).catch(() => false)) {
       await playerBtns.nth(idx).click()
       await page.waitForTimeout(200)
     }
 
+    // Ronda 1: poblado + su camino
     await placeSettlement(page, v1)
+    await placeRoad(page, road1)
+    // Ronda 2: poblado + su camino
     await placeSettlement(page, v2)
-    for (const road of roads) {
-      await placeRoad(page, road)
-    }
+    await placeRoad(page, road2)
   }
 
   // 4. Confirm board
@@ -335,11 +333,11 @@ test('4 players: dice roll produces correct resources', async ({ page }) => {
   // Place settlements at v0 (clay(6)+mineral(10)+wool(2)) and v14 (cereal(12)+clay(6)+cereal(11))
   // v0 adjacent: [1, 5, 7], v14 adjacent: [15, 1, 19]
   // They are NOT adjacent (v0's adj are 1,5,7 and 14 is not among them)
+  // Ronda 1: poblado v0 + su camino e0_1
   await placeSettlement(page, 0)
-  await placeSettlement(page, 14)
   await placeRoad(page, '0_1')
-  await placeRoad(page, '0_5')
-  await placeRoad(page, '1_14')
+  // Ronda 2: poblado v14 + su camino e14_15
+  await placeSettlement(page, 14)
   await placeRoad(page, '14_15')
 
   // Confirm board
